@@ -7,6 +7,8 @@
 #include "GameFramework/PlayerController.h"
 #include "AuraPlayerController.generated.h"
 
+class UAuraAttributeSet;
+class UDamageTextComponent;
 class UNavigationSystemV1;
 class USplineComponent;
 class UAuraAbilitySystemComponent;
@@ -26,6 +28,9 @@ class AURA_API AAuraPlayerController : public APlayerController
 public:
 	AAuraPlayerController();
 	virtual void PlayerTick(float DeltaTime) override; // Processes player input
+
+	// return CursorHitResult
+	FORCEINLINE FHitResult GetCursorHitResult() { return CursorHitResult; }
 protected:
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
@@ -48,7 +53,9 @@ private:
 
 	FHitResult CursorHitResult;
 	void CursorTrace();
+	UPROPERTY(BlueprintReadWrite, meta=(AllowPrivateAccess))
 	TScriptInterface<IEnemyInterface> LastActor;
+	UPROPERTY(BlueprintReadWrite, meta=(AllowPrivateAccess))
 	TScriptInterface<IEnemyInterface> CurrentActor;
 
 
@@ -65,9 +72,7 @@ private:
 #pragma endregion
 
 
-	/**
-	 * For multiplayer: Project Settings -> Engine/Navigation System -> Allow Client Side Navigation
-	 */
+	/*** For multiplayer: Project Settings -> Engine/Navigation System -> Allow Client Side Navigation */
 #pragma region ClickMove
 	UPROPERTY(EditDefaultsOnly, Category="SplineController")
 	bool bDrawNavBox = false;
@@ -90,8 +95,4 @@ private:
 
 	void AutoRun();
 #pragma endregion
-
-public:
-	// return CursorHitResult
-	FORCEINLINE FHitResult GetCursorHitResult() { return CursorHitResult; }
 };

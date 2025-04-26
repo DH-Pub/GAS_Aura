@@ -9,6 +9,7 @@
 namespace AuraGameplayTags
 {
 	// Automatically add to Gameplay Tag List
+#pragma region Attributes
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Attributes_Primary_Strength)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Attributes_Primary_Intelligence)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Attributes_Primary_Resilience)
@@ -27,12 +28,26 @@ namespace AuraGameplayTags
 	
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Attributes_Vital_Health)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Attributes_Vital_Mana)
+#pragma endregion 
 
 	
+#pragma region Input
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_LMB)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_RMB)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_1)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_2)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_3)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_4)
+#pragma endregion
+
+
+#pragma region Combat
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Damage_Incoming)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Effects_HitReact)
+#pragma endregion
+	
+	
+#pragma region GameplayCue
+
+#pragma endregion
 }

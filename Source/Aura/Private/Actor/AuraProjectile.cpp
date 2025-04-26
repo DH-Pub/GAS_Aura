@@ -11,7 +11,6 @@
 #include "NiagaraFunctionLibrary.h"
 #include "Aura/Aura.h"
 #include "Components/AudioComponent.h"
-#include "GameFramework/PlayerState.h"
 
 AAuraProjectile::AAuraProjectile()
 {
@@ -50,16 +49,31 @@ void AAuraProjectile::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, 
                                       UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	if (OtherActor == GetInstigator()) return;
-	SetActorTickEnabled(false);
-	Sphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	// Stop All projectile's functions, collisions
 	ProjectileMovement->Deactivate();
+	SetActorTickEnabled(false);
 	SetActorHiddenInGame(true);
+	Sphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	// Play Effect
 	UGameplayStatics::PlaySoundAtLocation(this, ImpactSound, GetActorLocation(), FRotator::ZeroRotator);
 	UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, ImpactEffect, GetActorLocation());
+
 	if (HasAuthority())
 	{
 		if (UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(OtherActor))
 		{
+			if (SweepResult.Location.IsZero())
+			{
+				FHitResult HitResult;
+				HitResult.Location = GetActorLocation();
+				DamageEffectSpecHandle.Data->GetContext().AddHitResult(HitResult);
+			}
+			else
+			{
+				DamageEffectSpecHandle.Data->GetContext().AddHitResult(SweepResult);
+			}
 			TargetASC->ApplyGameplayEffectSpecToSelf(*DamageEffectSpecHandle.Data);
 		}
 		SetLifeSpan(2.f);

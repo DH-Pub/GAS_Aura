@@ -28,7 +28,16 @@ public:
 
 	//~ Combat Interface
 	FORCEINLINE virtual int32 GetCharacterLevel() override { return Level; }
+	virtual void Die() override;
 	//~ End Combat Interface
+	
+	UFUNCTION()
+	void HitReactChanged(const FGameplayTag CallbackTag, int NewCount);
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Combat")
+	float BaseWalkSpeed = 250.f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Combat")
+	float LifeSpan = 5.f;
 protected:
 	virtual void BeginPlay() override;
 	virtual void InitAbilityActorInfo() override;

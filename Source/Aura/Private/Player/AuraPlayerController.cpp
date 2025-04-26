@@ -9,6 +9,7 @@
 #include "NavigationPath.h"
 #include "NavigationSystem.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
+#include "AbilitySystem/AuraAttributeSet.h"
 #include "Components/SplineComponent.h"
 #include "Input/AuraInputComponent.h"
 #include "Interaction/EnemyInterface.h"
@@ -33,7 +34,7 @@ void AAuraPlayerController::CursorTrace()
 	if (!CursorHitResult.bBlockingHit) return;
 
 	LastActor = CurrentActor;
-	CurrentActor = CursorHitResult.GetActor(); // cast to enemy interface, nullptr if can't (i.e. Floor -> nullptr)
+	CurrentActor = CursorHitResult.GetActor(); // cast to IEnemyInterface, nullptr if can't (i.e. Floor -> nullptr)
 
 	if (CurrentActor != LastActor)
 	{
@@ -59,7 +60,6 @@ void AAuraPlayerController::AutoRun()
 		}
 	}
 }
-
 
 void AAuraPlayerController::BeginPlay()
 {

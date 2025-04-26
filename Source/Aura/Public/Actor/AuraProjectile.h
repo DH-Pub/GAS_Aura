@@ -23,8 +23,8 @@ public:
 	AAuraProjectile();
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UProjectileMovementComponent> ProjectileMovement;
-
-	UPROPERTY(BlueprintReadWrite, meta=(ExposeOnSpawn)) // Expose pin on spawn
+	
+	UPROPERTY(BlueprintReadOnly, meta=(ExposeOnSpawn)) // Expose pin on spawn
 	FGameplayEffectSpecHandle DamageEffectSpecHandle;
 protected:
 	virtual void BeginPlay() override;

@@ -7,11 +7,12 @@
 #include "AuraGameplayTags.h"
 #include "Net/UnrealNetwork.h" // DOREPLIFETIME_CONDITION_NOTIFY
 #include "GameplayEffectExtension.h" // FGameplayEffectModCallbackData.EvaluatedData
+#include "Character/AuraCharacterBase.h"
 #include "GameFramework/Character.h"
+#include "Interaction/CombatInterface.h"
 
 UAuraAttributeSet::UAuraAttributeSet()
 {
-
 }
 
 // To Replicate
@@ -40,6 +41,9 @@ void UAuraAttributeSet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	// Vital
 	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, Health, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, Mana, COND_None, REPNOTIFY_Always);
+
+	// Meta
+	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, IncomingDamage, COND_None, REPNOTIFY_Always)
 }
 
 // Each Attribute has BaseValue and CurrentValue
@@ -63,10 +67,8 @@ void UAuraAttributeSet::SetEffectProperties(const FGameplayEffectModCallbackData
 	// Source: Causer / Target: Owner of this AS
 	Props.EffectContextHandle = Data.EffectSpec.GetContext();
 	Props.SourceASC = Props.EffectContextHandle.GetOriginalInstigatorAbilitySystemComponent();
-
-	UAbilitySystemComponent* SourceASC = Props.SourceASC;
-	if (IsValid(SourceASC) && SourceASC->AbilityActorInfo.IsValid()
-		&& SourceASC->AbilityActorInfo->AvatarActor.IsValid())
+	if (const UAbilitySystemComponent* SourceASC = Props.SourceASC;
+		IsValid(SourceASC) && SourceASC->AbilityActorInfo.IsValid() && SourceASC->AbilityActorInfo->AvatarActor.IsValid())
 	{
 		Props.SourceAvatarActor = SourceASC->AbilityActorInfo->AvatarActor.Get();
 		Props.SourceController = SourceASC->AbilityActorInfo->PlayerController.Get();
@@ -78,15 +80,14 @@ void UAuraAttributeSet::SetEffectProperties(const FGameplayEffectModCallbackData
 			}
 		}
 		if (Props.SourceController)
-		{
 			Props.SourceCharacter = Cast<ACharacter>(Props.SourceController->GetPawn());
-		}
 	}
-	
-	if (Data.Target.AbilityActorInfo.IsValid() && Data.Target.AbilityActorInfo->AvatarActor.IsValid())
+
+	if (const TSharedPtr<FGameplayAbilityActorInfo> TargetAbilityActorInfo = Data.Target.AbilityActorInfo;
+		TargetAbilityActorInfo.IsValid() && TargetAbilityActorInfo->AvatarActor.IsValid())
 	{
-		Props.TargetAvatarActor = Data.Target.AbilityActorInfo->AvatarActor.Get();
-		Props.TargetController = Data.Target.AbilityActorInfo->PlayerController.Get();
+		Props.TargetAvatarActor = TargetAbilityActorInfo->AvatarActor.Get();
+		Props.TargetController = TargetAbilityActorInfo->PlayerController.Get();
 		Props.TargetCharacter = Cast<ACharacter>(Props.TargetAvatarActor);
 		Props.TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Props.TargetAvatarActor);
 	}
@@ -99,6 +100,32 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 	FEffectProperties Props;
 	SetEffectProperties(Data, Props);
 	// UE_LOG(LogTemp, Warning, TEXT("%s: %f"), *Props.TargetAvatarActor->GetName(), GetHealth());
+
+	if (Data.EvaluatedData.Attribute == GetIncomingDamageAttribute())
+	{
+		if (const float LocalIncomingDamage = GetIncomingDamage(); LocalIncomingDamage > 0)
+		{
+			const float NewHealth = GetHealth() - LocalIncomingDamage;
+			SetHealth(FMath::Clamp(NewHealth, 0.f, GetMaxHealth()));
+			
+			if (NewHealth > 0.f)
+			{
+				const FGameplayTagContainer TagContainer(AuraGameplayTags::Effects_HitReact); // Container with 1 default
+				Props.TargetASC->TryActivateAbilitiesByTag(TagContainer);
+			}
+			else
+			{
+				if (ICombatInterface* CombatInterface = Cast<ICombatInterface>(Props.TargetAvatarActor)) CombatInterface->Die();
+			}
+			
+			// if (Props.SourceCharacter != Props.TargetCharacter)
+			if (AAuraCharacterBase* Chara = Cast<AAuraCharacterBase>(Props.TargetCharacter))
+			{
+				Chara->MulticastShowDamageNumber(*Props.EffectContextHandle.GetHitResult(), LocalIncomingDamage); // Show Damage Floating Text
+			}
+		}
+		// SetIncomingDamage(0.f); // prevent stacking old damage if Modifier Op is Add instead of Override
+	}
 }
 
 #pragma region Primary
@@ -167,15 +194,3 @@ void UAuraAttributeSet::OnRep_MaxMana(const FGameplayAttributeData& OldMaxMana) 
 	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, MaxMana, OldMaxMana);
 }
 #pragma endregion
-
-
-#pragma region Vital
-void UAuraAttributeSet::OnRep_Health(const FGameplayAttributeData& OldHealth) const
-{
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, Health, OldHealth);
-}
-void UAuraAttributeSet::OnRep_Mana(const FGameplayAttributeData& OldMana) const
-{
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, Mana, OldMana);
-}
-#pragma endregion 

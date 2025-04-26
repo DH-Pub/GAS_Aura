@@ -46,7 +46,8 @@ public:
 	virtual void BroadcastInitialValues() {};
 
 	template <typename ControllerT = UAuraWidgetController>
-	static ControllerT* CreateOrGetWidgetController(UObject* Outer, TObjectPtr<ControllerT>& WC, TSubclassOf<UAuraWidgetController> WCClass, const FWidgetControllerParams& WCParams)
+	static ControllerT* CreateOrGetWidgetController(UObject* Outer, TObjectPtr<ControllerT>& WC,
+		TSubclassOf<UAuraWidgetController> WCClass, const FWidgetControllerParams& WCParams)
 	{
 		checkf(WCClass, TEXT("Widget Controller Class uninitialized, please fill out in BP_AuraHUD"));
 		if (WC == nullptr)

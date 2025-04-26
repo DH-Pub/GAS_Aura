@@ -48,4 +48,7 @@ private:
 	TObjectPtr<UAttributeMenuWidgetController> AttributeMenuWidgetController;
 	UPROPERTY(EditAnywhere, Category = "AuraWidget|AttributeMenu")
 	TSubclassOf<UAttributeMenuWidgetController> AttributeMenuWidgetControllerClass;
+public:
+	UFUNCTION(Category = "AuraWidget|Overlay")
+	UAuraUserWidget* GetOverlayWidget() {return OverlayWidget;}
 };

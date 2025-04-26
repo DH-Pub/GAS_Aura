@@ -6,6 +6,7 @@
 
 namespace AuraGameplayTags
 {
+#pragma region Attributes
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Primary_Strength,"Attributes.Primary.Strength","Increases physical damage")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Primary_Intelligence,"Attributes.Primary.Intelligence","Increases magical damage")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Primary_Resilience,"Attributes.Primary.Resilience","Increases armor and armor penetration")
@@ -24,12 +25,26 @@ namespace AuraGameplayTags
 
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Vital_Health, "Attributes.Vital.Health", "Amount of damage a player can take before death")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Vital_Mana, "Attributes.Vital.Mana", "Amount of energy used to cast spells")
+#pragma endregion
 
-	
+
+#pragma region Input
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_LMB, "Input.MnK.LMB", "Left")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_RMB, "Input.MnK.RMB", "")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_1, "Input.MnK.1", "")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_2, "Input.MnK.2", "")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_3, "Input.MnK.3", "")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_4, "Input.MnK.4", "")
+#pragma endregion
+
+
+#pragma region Combat
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Damage_Incoming, "Damage.Incoming", "Incoming Damage caused by GE_Damage ")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Effects_HitReact, "Effects.HitReact", "Character with this tag is reacting to being hit")
+#pragma endregion
+
+	
+#pragma region Gameplay Cue
+
+#pragma endregion
 }

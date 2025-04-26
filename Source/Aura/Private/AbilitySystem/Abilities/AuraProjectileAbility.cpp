@@ -5,6 +5,7 @@
 
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
+#include "AuraGameplayTags.h"
 #include "Actor/AuraProjectile.h"
 #include "Interaction/CombatInterface.h"
 
@@ -22,7 +23,7 @@ void UAuraProjectileAbility::SpawnProjectile(const FVector& ProjectileTargetLoca
 	AActor* AvatarActor = GetAvatarActorFromActorInfo();
 	if (!AvatarActor->HasAuthority()) return; // GetCurrentActivationInfo()
 
-	if (ICombatInterface* CombatInterface = Cast<ICombatInterface>(AvatarActor))
+	if (TScriptInterface<ICombatInterface> CombatInterface = AvatarActor)
 	{
 		const FVector SocketLocation = CombatInterface->GetCombatSocketLocation();
 		FRotator Rotation = (ProjectileTargetLocation - SocketLocation).Rotation();
@@ -35,8 +36,17 @@ void UAuraProjectileAbility::SpawnProjectile(const FVector& ProjectileTargetLoca
 			AvatarActor, Cast<APawn>(AvatarActor), ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
 
 		const UAbilitySystemComponent* SourceASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(AvatarActor);
-		const FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(DamageEffectClass, GetAbilityLevel(), SourceASC->MakeEffectContext());
-		Projectile->DamageEffectSpecHandle = SpecHandle;
+		
+		FGameplayEffectContextHandle EffectContextHandle = SourceASC->MakeEffectContext();
+		EffectContextHandle.SetAbility(this);
+		EffectContextHandle.AddSourceObject(Projectile);
+		TArray<TWeakObjectPtr<AActor>> Actors;
+		EffectContextHandle.AddActors(Actors);
+		Projectile->DamageEffectSpecHandle = SourceASC->MakeOutgoingSpec(DamageEffectClass, GetAbilityLevel(), EffectContextHandle);
+		
+		// const float ScaledDamage = Damage.GetValueAtLevel(GetAbilityLevel());
+		const float ScaledDamage = Damage.GetValueAtLevel(10);
+		Projectile->DamageEffectSpecHandle.Data->SetSetByCallerMagnitude(AuraGameplayTags::Damage_Incoming, ScaledDamage);
 		
 		Projectile->FinishSpawning(SpawnTransform);
 	}

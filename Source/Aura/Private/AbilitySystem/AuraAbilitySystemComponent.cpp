@@ -16,7 +16,7 @@ void UAuraAbilitySystemComponent::ClientEffectApplied_Implementation(UAbilitySys
 {
 	FGameplayTagContainer TagContainer;
 	EffectSpec.GetAllAssetTags(TagContainer); // Asset Tags
-	EffectAssetTags.Broadcast(TagContainer); // Broadcast to OverlayWidgetController
+	EffectAssetTags.Broadcast(TagContainer); // Broadcast to OverlayWidgetController.cpp ASC->EffectAssetTags.AddLambda()
 }
 
 
