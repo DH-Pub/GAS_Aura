@@ -6,6 +6,7 @@
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
 #include "AuraGameplayTags.h"
+#include "AbilitySystem/AuraAbilitySystemLibrary.h"
 #include "Actor/AuraProjectile.h"
 #include "Interaction/CombatInterface.h"
 
@@ -23,14 +24,15 @@ void UAuraProjectileAbility::SpawnProjectile(const FVector& ProjectileTargetLoca
 	AActor* AvatarActor = GetAvatarActorFromActorInfo();
 	if (!AvatarActor->HasAuthority()) return; // GetCurrentActivationInfo()
 
-	if (TScriptInterface<ICombatInterface> CombatInterface = AvatarActor)
+	if (const TScriptInterface<ICombatInterface> CombatInterface = AvatarActor)
 	{
-		const FVector SocketLocation = CombatInterface->GetCombatSocketLocation();
-		FRotator Rotation = (ProjectileTargetLocation - SocketLocation).Rotation();
+		const FVector SpawnLocation = AvatarActor->GetActorLocation() + AvatarActor->GetActorForwardVector() * 60.f;
+		// const FVector SpawnLocation = CombatInterface->GetCombatSocketLocation();
+		FRotator Rotation = (ProjectileTargetLocation - SpawnLocation).Rotation();
 		Rotation.Pitch = 0.f;
 		
 		FTransform SpawnTransform;
-		SpawnTransform.SetLocation(SocketLocation);
+		SpawnTransform.SetLocation(SpawnLocation);
 		SpawnTransform.SetRotation(Rotation.Quaternion());
 		AAuraProjectile* Projectile = GetWorld()->SpawnActorDeferred<AAuraProjectile>(ProjectileClass, SpawnTransform,
 			AvatarActor, Cast<APawn>(AvatarActor), ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
@@ -40,13 +42,15 @@ void UAuraProjectileAbility::SpawnProjectile(const FVector& ProjectileTargetLoca
 		FGameplayEffectContextHandle EffectContextHandle = SourceASC->MakeEffectContext();
 		EffectContextHandle.SetAbility(this);
 		EffectContextHandle.AddSourceObject(Projectile);
+		UAuraAbilitySystemLibrary::SetIsStaggerDamage(EffectContextHandle, bStagger);
 		TArray<TWeakObjectPtr<AActor>> Actors;
 		EffectContextHandle.AddActors(Actors);
 		Projectile->DamageEffectSpecHandle = SourceASC->MakeOutgoingSpec(DamageEffectClass, GetAbilityLevel(), EffectContextHandle);
 		
-		// const float ScaledDamage = Damage.GetValueAtLevel(GetAbilityLevel());
-		const float ScaledDamage = Damage.GetValueAtLevel(10);
-		Projectile->DamageEffectSpecHandle.Data->SetSetByCallerMagnitude(AuraGameplayTags::Damage_Incoming, ScaledDamage);
+		for (TPair<FGameplayTag, FScalableFloat>& Pair : DamageTypes)
+		{
+			Projectile->DamageEffectSpecHandle.Data->SetSetByCallerMagnitude(Pair.Key, Pair.Value.GetValueAtLevel(GetAbilityLevel()));
+		}
 		
 		Projectile->FinishSpawning(SpawnTransform);
 	}

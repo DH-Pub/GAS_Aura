@@ -11,12 +11,13 @@ void UAuraWorldUserWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 	// Assumes we are directly added to a CanvasPanel rather than direct to viewport.
-	if (UCanvasPanelSlot* CanvasSlot = static_cast<UCanvasPanelSlot*>(Slot))
+	/*if (UCanvasPanelSlot* CanvasSlot = static_cast<UCanvasPanelSlot*>(Slot))
 	{
-		CanvasSlot->SetAlignment(FVector2D(0.5, 1.0));
+		CanvasSlot->SetAlignment(FVector2D(0.5, .5));
 		CanvasSlot->SetAutoSize(true);
-	}
-
+	}*/
+	// SetAlignmentInViewport(FVector2D(1., .5));
+	SetWorldToScreenTranslation(InitialLocation);
 	if (!IsValid(AttachedActor)) RemoveFromParent();
 }
 
@@ -47,7 +48,8 @@ void UAuraWorldUserWidget::SetWorldToScreenTranslation(const FVector& WorldLocat
 	{
 		const float Scale = UWidgetLayoutLibrary::GetViewportScale(this);
 		ScreenPosition /= Scale;
-		ScreenPosition.X -= GetDesiredSize().X * 0.5f;
+		ScreenPosition -= GetDesiredSize() * 0.5f;
+		ScreenPosition.Y -= 10.f;
 		SetRenderTranslation(ScreenPosition);
 	}
 	// Avoid unnecessary invalidation is Slate

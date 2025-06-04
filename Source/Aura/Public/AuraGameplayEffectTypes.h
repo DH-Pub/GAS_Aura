@@ -12,10 +12,16 @@ struct FAuraGameplayEffectContext : public FGameplayEffectContext
 	GENERATED_BODY()
 
 	bool IsBlocked() const {return bIsBlocked;}
-	bool IsCrit() const {return bIsCrit;}
-
-	void SetIsCrit(const bool bIn) {bIsCrit = bIn;}
 	void SetIsBlocked(const bool bIn) {bIsBlocked = bIn;}
+	
+	bool IsCrit() const {return bIsCrit;}
+	void SetIsCrit(const bool bIn) {bIsCrit = bIn;}
+	
+	bool IsStagger() const {return bStagger;}
+	void SetIsStagger(const bool bIn) {bStagger = bIn;}
+	
+	bool IsShowDamageOnTarget() const {return bShowDamageOnTarget;}
+	void SetIsShowDamageOnTarget(const bool bIn) {bShowDamageOnTarget = bIn;}
 	
 	/** Returns the actual struct used for serialization, subclasses must override this! */
 	virtual UScriptStruct* GetScriptStruct() const override
@@ -43,6 +49,10 @@ protected:
 	bool bIsBlocked = false;
 	UPROPERTY()
 	bool bIsCrit = false;
+	UPROPERTY()
+	bool bStagger = false;
+	UPROPERTY()
+	bool bShowDamageOnTarget = false;
 };
 
 template<>

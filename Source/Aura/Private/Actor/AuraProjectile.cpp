@@ -55,7 +55,8 @@ void AAuraProjectile::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, 
 	SetActorTickEnabled(false);
 	SetActorHiddenInGame(true);
 	Sphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-
+	LoopingAudio->Stop();
+	
 	// Play Effect
 	UGameplayStatics::PlaySoundAtLocation(this, ImpactSound, GetActorLocation(), FRotator::ZeroRotator);
 	UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, ImpactEffect, GetActorLocation());
@@ -64,16 +65,7 @@ void AAuraProjectile::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, 
 	{
 		if (UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(OtherActor))
 		{
-			if (SweepResult.Location.IsZero())
-			{
-				FHitResult HitResult;
-				HitResult.Location = GetActorLocation();
-				DamageEffectSpecHandle.Data->GetContext().AddHitResult(HitResult);
-			}
-			else
-			{
-				DamageEffectSpecHandle.Data->GetContext().AddHitResult(SweepResult);
-			}
+			DamageEffectSpecHandle.Data->GetContext().AddHitResult(SweepResult);
 			TargetASC->ApplyGameplayEffectSpecToSelf(*DamageEffectSpecHandle.Data);
 		}
 		SetLifeSpan(2.f);

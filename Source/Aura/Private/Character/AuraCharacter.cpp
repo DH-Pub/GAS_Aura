@@ -21,15 +21,6 @@ AAuraCharacter::AAuraCharacter()
 	// Skeletal meshes do not update their sockets or bones while not being rendered by default on the server part
 	GetMesh()->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
 	
-	GetCharacterMovement()->bOrientRotationToMovement = true;
-	GetCharacterMovement()->RotationRate = FRotator(0., 540., 0.);
-	GetCharacterMovement()->bConstrainToPlane = true;
-	GetCharacterMovement()->bSnapToPlaneAtStart = true;
-	// avoid 
-	GetCharacterMovement()->bUseRVOAvoidance = true;
-	GetCharacterMovement()->AvoidanceConsiderationRadius = 100.f;
-	bUseControllerRotationPitch = bUseControllerRotationRoll = bUseControllerRotationYaw = false;
-	
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>("SpringArm");
 	SpringArm->SetupAttachment(RootComponent);
 	SpringArm->SetRelativeRotation(FRotator(-45., 0., 0.));
@@ -90,5 +81,8 @@ void AAuraCharacter::InitAbilityActorInfo()
 
 	// Initialize Default Attributes
 	constexpr float Level = 1.f;
-	UAuraAbilitySystemLibrary::InitializeDefaultAttributes(this, this, CharacterClass, Level, AbilitySystemComponent);
+	if (HasAuthority())
+	{
+		UAuraAbilitySystemLibrary::InitializeDefaultAttributes(this, this, CharacterClass, Level, AbilitySystemComponent);
+	}
 }

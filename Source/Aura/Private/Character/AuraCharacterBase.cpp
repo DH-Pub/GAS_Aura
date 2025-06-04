@@ -6,12 +6,8 @@
 #include "Components/CapsuleComponent.h"
 #include "AbilitySystemComponent.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
-#include "AbilitySystem/AuraAbilitySystemLibrary.h"
-#include "AbilitySystem/AuraAttributeSet.h"
 #include "Aura/Aura.h"
-#include "Blueprint/WidgetTree.h"
-#include "UI/Widget/AuraWorldUserWidget.h"
-#include "UI/Widget/DamageTextComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 AAuraCharacterBase::AAuraCharacterBase()
 {
@@ -20,12 +16,23 @@ AAuraCharacterBase::AAuraCharacterBase()
 	GetCapsuleComponent()->SetGenerateOverlapEvents(true);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Projectile, ECR_Overlap);
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Mouse, ECR_Overlap);
 	GetMesh()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 	GetMesh()->SetGenerateOverlapEvents(false);
 	
 	Weapon = CreateDefaultSubobject<USkeletalMeshComponent>("Weapon");
 	Weapon->SetupAttachment(GetMesh(), FName("WeaponHandSocket"));
 	Weapon->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	// GetCharacterMovement()->bUseControllerDesiredRotation = true;
+	GetCharacterMovement()->bOrientRotationToMovement = true;
+	GetCharacterMovement()->RotationRate = FRotator(0., 540., 0.);
+	GetCharacterMovement()->bConstrainToPlane = true;
+	GetCharacterMovement()->bSnapToPlaneAtStart = true;
+	// avoid
+	// GetCharacterMovement()->bUseRVOAvoidance = true;
+	// GetCharacterMovement()->AvoidanceConsiderationRadius = 100.f;
+	bUseControllerRotationPitch = bUseControllerRotationRoll = bUseControllerRotationYaw = false;
 }
 
 void AAuraCharacterBase::Die()
@@ -48,7 +55,8 @@ void AAuraCharacterBase::MulticastHandleDeath_Implementation()
 	Dissolve();
 }
 
-void AAuraCharacterBase::MulticastShowDamageNumber_Implementation(FHitResult HitResult, const float Damage)
+void AAuraCharacterBase::ShowDamageNumber_Implementation(const AController* SourceController, const FVector& HitLocation,
+	const float Damage, const bool bBlocked, const bool bCrit)
 {
 	/*if (DamageTextComponentClass)
 	{
@@ -57,9 +65,13 @@ void AAuraCharacterBase::MulticastShowDamageNumber_Implementation(FHitResult Hit
 		// DmgTxt->AttachToComponent(TargetCharacter->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform); // to set location
 		// DmgTxt->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform); // to not when character move
 		DmgTxt->SetWorldLocation(GetActorLocation());
-		DmgTxt->SetDamageText(Damage);
+		DmgTxt->BP_SetDamageText(Damage);
 	}*/
-	BP_ShowDamageNumber(HitResult.Location, Damage);
+	const APlayerController* LocalPlayerController = GEngine->GetFirstLocalPlayerController(GetWorld());
+	if (LocalPlayerController && LocalPlayerController == SourceController)// check if damage dealer is the local player
+	{
+		BP_ShowDamageNumber(HitLocation, Damage, bBlocked, bCrit);
+	}
 }
 
 void AAuraCharacterBase::BeginPlay()

@@ -28,6 +28,11 @@ namespace AuraGameplayTags
 	
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Attributes_Vital_Health)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Attributes_Vital_Mana)
+	
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Attributes_Resistance_Fire)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Attributes_Resistance_Lightning)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Attributes_Resistance_Arcane)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Attributes_Resistance_Physical)
 #pragma endregion 
 
 	
@@ -42,12 +47,24 @@ namespace AuraGameplayTags
 
 
 #pragma region Combat
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Damage_Incoming)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Damage)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Damage_Fire)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Damage_Lightning)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Damage_Arcane)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Damage_Physical)
+	static const TMap<FGameplayTag, FGameplayTag> DamageTypesToResistances = {
+		{Damage_Fire, Attributes_Resistance_Fire},
+		{Damage_Lightning, Attributes_Resistance_Lightning},
+		{Damage_Arcane, Attributes_Resistance_Arcane},
+		{Damage_Physical, Attributes_Resistance_Physical},
+	};
+	
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Abilities_Attack)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Effects_HitReact)
 #pragma endregion
 	
 	
 #pragma region GameplayCue
-
+	// UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_FireBolt_Impact)
 #pragma endregion
 }

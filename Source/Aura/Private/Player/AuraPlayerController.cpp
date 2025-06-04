@@ -10,7 +10,9 @@
 #include "NavigationSystem.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/AuraAttributeSet.h"
+#include "Aura/Aura.h"
 #include "Components/SplineComponent.h"
+#include "GameFramework/PawnMovementComponent.h"
 #include "Input/AuraInputComponent.h"
 #include "Interaction/EnemyInterface.h"
 
@@ -21,7 +23,7 @@ AAuraPlayerController::AAuraPlayerController()
 	Spline = CreateDefaultSubobject<USplineComponent>("Splines");
 }
 
-void AAuraPlayerController::PlayerTick(float DeltaTime)
+void AAuraPlayerController::PlayerTick(const float DeltaTime)
 {
 	Super::PlayerTick(DeltaTime);
 	CursorTrace();
@@ -30,7 +32,7 @@ void AAuraPlayerController::PlayerTick(float DeltaTime)
 
 void AAuraPlayerController::CursorTrace()
 {
-	GetHitResultUnderCursor(ECC_Visibility, false, CursorHitResult);
+	GetHitResultUnderCursor(ECC_Mouse, false, CursorHitResult);
 	if (!CursorHitResult.bBlockingHit) return;
 
 	LastActor = CurrentActor;
@@ -49,14 +51,16 @@ void AAuraPlayerController::AutoRun()
 	{
 		const FVector LocationOnSpline = Spline->FindLocationClosestToWorldLocation(
 			ControlledPawn->GetActorLocation(), ESplineCoordinateSpace::World);
-		const FVector Direction = Spline->FindDirectionClosestToWorldLocation(
-			LocationOnSpline, ESplineCoordinateSpace::World);
+		// FVector Direction = Spline->FindDirectionClosestToWorldLocation(LocationOnSpline, ESplineCoordinateSpace::World);
+		FVector Direction = Spline->FindTangentClosestToWorldLocation(ControlledPawn->GetActorLocation(), ESplineCoordinateSpace::World);
+		Direction += LocationOnSpline - ControlledPawn->GetActorLocation();
 		ControlledPawn->AddMovementInput(Direction);
-
-		const float DistanceToDestination = (LocationOnSpline - CachedDestination).SquaredLength();
-		if (DistanceToDestination < AutoRunAcceptanceRadius * AutoRunAcceptanceRadius)
+		
+		const float DistanceToDestinationSquared = (LocationOnSpline - CachedDestination).SizeSquared();
+		if (DistanceToDestinationSquared < AutoRunAcceptanceRadius * AutoRunAcceptanceRadius)
 		{
 			bAutoRunning = false;
+			Spline->ClearSplinePoints();
 		}
 	}
 }
@@ -112,8 +116,9 @@ void AAuraPlayerController::Move(const FInputActionValue& InputActionValue)
 
 	if (ControlledPawn)
 	{
-		ControlledPawn->AddMovementInput(ForwardDirection, InputAxisVector.Y);
-		ControlledPawn->AddMovementInput(RightDirection, InputAxisVector.X);
+		ControlledPawn->GetMovementComponent()->AddInputVector(ForwardDirection * InputAxisVector.Y + RightDirection * InputAxisVector.X);
+		/*ControlledPawn->AddMovementInput(ForwardDirection, InputAxisVector.Y);
+		ControlledPawn->AddMovementInput(RightDirection, InputAxisVector.X);*/
 	}
 }
 
@@ -144,7 +149,7 @@ void AAuraPlayerController::AbilityInputTagReleased(FGameplayTag InputTag)
 				if (ControlledPawn == nullptr) ControlledPawn = GetPawn();
 				UNavigationPath* NavPath = UNavigationSystemV1::FindPathToLocationSynchronously(
 					this, ControlledPawn->GetActorLocation(), CachedDestination);
-				if (NavPath && NavPath->PathPoints.Num() > 0)
+				if (NavPath && !NavPath->PathPoints.IsEmpty())
 				{
 					Spline->ClearSplinePoints();
 					for (int i = 0; i < NavPath->PathPoints.Num(); i++)

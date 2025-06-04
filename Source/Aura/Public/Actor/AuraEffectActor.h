@@ -3,7 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "ActiveGameplayEffectHandle.h"
 #include "GameFramework/Actor.h"
 #include "AuraEffectActor.generated.h"
 
@@ -49,14 +48,17 @@ protected:
 	virtual void BeginPlay() override;
 
 	UFUNCTION(BlueprintCallable)
-	void ApplyEffectToTarget(AActor* TargetActor, const FEffectType& EffectType);
+	void ApplyEffectToTarget(AActor* TargetActor, const FEffectType& EffectType, const FHitResult& HitResult);
 	UFUNCTION(BlueprintCallable)
-	void OnOverlap(AActor* TargetActor);
+	void OnOverlap(AActor* TargetActor, FHitResult HitResult);
 	UFUNCTION(BlueprintCallable)
 	void OnEndOverlap(AActor* TargetActor);
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AppliedEffects")
-	bool bDestroyOnEffectRemoval = false;
+	bool bDestroyOnEffectApplication = false;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AppliedEffects")
+	bool bApplyEffectsToEnemies = false;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AppliedEffects")
 	TArray<FEffectType> Effects;
@@ -65,4 +67,5 @@ protected:
 	float ActorLevel = 1.f;
 private:
 	// TMap<FActiveGameplayEffectHandle, UAbilitySystemComponent*> ActiveEffectHandles;
+	bool IsNotForEnemy(const AActor* Actor) const {return Actor->ActorHasTag(FName("Enemy")) && !bApplyEffectsToEnemies;}
 };

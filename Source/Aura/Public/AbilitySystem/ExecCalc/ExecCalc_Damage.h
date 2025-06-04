@@ -17,9 +17,4 @@ public:
 	UExecCalc_Damage();
 
 	virtual void Execute_Implementation(const FGameplayEffectCustomExecutionParameters& ExecutionParams, FGameplayEffectCustomExecutionOutput& OutExecutionOutput) const override;
-private:
-	void GetAttributeMagnitude(const FGameplayEffectCustomExecutionParameters& ExecutionParams, const FAggregatorEvaluateParameters& EvaluateParameters,
-		const FGameplayEffectAttributeCaptureDefinition& AttributeDef, float& Attribute) const;
-	// FGameplayEffectAttributeCaptureDefinition SourceBlockChanceDef;
-	// FGameplayEffectAttributeCaptureDefinition TargetBlockChanceDef;
 };

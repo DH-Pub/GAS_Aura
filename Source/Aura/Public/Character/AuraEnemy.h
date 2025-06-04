@@ -8,6 +8,8 @@
 #include "UI/WidgetController/EnemyWidgetController.h"
 #include "AuraEnemy.generated.h"
 
+class AAuraAIController;
+class UBehaviorTree;
 class UEnemyWidgetController;
 class UWidgetComponent;
 /**
@@ -20,6 +22,7 @@ class AURA_API AAuraEnemy : public AAuraCharacterBase, public IEnemyInterface
 
 public:
 	AAuraEnemy();
+	virtual void PossessedBy(AController* NewController) override;
 
 	//~ Begin IEnemyInterface
 	virtual void HighlightActor() override;
@@ -29,6 +32,8 @@ public:
 	//~ Combat Interface
 	FORCEINLINE virtual int32 GetCharacterLevel() override { return Level; }
 	virtual void Die() override;
+	virtual void SetCombatTarget_Implementation(AActor* NewTarget) override {CombatTarget = NewTarget;}
+	virtual AActor* GetCombatTarget_Implementation() const override {return CombatTarget;}
 	//~ End Combat Interface
 	
 	UFUNCTION()
@@ -53,4 +58,9 @@ protected:
 	TObjectPtr<UEnemyWidgetController> HealthBarController;
 	UPROPERTY(EditAnywhere, Category = "AuraEnemy|AttributeMenu")
 	TSubclassOf<UEnemyWidgetController> HealthBarControllerClass;
+
+	// UPROPERTY(EditAnywhere, Category="AI")
+	// TObjectPtr<UBehaviorTree> BehaviorTree;
+	UPROPERTY()
+	TObjectPtr<AAuraAIController> AuraAIController;
 };

@@ -29,6 +29,12 @@ public:
 	virtual UAnimMontage* GetHitReactMontage_Implementation() override {return HitReactMontage;}
 	UAttributeSet* GetAttributeSet() const { return AttributeSet; }
 	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Character Class Defaults")
+	ECharacterClass CharacterClass = ECharacterClass::DefaultClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat")
+	TObjectPtr<AActor> CombatTarget;
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat")
 	bool bHitReacting = false;
 
@@ -36,12 +42,13 @@ public:
 	// Handle Ragdoll, physics called in Die
 	UFUNCTION(NetMulticast, Reliable)
 	virtual void MulticastHandleDeath();
-
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat")
+	bool bIsDead = false;
 	
 	UFUNCTION(NetMulticast, Unreliable)
-	void MulticastShowDamageNumber(FHitResult HitResult, float Damage);
+	void ShowDamageNumber(const AController* SourceController, const FVector& HitLocation, const float Damage, const bool bBlocked, const bool bCrit);
 	UFUNCTION(BlueprintImplementableEvent, Category="Combat")
-	void BP_ShowDamageNumber(FVector Loc, float Damage);
+	void BP_ShowDamageNumber(FVector Loc, float Damage, bool bBlocked, bool bCrit);
 protected:
 	virtual void BeginPlay() override;
 
@@ -59,9 +66,6 @@ protected:
 	// ASC->InitAbility and Set
 	virtual void InitAbilityActorInfo() {}
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Character Class Defaults")
-	ECharacterClass CharacterClass = ECharacterClass::DefaultClass;
-
 	// Add startup abilities (from server)
 	void AddCharacterAbilities() const;
 
@@ -82,9 +86,7 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category="Combat")
 	TObjectPtr<UAnimMontage> HitReactMontage;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(AllowPrivateAccess), Category="Combat")
-	TSubclassOf<UAuraWorldUserWidget> FloatingDamageTextClass;
+	
 	/*UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<UDamageTextComponent> DamageTextComponentClass;*/
 };

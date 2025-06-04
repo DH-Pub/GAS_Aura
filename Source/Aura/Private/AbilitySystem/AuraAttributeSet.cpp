@@ -7,6 +7,7 @@
 #include "AuraGameplayTags.h"
 #include "Net/UnrealNetwork.h" // DOREPLIFETIME_CONDITION_NOTIFY
 #include "GameplayEffectExtension.h" // FGameplayEffectModCallbackData.EvaluatedData
+#include "AbilitySystem/AuraAbilitySystemLibrary.h"
 #include "Character/AuraCharacterBase.h"
 #include "GameFramework/Character.h"
 #include "Interaction/CombatInterface.h"
@@ -37,7 +38,12 @@ void UAuraAttributeSet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, ManaRegeneration, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, MaxHealth, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, MaxMana, COND_None, REPNOTIFY_Always);
-
+	// Resistance
+	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, FireResistance, COND_None, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, LightningResistance, COND_None, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, ArcaneResistance, COND_None, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, PhysicalResistance, COND_None, REPNOTIFY_Always);
+	
 	// Vital
 	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, Health, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, Mana, COND_None, REPNOTIFY_Always);
@@ -110,8 +116,14 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 			
 			if (NewHealth > 0.f)
 			{
-				const FGameplayTagContainer TagContainer(AuraGameplayTags::Effects_HitReact); // Container with 1 default
-				Props.TargetASC->TryActivateAbilitiesByTag(TagContainer);
+				if (UAuraAbilitySystemLibrary::IsStaggerDamage(Props.EffectContextHandle)) // HitReact
+				{
+					const FGameplayTagContainer TagContainer(AuraGameplayTags::Effects_HitReact); // Container with 1 default
+					// Activate GA_HitReact which has AssetTag(Effects.HitReact)
+					// GameplayAbility Added to Character through UAuraAbilitySystemLibrary::GiveStartupAbilities(CommonAbilities)
+					// Abilities needs to be given to first so that those with abilities can Activate it
+					Props.TargetASC->TryActivateAbilitiesByTag(TagContainer);
+				}
 			}
 			else
 			{
@@ -121,7 +133,19 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 			// if (Props.SourceCharacter != Props.TargetCharacter)
 			if (AAuraCharacterBase* Chara = Cast<AAuraCharacterBase>(Props.TargetCharacter))
 			{
-				Chara->MulticastShowDamageNumber(*Props.EffectContextHandle.GetHitResult(), LocalIncomingDamage); // Show Damage Floating Text
+				const bool bBlocked = UAuraAbilitySystemLibrary::IsBlocked(Props.EffectContextHandle);
+				const bool bCrit = UAuraAbilitySystemLibrary::IsCrit(Props.EffectContextHandle);
+				const FHitResult& HitResult = *Props.EffectContextHandle.GetHitResult();
+				FVector HitLocation = HitResult.Location;
+				if (UAuraAbilitySystemLibrary::IsShowDamageOnTarget(Props.EffectContextHandle))
+				{
+					HitLocation = Props.TargetAvatarActor->GetActorLocation();
+				}
+				else if (HitResult.Distance == 0.f)
+				{
+					HitLocation = Cast<AActor>(Props.EffectContextHandle.GetSourceObject())->GetActorLocation();
+				}
+				Chara->ShowDamageNumber(Props.SourceController, HitLocation, LocalIncomingDamage, bBlocked, bCrit);
 			}
 		}
 		// SetIncomingDamage(0.f); // prevent stacking old damage if Modifier Op is Add instead of Override

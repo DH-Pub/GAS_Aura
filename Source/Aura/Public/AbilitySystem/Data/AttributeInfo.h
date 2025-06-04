@@ -34,13 +34,18 @@ class AURA_API UAttributeInfo : public UDataAsset
 {
 	GENERATED_BODY()
 public:
-	FAuraAttributeInfo FindAttributeInfoForTag(const FGameplayTag& AttributeTag, bool bLogNotFound = false) const;
+	FAuraAttributeInfo FindAttributeInfoForTag(const FGameplayTag& AttributeTag, bool bLogNotFound = false) const
+	{return AttributeInformation.FindRef(AttributeTag);}
 
+	/**
+	 * Future note: make this a TArray
+	 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(TitleProperty="{AttributeName} - {GameplayAttribute}", ForceInlineRow))
 	TMap<FGameplayTag, FAuraAttributeInfo> AttributeInformation;
-
-
 	
+	/**
+	 * Editor
+	 */
 #if WITH_EDITOR // Create a button in editor
 	UFUNCTION(Category="Populate Attribute Info", CallInEditor)
 	void PopulateDataAsset();

@@ -36,7 +36,8 @@ bool FAuraGameplayEffectContext::NetSerialize(FArchive& Ar, class UPackageMap* M
 		{
 			RepBits |= 1 << 6;
 		}
-		// New ------------------------------------
+		
+		// Custom -----------------------------------------------------------------------------------------------
 		if (bIsBlocked)
 		{
 			RepBits |= 1 << 7;
@@ -45,7 +46,15 @@ bool FAuraGameplayEffectContext::NetSerialize(FArchive& Ar, class UPackageMap* M
 		{
 			RepBits |= 1 << 8;
 		}
-		// End ---------------------
+		if (bStagger)
+		{
+			RepBits |= 1 << 9;
+		}
+		if (bShowDamageOnTarget)
+		{
+			RepBits |= 1 << 10;
+		}
+		// End -----------------------------------------------------------------------------------------------------
 	}
 
 	Ar.SerializeBits(&RepBits, 9); // 0-8
@@ -91,10 +100,12 @@ bool FAuraGameplayEffectContext::NetSerialize(FArchive& Ar, class UPackageMap* M
 		bHasWorldOrigin = false;
 	}
 
-	// New ======================================
+	// Custom ==========================================================================================
 	bIsBlocked = RepBits & (1 << 7);
 	bIsCrit = RepBits & (1 << 8);
-	// End ======================================
+	bStagger = RepBits & (1 << 9);
+	bShowDamageOnTarget = RepBits & (1 << 10);
+	// End ====================================================================================================
 
 	if (Ar.IsLoading())
 	{

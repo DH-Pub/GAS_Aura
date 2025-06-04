@@ -17,6 +17,9 @@ public class Aura : ModuleRules
 			"GameplayTags", "GameplayTasks", // GameplayAbilitySystem
 			"NavigationSystem",
 			"Niagara",
+			"AIModule",
+			"StateTreeModule", // StateTreeTaskBase.h
+			"GameplayStateTreeModule", // Tasks/StateTreeAITask.h
 		});
 
 		// Uncomment if you are using Slate UI
