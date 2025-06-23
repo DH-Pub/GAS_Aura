@@ -12,38 +12,16 @@ UAuraGameplayAbility::UAuraGameplayAbility()
 	// bRetriggerInstancedAbility = true;
 }
 
-void UAuraGameplayAbility::GetAvatarCombatInterface(TScriptInterface<ICombatInterface>& CombatInterface,
-                                                    TEnumAsByte<EOutcome>& Outcome)
+void UAuraGameplayAbility::PreActivate(const FGameplayAbilitySpecHandle Handle,
+	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo,
+	FOnGameplayAbilityEnded::FDelegate* OnGameplayAbilityEndedDelegate, const FGameplayEventData* TriggerEventData)
 {
-	// Outcome = EOutcomeCombatInterface::Failure;
-	if (AvatarCombatInterface == nullptr)
+	Super::PreActivate(Handle, ActorInfo, ActivationInfo, OnGameplayAbilityEndedDelegate, TriggerEventData);
+	if (AvatarActor == nullptr)
 	{
-		AvatarCombatInterface = GetAvatarActorFromActorInfo();
-		if (AvatarCombatInterface == nullptr)
-		{
-			Outcome = EOutcome::Failure;
-			return;
-		}
-	}
-	CombatInterface = AvatarCombatInterface;
-	Outcome = EOutcome::Success;
-}
-
-void UAuraGameplayAbility::GetAvatarInterfaces(TEnumAsByte<EOutcome>& Outcome,
-	TScriptInterface<ICombatInterface>& CombatInterface, TScriptInterface<IEnemyInterface>& EnemyInterface)
-{
-	if (AvatarCombatInterface == nullptr || AvatarEnemyInterface == nullptr)
-	{
-		AActor* AvatarActor = GetAvatarActorFromActorInfo();
+		AvatarActor = GetAvatarActorFromActorInfo();
 		AvatarCombatInterface = AvatarActor;
 		AvatarEnemyInterface = AvatarActor;
-		if (AvatarCombatInterface == nullptr || AvatarEnemyInterface == nullptr)
-		{
-			Outcome = EOutcome::Failure;
-			return;
-		}
+		if (AvatarCombatInterface == nullptr) EndAbility(Handle, ActorInfo, ActivationInfo, false, true);
 	}
-	CombatInterface = AvatarCombatInterface;
-	EnemyInterface = AvatarEnemyInterface;
-	Outcome = EOutcome::Success;
 }

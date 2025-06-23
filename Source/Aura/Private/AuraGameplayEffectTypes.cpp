@@ -5,6 +5,7 @@
 
 bool FAuraGameplayEffectContext::NetSerialize(FArchive& Ar, class UPackageMap* Map, bool& bOutSuccess)
 {
+	// -------------------------------------------------------
 	uint32 RepBits = 0;
 	if (Ar.IsSaving())
 	{
@@ -57,7 +58,7 @@ bool FAuraGameplayEffectContext::NetSerialize(FArchive& Ar, class UPackageMap* M
 		// End -----------------------------------------------------------------------------------------------------
 	}
 
-	Ar.SerializeBits(&RepBits, 9); // 0-8
+	Ar.SerializeBits(&RepBits, 10); // 0-8
 
 	if (RepBits & (1 << 0))
 	{
@@ -112,6 +113,8 @@ bool FAuraGameplayEffectContext::NetSerialize(FArchive& Ar, class UPackageMap* M
 		AddInstigator(Instigator.Get(), EffectCauser.Get()); // Just to initialize InstigatorAbilitySystemComponent
 	}	
 	
-	bOutSuccess = true;
+	// bOutSuccess = true;
+	// Must add NetCore in Build.cs
+	bOutSuccess &= SafeNetSerializeTArray_WithNetSerialize<31>(Ar, CueLocations, Map);
 	return true;
 }

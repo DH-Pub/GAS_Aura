@@ -31,7 +31,7 @@ class AURA_API UAuraInputConfig : public UDataAsset
 public:
 	UInputAction* FindAbilityInputActionForTag(const FGameplayTag& InputTag) const;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(ForceInlineRow))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(ForceInlineRow, GameplayTagFilter="Input"))
 	TMap<FGameplayTag, TObjectPtr<UInputAction>> AbilityInputActions;
 
 	

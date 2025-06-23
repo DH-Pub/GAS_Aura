@@ -38,6 +38,6 @@ class AURA_API UMessageInfo : public UDataAsset
 public:
 	FAuraMessageInfo FindMessageInfoForTag(const FGameplayTag& MessageTag) const;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(TitleProperty="Message", ForceInlineRow))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(TitleProperty="Message", ForceInlineRow, GameplayTagFilter="Message"))
 	TMap<FGameplayTag, FAuraMessageInfo> MessageInformation;
 };

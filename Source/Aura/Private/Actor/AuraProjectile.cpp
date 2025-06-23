@@ -5,10 +5,13 @@
 
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
+#include "AbilitySystemGlobals.h"
+#include "AuraGameplayTags.h"
 #include "Components/SphereComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "NiagaraFunctionLibrary.h"
+#include "AbilitySystem/AuraAbilitySystemLibrary.h"
 #include "Aura/Aura.h"
 #include "Components/AudioComponent.h"
 
@@ -49,23 +52,44 @@ void AAuraProjectile::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, 
                                       UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	if (OtherActor == GetInstigator()) return;
-
+	if (!UAuraAbilitySystemLibrary::IsNotFriend(GetInstigator(), OtherActor)) return;
 	// Stop All projectile's functions, collisions
 	ProjectileMovement->Deactivate();
 	SetActorTickEnabled(false);
 	SetActorHiddenInGame(true);
 	Sphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	LoopingAudio->Stop();
+
 	
 	// Play Effect
-	UGameplayStatics::PlaySoundAtLocation(this, ImpactSound, GetActorLocation(), FRotator::ZeroRotator);
-	UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, ImpactEffect, GetActorLocation());
-
+	// UGameplayStatics::PlaySoundAtLocation(this, ImpactSound, GetActorLocation(), FRotator::ZeroRotator);
+	// UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, ImpactEffect, GetActorLocation());
 	if (HasAuthority())
 	{
+		// Modify GameplayEffectSpecHandle (client does not have access)
+		FGameplayEffectContextHandle GE_ContextHandle = DamageEffectSpecHandle.Data->GetContext();
+		if (SweepResult.Distance == 0.f)
+		{
+			FHitResult HitResult;
+			HitResult.Location = OtherActor->GetActorLocation();
+			HitResult.ImpactPoint = GetActorLocation();
+			GE_ContextHandle.AddHitResult(HitResult);
+		}
+		else GE_ContextHandle.AddHitResult(SweepResult);
+		
+		if (UAbilitySystemComponent* InstigatorASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(GetInstigator()))
+		{
+			FGameplayCueParameters CueParams;
+			CueParams.EffectContext = GE_ContextHandle;
+			CueParams.Location = GE_ContextHandle.GetHitResult()->ImpactPoint;
+			CueParams.Instigator = GetInstigator();
+			CueParams.EffectCauser = this;
+			CueParams.SourceObject = OtherActor;
+			InstigatorASC->ExecuteGameplayCue(AuraGameplayTags::GameplayCue_Impact_Projectile, CueParams);
+		}
+		
 		if (UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(OtherActor))
 		{
-			DamageEffectSpecHandle.Data->GetContext().AddHitResult(SweepResult);
 			TargetASC->ApplyGameplayEffectSpecToSelf(*DamageEffectSpecHandle.Data);
 		}
 		SetLifeSpan(2.f);

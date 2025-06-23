@@ -5,9 +5,11 @@
 
 #include "Components/CapsuleComponent.h"
 #include "AbilitySystemComponent.h"
+#include "AuraGameplayTags.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "Aura/Aura.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 AAuraCharacterBase::AAuraCharacterBase()
 {
@@ -19,6 +21,10 @@ AAuraCharacterBase::AAuraCharacterBase()
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Mouse, ECR_Overlap);
 	GetMesh()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 	GetMesh()->SetGenerateOverlapEvents(false);
+	GetMesh()->SetRelativeRotation(FRotator(0., -90., 0.));
+	// Dedicated servers don't render the meshes
+	// Skeletal meshes do not update their sockets or bones while not being rendered by default on the server part
+	GetMesh()->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
 	
 	Weapon = CreateDefaultSubobject<USkeletalMeshComponent>("Weapon");
 	Weapon->SetupAttachment(GetMesh(), FName("WeaponHandSocket"));
@@ -37,14 +43,17 @@ AAuraCharacterBase::AAuraCharacterBase()
 
 void AAuraCharacterBase::Die()
 {
-	Weapon->DetachFromComponent(FDetachmentTransformRules(EDetachmentRule::KeepWorld, true));
 	MulticastHandleDeath();
 }
 void AAuraCharacterBase::MulticastHandleDeath_Implementation()
 {
-	Weapon->SetSimulatePhysics(true);
-	Weapon->SetEnableGravity(true);
-	Weapon->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
+	if (Weapon->GetSkeletalMeshAsset())
+	{
+		Weapon->DetachFromComponent(FDetachmentTransformRules(EDetachmentRule::KeepWorld, true));
+		Weapon->SetSimulatePhysics(true);
+		Weapon->SetEnableGravity(true);
+		Weapon->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
+	}
 	GetMesh()->SetSimulatePhysics(true);
 	GetMesh()->SetEnableGravity(true);
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
@@ -52,7 +61,9 @@ void AAuraCharacterBase::MulticastHandleDeath_Implementation()
 	GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECR_Ignore);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
 
+	bIsDead = true;
 	Dissolve();
+	UGameplayStatics::PlaySoundAtLocation(this, DeathSound, GetActorLocation(), GetActorRotation());
 }
 
 void AAuraCharacterBase::ShowDamageNumber_Implementation(const AController* SourceController, const FVector& HitLocation,
@@ -68,7 +79,7 @@ void AAuraCharacterBase::ShowDamageNumber_Implementation(const AController* Sour
 		DmgTxt->BP_SetDamageText(Damage);
 	}*/
 	const APlayerController* LocalPlayerController = GEngine->GetFirstLocalPlayerController(GetWorld());
-	if (LocalPlayerController && LocalPlayerController == SourceController)// check if damage dealer is the local player
+	// if (LocalPlayerController && LocalPlayerController == SourceController)// check if damage dealer is the local player
 	{
 		BP_ShowDamageNumber(HitLocation, Damage, bBlocked, bCrit);
 	}
@@ -79,9 +90,39 @@ void AAuraCharacterBase::BeginPlay()
 	Super::BeginPlay();
 }
 
-FVector AAuraCharacterBase::GetCombatSocketLocation()
+FTaggedMontage AAuraCharacterBase::GetRandomAttackMontage_Implementation()
 {
-	return Weapon->GetSocketLocation(WeaponTipSocketName);
+	if (AttackMontages.IsEmpty()) return FTaggedMontage();
+	return AttackMontages[FMath::RandRange(0, AttackMontages.Num() - 1)];
+}
+FVector AAuraCharacterBase::GetCombatSocketLocation_Implementation(const FGameplayTag& MontageTag)
+{
+	if (IsValid(Weapon->GetSkeletalMeshAsset()) && MontageTag.MatchesTagExact(AuraGameplayTags::CombatSocket_Weapon))
+	{
+		return Weapon->GetSocketLocation("Attack_Socket");
+	}
+	if (MontageTag.MatchesTagExact(AuraGameplayTags::CombatSocket_LeftHand))
+	{
+		return GetMesh()->GetSocketLocation("Hand_L_Socket");
+	}
+	if (MontageTag.MatchesTagExact(AuraGameplayTags::CombatSocket_RightHand))
+	{
+		return GetMesh()->GetSocketLocation("Hand_R_Socket");
+	}
+	if (MontageTag.MatchesTagExact(AuraGameplayTags::CombatSocket_Tail))
+	{
+		return GetMesh()->GetSocketLocation("Tail_Socket");
+	}
+	return GetActorLocation();
+}
+
+FTaggedMontage AAuraCharacterBase::GetTaggedMontageByTag_Implementation(const FGameplayTag& MontageTag)
+{
+	for (FTaggedMontage TaggedMontage : AttackMontages)
+	{
+		if (TaggedMontage.MontageTag == MontageTag) return TaggedMontage;
+	}
+	return FTaggedMontage();
 }
 
 void AAuraCharacterBase::AddCharacterAbilities() const
@@ -99,7 +140,7 @@ void AAuraCharacterBase::Dissolve()
 		GetMesh()->SetMaterial(0, MIDynamic);
 		StartDissolveTimeline(MIDynamic);
 	}
-	if (IsValid(WeaponDissolveMI))
+	if (Weapon->GetSkeletalMeshAsset() && IsValid(WeaponDissolveMI))
 	{
 		UMaterialInstanceDynamic* MIDynamic = UMaterialInstanceDynamic::Create(WeaponDissolveMI, this);
 		Weapon->SetMaterial(0, MIDynamic);

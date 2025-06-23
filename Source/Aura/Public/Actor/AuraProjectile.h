@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameplayEffectTypes.h"
 #include "GameFramework/Actor.h"
+#include "Interaction/ProjectileInterface.h"
 #include "AuraProjectile.generated.h"
 
 class UNiagaraSystem;
@@ -15,7 +16,7 @@ class USphereComponent;
  *	The projectile AActor that will have VFX/Mesh/...
  */
 UCLASS()
-class AURA_API AAuraProjectile : public AActor
+class AURA_API AAuraProjectile : public AActor, public IProjectileInterface
 {
 	GENERATED_BODY()
 	
@@ -26,6 +27,9 @@ public:
 	
 	UPROPERTY(BlueprintReadOnly, meta=(ExposeOnSpawn)) // Expose pin on spawn
 	FGameplayEffectSpecHandle DamageEffectSpecHandle;
+
+	virtual void GetImpactCue_Implementation(UNiagaraSystem*& CueEffect, USoundBase*& CueSound) override
+	{CueEffect = ImpactEffect; CueSound = ImpactSound;}
 protected:
 	virtual void BeginPlay() override;
 	
@@ -33,13 +37,13 @@ protected:
 	void OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 		int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<USphereComponent> Sphere;
 private:
 	UPROPERTY(EditDefaultsOnly)
 	float LifeSpan = 2.f;
 	
-	UPROPERTY(VisibleAnywhere)
-	TObjectPtr<USphereComponent> Sphere;
-	
+	// Flying sound
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UAudioComponent> LoopingAudio;
 	UPROPERTY(EditAnywhere, Category="Effects")

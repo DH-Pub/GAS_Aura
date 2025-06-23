@@ -51,6 +51,7 @@ private:
 	void ShiftReleased() { bShiftKeyDown = false; }
 	bool bShiftKeyDown = false;
 
+	UPROPERTY(BlueprintReadOnly, meta=(AllowPrivateAccess))
 	FHitResult CursorHitResult;
 	void CursorTrace();
 	UPROPERTY(BlueprintReadWrite, meta=(AllowPrivateAccess))

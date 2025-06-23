@@ -37,7 +37,7 @@ void AAuraPlayerController::CursorTrace()
 
 	LastActor = CurrentActor;
 	CurrentActor = CursorHitResult.GetActor(); // cast to IEnemyInterface, nullptr if can't (i.e. Floor -> nullptr)
-
+	
 	if (CurrentActor != LastActor)
 	{
 		if (LastActor) LastActor->UnHighlightActor();

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Abilities/AuraGameplayAbility.h"
 #include "Data/CharacterClassDataAsset.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "AuraAbilitySystemLibrary.generated.h"
@@ -35,23 +36,35 @@ public:
 	UFUNCTION(BlueprintCallable, meta=(DefaultToSelf="WorldContextObject"), Category = "AuraAbilitySystemLibrary|CharacterClassDefaults")
 	static void GiveStartupAbilities(const UObject* WorldContextObject, UAbilitySystemComponent* ASC, ECharacterClass CharacterClass = ECharacterClass::DefaultClass);
 
-
+#pragma region ActorFunctions
 	/**
 	 * Add widget to OverlayWidget -> Canvas -> Overlay_Game
 	 * @param WorldContextObject 
 	 * @param InNewWidget 
 	 * @return 
 	 */
-	UFUNCTION(BlueprintCallable, meta=(DefaultToSelf="WorldContextObject"), Category="AuraAbilitySystemLibrary|UI")
-	static bool AddWidgetToRootCanvasPanel(const UObject* WorldContextObject, UUserWidget* InNewWidget);
+	UFUNCTION(BlueprintCallable, meta=(DefaultToSelf="WorldContextObject", ExpandEnumAsExecs="Outcome"), Category="AuraAbilitySystemLibrary|UI")
+	static void AddWidgetToRootCanvasPanel(const UObject* WorldContextObject, UUserWidget* InNewWidget, TEnumAsByte<EOutcome>& Outcome);
 
+	UFUNCTION(BlueprintCallable, meta=(ExpandEnumAsExecs="Outcome"), Category="AuraAbilitySystemLibrary|Actor")
+	static void YawActorToLocation(TEnumAsByte<EOutcome>& Outcome, AActor* InActor, FVector InLocation,
+		float DeltaTime, float InterpSpeed, float DegreeTolerance = 0.1);
+	
+	UFUNCTION(BlueprintCallable, meta=(DefaultToSelf="WorldContextObject"), Category="AuraAbilitySystemLibrary|GameplayMechanics")
+	static void GetLivePlayersInRadius(const UObject* WorldContextObject,
+		TArray<AActor*>& OutActors, const TArray<AActor*>& ActorsToIgnore, float Radius, const FVector& Origin);
+	UFUNCTION(BlueprintPure, meta=(DefaultToSelf="WorldContextObject"), Category="AuraAbilitySystemLibrary|GameplayMechanics")
+	static bool IsNotFriend(const AActor* FirstActor, const AActor* SecondActor);
+#pragma endregion
+
+	
 	/**
 	 * Get DA_CharacterClass.
 	 * Client can't get GameMode so this will always return nullptr
 	 */
 	UFUNCTION(BlueprintCallable, meta=(DefaultToSelf="WorldContextObject"), Category="AuraAbilitySystemLibrary|UI")
 	static UCharacterClassDataAsset* GetCharacterClassDataAsset(const UObject* WorldContextObject);
-
+	
 #pragma region Damage
 	UFUNCTION(BlueprintPure, Category="AuraAbilitySystemLibrary|GameplayEffects")
 	static bool IsBlocked(const FGameplayEffectContextHandle& EffectContextHandle);
@@ -65,11 +78,19 @@ public:
 	
 	UFUNCTION(BlueprintPure, Category="AuraAbilitySystemLibrary|GameplayEffects")
 	static bool IsStaggerDamage(const FGameplayEffectContextHandle& EffectContextHandle);
-	UFUNCTION(BlueprintPure, Category="AuraAbilitySystemLibrary|GameplayEffects")
+	UFUNCTION(BlueprintCallable, Category="AuraAbilitySystemLibrary|GameplayEffects")
 	static void SetIsStaggerDamage(UPARAM(ref) FGameplayEffectContextHandle& EffectContext, bool bStagger);
 	UFUNCTION(BlueprintPure, Category="AuraAbilitySystemLibrary|GameplayEffects")
 	static bool IsShowDamageOnTarget(const FGameplayEffectContextHandle& EffectContextHandle);
 	UFUNCTION(BlueprintCallable, Category="AuraAbilitySystemLibrary|GameplayEffects")
 	static void SetIsShowDamageOnTarget(UPARAM(ref) FGameplayEffectContextHandle& EffectContext, bool bShowDamageOnTarget);
+#pragma endregion
+
+	
+#pragma region GameplayCue
+	UFUNCTION(BlueprintPure, Category="AuraAbilitySystemLibrary|Cue")
+	static TArray<FVector_NetQuantize> GetCueLocations(const FGameplayEffectContextHandle& EffectContextHandle);
+	UFUNCTION(BlueprintCallable, Category="AuraAbilitySystemLibrary|Cue")
+	static void SetCueLocations(UPARAM(ref) FGameplayEffectContextHandle& EffectContextHandle, TArray<FVector_NetQuantize> InLocations);
 #pragma endregion
 };

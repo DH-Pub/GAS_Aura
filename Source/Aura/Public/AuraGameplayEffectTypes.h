@@ -6,6 +6,8 @@
 #include "GameplayEffectTypes.h"
 #include "AuraGameplayEffectTypes.generated.h"
 
+class UNiagaraSystem;
+
 USTRUCT(BlueprintType)
 struct FAuraGameplayEffectContext : public FGameplayEffectContext
 {
@@ -20,8 +22,10 @@ struct FAuraGameplayEffectContext : public FGameplayEffectContext
 	bool IsStagger() const {return bStagger;}
 	void SetIsStagger(const bool bIn) {bStagger = bIn;}
 	
-	bool IsShowDamageOnTarget() const {return bShowDamageOnTarget;}
-	void SetIsShowDamageOnTarget(const bool bIn) {bShowDamageOnTarget = bIn;}
+	UPROPERTY()
+	bool bShowDamageOnTarget = false;
+	UPROPERTY()
+	TArray<FVector_NetQuantize> CueLocations = TArray<FVector_NetQuantize>();
 	
 	/** Returns the actual struct used for serialization, subclasses must override this! */
 	virtual UScriptStruct* GetScriptStruct() const override
@@ -51,8 +55,6 @@ protected:
 	bool bIsCrit = false;
 	UPROPERTY()
 	bool bStagger = false;
-	UPROPERTY()
-	bool bShowDamageOnTarget = false;
 };
 
 template<>

@@ -9,6 +9,7 @@
 #include "Interaction/CombatInterface.h"
 #include "AuraCharacterBase.generated.h"
 
+class UNiagaraSystem;
 class UAuraWorldUserWidget;
 struct FGameplayAttribute;
 class UAuraAttributeSet;
@@ -26,38 +27,55 @@ class AURA_API AAuraCharacterBase : public ACharacter, public IAbilitySystemInte
 public:
 	AAuraCharacterBase();
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; }
-	virtual UAnimMontage* GetHitReactMontage_Implementation() override {return HitReactMontage;}
 	UAttributeSet* GetAttributeSet() const { return AttributeSet; }
+	// Call MulticastHandleDeath(), which should be overriden
+	virtual void Die() override;
+	// Handle Ragdoll, physics called in Die
+	UFUNCTION(NetMulticast, Reliable)
+	virtual void MulticastHandleDeath();
+
+	
+	/*
+	 * Interface start ====================================================================================
+	 */
+#pragma region Interfaces
+	virtual UAnimMontage* GetHitReactMontage_Implementation() override {return HitReactMontage;}
+	virtual FTaggedMontage GetRandomAttackMontage_Implementation() override;
+	virtual FVector GetCombatSocketLocation_Implementation(const FGameplayTag& MontageTag) override;
+	virtual bool IsDead_Implementation() const override {return bIsDead;}
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="Combat")
+	bool bIsDead = false;
+	virtual AActor* GetAvatar_Implementation() override {return this;}
+	virtual UNiagaraSystem* GetBloodEffect_Implementation() override {return BloodEffect;}
+	virtual FTaggedMontage GetTaggedMontageByTag_Implementation(const FGameplayTag& MontageTag) override;
+	virtual int32 GetMinionCount_Implementation() const override {return MinionCount;}
+#pragma endregion
+	/*
+	 * Interface end ========================================================================================
+	 */
+
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Character Class Defaults")
 	ECharacterClass CharacterClass = ECharacterClass::DefaultClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat")
 	TObjectPtr<AActor> CombatTarget;
+	UPROPERTY(BlueprintReadWrite, Category="Combat")
+	bool bTracking = false;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat")
 	bool bHitReacting = false;
-
-	virtual void Die() override;
-	// Handle Ragdoll, physics called in Die
-	UFUNCTION(NetMulticast, Reliable)
-	virtual void MulticastHandleDeath();
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat")
-	bool bIsDead = false;
 	
 	UFUNCTION(NetMulticast, Unreliable)
 	void ShowDamageNumber(const AController* SourceController, const FVector& HitLocation, const float Damage, const bool bBlocked, const bool bCrit);
 	UFUNCTION(BlueprintImplementableEvent, Category="Combat")
 	void BP_ShowDamageNumber(FVector Loc, float Damage, bool bBlocked, bool bCrit);
+
 protected:
 	virtual void BeginPlay() override;
 
-	UPROPERTY(EditAnywhere, Category="Combat|Weapon")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Combat|Weapon")
 	TObjectPtr<USkeletalMeshComponent> Weapon;
-
-	UPROPERTY(EditAnywhere, Category="Combat")
-	FName WeaponTipSocketName;
-	virtual FVector GetCombatSocketLocation() override;
 
 	UPROPERTY()
 	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
@@ -79,13 +97,24 @@ protected:
 	TObjectPtr<UMaterialInstance> MeshDissolveMI;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Character Class Defaults")
 	TObjectPtr<UMaterialInstance> WeaponDissolveMI;
-	
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Combat")
+	TObjectPtr<UNiagaraSystem> BloodEffect;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Combat")
+	TObjectPtr<USoundBase> DeathSound;
+
+	/* Minions*/
+	UPROPERTY()
+	int32 MinionCount = 0;
 private:
 	UPROPERTY(EditAnywhere, Category="GameplayAbility|Abilities")
 	TArray<TSubclassOf<UGameplayAbility>> StartupAbilities;
 
 	UPROPERTY(EditDefaultsOnly, Category="Combat")
 	TObjectPtr<UAnimMontage> HitReactMontage;
+	UPROPERTY(EditDefaultsOnly, meta=(ForceInlineRow, TitleProperty="{MontageTag} - {SocketTag}"), Category="Combat")
+	TArray<FTaggedMontage> AttackMontages;
 	
 	/*UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<UDamageTextComponent> DamageTextComponentClass;*/

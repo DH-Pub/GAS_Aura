@@ -135,16 +135,13 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 			{
 				const bool bBlocked = UAuraAbilitySystemLibrary::IsBlocked(Props.EffectContextHandle);
 				const bool bCrit = UAuraAbilitySystemLibrary::IsCrit(Props.EffectContextHandle);
-				const FHitResult& HitResult = *Props.EffectContextHandle.GetHitResult();
-				FVector HitLocation = HitResult.Location;
-				if (UAuraAbilitySystemLibrary::IsShowDamageOnTarget(Props.EffectContextHandle))
+				FVector HitLocation = Props.TargetAvatarActor->GetActorLocation();
+				if (const FHitResult* HitResult = Props.EffectContextHandle.GetHitResult())
 				{
-					HitLocation = Props.TargetAvatarActor->GetActorLocation();
+					if (HitResult->Distance > 0.f) HitLocation = HitResult->ImpactPoint;
+					else HitLocation = Cast<AActor>(Props.EffectContextHandle.GetSourceObject())->GetActorLocation();
 				}
-				else if (HitResult.Distance == 0.f)
-				{
-					HitLocation = Cast<AActor>(Props.EffectContextHandle.GetSourceObject())->GetActorLocation();
-				}
+				// if (UAuraAbilitySystemLibrary::IsShowDamageOnTarget(Props.EffectContextHandle)) HitLocation = Props.TargetAvatarActor->GetActorLocation();
 				Chara->ShowDamageNumber(Props.SourceController, HitLocation, LocalIncomingDamage, bBlocked, bCrit);
 			}
 		}

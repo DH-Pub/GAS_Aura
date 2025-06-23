@@ -22,6 +22,7 @@ class AURA_API AAuraEnemy : public AAuraCharacterBase, public IEnemyInterface
 
 public:
 	AAuraEnemy();
+	virtual void Tick(float DeltaSeconds) override;
 	virtual void PossessedBy(AController* NewController) override;
 
 	//~ Begin IEnemyInterface
@@ -32,6 +33,7 @@ public:
 	//~ Combat Interface
 	FORCEINLINE virtual int32 GetCharacterLevel() override { return Level; }
 	virtual void Die() override;
+	virtual void MulticastHandleDeath_Implementation() override;
 	virtual void SetCombatTarget_Implementation(AActor* NewTarget) override {CombatTarget = NewTarget;}
 	virtual AActor* GetCombatTarget_Implementation() const override {return CombatTarget;}
 	//~ End Combat Interface
@@ -41,7 +43,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Combat")
 	float BaseWalkSpeed = 250.f;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Combat")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Combat")
 	float LifeSpan = 5.f;
 protected:
 	virtual void BeginPlay() override;

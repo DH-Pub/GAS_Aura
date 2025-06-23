@@ -37,7 +37,7 @@ void AAuraEffectActor::ApplyEffectToTarget(AActor* TargetActor, const FEffectTyp
 		// if (EffectSpecHandle.Data->Def->DurationPolicy == EGameplayEffectDurationType::Infinite
 		// 	&& InfiniteEffectRemovalPolicy == EEffectRemovalPolicy::RemoveOnEndOverlap)
 		// {ActiveEffectHandles.Add(ActiveEffectHandle, TargetAbilitySystem);}
-		EGameplayEffectDurationType EffectDurationType = EffectSpecHandle.Data.Get()->Def.Get()->DurationPolicy;
+		// EGameplayEffectDurationType EffectDurationType = EffectSpecHandle.Data.Get()->Def.Get()->DurationPolicy;
 		if (bDestroyOnEffectApplication)
 		{
 			Destroy();

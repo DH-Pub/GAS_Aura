@@ -24,17 +24,18 @@ class AURA_API UAuraGameplayAbility : public UGameplayAbility
 	GENERATED_BODY()
 public:
 	UAuraGameplayAbility();
-	UPROPERTY(EditDefaultsOnly, Category="Inputs", meta=(Categories="Inputs"))
+	UPROPERTY(EditDefaultsOnly, Category="Inputs", meta=(GameplayTagFilter="Inputs"))
 	FGameplayTag StartupInputTag;
-	
-	UFUNCTION(BlueprintCallable, meta=(ExpandEnumAsExecs="Outcome"))
-	void GetAvatarCombatInterface(TScriptInterface<ICombatInterface>& CombatInterface, TEnumAsByte<EOutcome>& Outcome);
-	UFUNCTION(BlueprintCallable, meta=(ExpandEnumAsExecs="Outcome"))
-	void GetAvatarInterfaces(TEnumAsByte<EOutcome>& Outcome, TScriptInterface<ICombatInterface>& CombatInterface,
-		TScriptInterface<IEnemyInterface>& EnemyInterface);
-private:
-	UPROPERTY()
+protected:
+	/*virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
+		const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;*/
+	virtual void PreActivate(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
+		const FGameplayAbilityActivationInfo ActivationInfo, FOnGameplayAbilityEnded::FDelegate* OnGameplayAbilityEndedDelegate,
+		const FGameplayEventData* TriggerEventData = nullptr) override;
+	UPROPERTY(BlueprintReadOnly)
 	TScriptInterface<ICombatInterface> AvatarCombatInterface;
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly)
 	TScriptInterface<IEnemyInterface> AvatarEnemyInterface;
+	UPROPERTY(BlueprintReadOnly)
+	AActor* AvatarActor;
 };

@@ -20,7 +20,8 @@ public class Aura : ModuleRules
 			"AIModule",
 			"StateTreeModule", // StateTreeTaskBase.h
 			"GameplayStateTreeModule", // Tasks/StateTreeAITask.h
-			"PropertyBindingUtils", // FStateTreePropertyRef -> ... -> StateTreePropertyBindings.h  
+			"PropertyBindingUtils", // FStateTreePropertyRef -> ... -> StateTreePropertyBindings.h 
+			"NetCore",
 		});
 
 		// Uncomment if you are using Slate UI

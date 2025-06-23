@@ -3,13 +3,14 @@
 
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
 
-// #include "Kismet/GameplayStatics.h"
 #include "AuraGameplayEffectTypes.h"
+#include "AbilitySystem/Abilities/AuraGameplayAbility.h"
 #include "Components/CanvasPanel.h"
 #include "Components/Overlay.h"
 #include "Game/AuraGameModeBase.h"
 #include "Interaction/CombatInterface.h"
 #include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "Player/AuraPlayerState.h"
 #include "UI/HUD/AuraHUD.h"
 #include "UI/Widget/AuraUserWidget.h"
@@ -92,8 +93,10 @@ void UAuraAbilitySystemLibrary::GiveStartupAbilities(const UObject* WorldContext
 	}
 }
 
-bool UAuraAbilitySystemLibrary::AddWidgetToRootCanvasPanel(const UObject* WorldContextObject, UUserWidget* InNewWidget)
+void UAuraAbilitySystemLibrary::AddWidgetToRootCanvasPanel(const UObject* WorldContextObject, UUserWidget* InNewWidget, TEnumAsByte<EOutcome>& Outcome)
 {
+	Outcome = EOutcome::Failure;
+	if (InNewWidget == nullptr) return;
 	if (const APlayerController* PC = GEngine->GetFirstLocalPlayerController(WorldContextObject->GetWorld()))
 	{
 		if (AAuraHUD* AuraHUD = Cast<AAuraHUD>(PC->GetHUD()))
@@ -106,11 +109,53 @@ bool UAuraAbilitySystemLibrary::AddWidgetToRootCanvasPanel(const UObject* WorldC
 					OverlayGame->AddChildToOverlay(InNewWidget);
 				}
 				// CanvasPanel->AddChild(InNewWidget);
-				return true;
+				Outcome = EOutcome::Success;
 			}
 		}
 	}
-	return false;
+}
+
+void UAuraAbilitySystemLibrary::YawActorToLocation(TEnumAsByte<EOutcome>& Outcome, AActor* InActor, const FVector InLocation,
+	const float DeltaTime, const float InterpSpeed, const float DegreeTolerance)
+{
+	const FRotator CurrentRot = InActor->GetActorRotation();
+	const FRotator LookAtRot = UKismetMathLibrary::FindLookAtRotation(InActor->GetActorLocation(), InLocation);
+	if (UKismetMathLibrary::Abs(LookAtRot.Yaw - CurrentRot.Yaw) < DegreeTolerance)
+	{
+		Outcome = Success; return;
+	}
+	const FRotator InterpToRot = UKismetMathLibrary::RInterpTo_Constant(CurrentRot,LookAtRot, DeltaTime, InterpSpeed);
+	InActor->GetRootComponent()->SetWorldRotation(FRotator(CurrentRot.Pitch, InterpToRot.Yaw, CurrentRot.Roll));
+	Outcome = Failure;
+}
+
+void UAuraAbilitySystemLibrary::GetLivePlayersInRadius(const UObject* WorldContextObject, TArray<AActor*>& OutActors,
+	const TArray<AActor*>& ActorsToIgnore, float Radius, const FVector& Origin)
+{
+	FCollisionQueryParams SphereParams;
+	SphereParams.AddIgnoredActors(ActorsToIgnore);
+	if (const UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull))
+	{
+		TArray<FOverlapResult> Overlaps;
+		World->OverlapMultiByObjectType(Overlaps, Origin, FQuat::Identity,
+			FCollisionObjectQueryParams(FCollisionObjectQueryParams::InitType::AllDynamicObjects),
+			FCollisionShape::MakeSphere(Radius), SphereParams);
+		for (FOverlapResult& Overlap : Overlaps)
+		{
+			if (Overlap.GetActor()->Implements<UCombatInterface>() && !ICombatInterface::Execute_IsDead(Overlap.GetActor()))
+			{
+				// OutActors.AddUnique(ICombatInterface::Execute_GetAvatar(Overlap.GetActor()));
+				OutActors.AddUnique(Overlap.GetActor());
+			}
+		}
+	}
+}
+
+bool UAuraAbilitySystemLibrary::IsNotFriend(const AActor* FirstActor, const AActor* SecondActor)
+{
+	const bool bBothArePlayers = FirstActor->ActorHasTag(FName("Player")) && SecondActor->ActorHasTag(FName("Player"));
+	const bool bBothAreEnemies = FirstActor->ActorHasTag(FName("Enemy")) && SecondActor->ActorHasTag(FName("Enemy"));
+	return !(bBothArePlayers || bBothAreEnemies);
 }
 
 UCharacterClassDataAsset* UAuraAbilitySystemLibrary::GetCharacterClassDataAsset(const UObject* WorldContextObject)
@@ -123,6 +168,9 @@ UCharacterClassDataAsset* UAuraAbilitySystemLibrary::GetCharacterClassDataAsset(
 }
 
 
+/*
+ * =======================================================================================================================================
+ */
 #pragma region Damage
 bool UAuraAbilitySystemLibrary::IsBlocked(const FGameplayEffectContextHandle& EffectContextHandle)
 {
@@ -140,6 +188,7 @@ void UAuraAbilitySystemLibrary::SetIsBlocked(FGameplayEffectContextHandle& Effec
 	}
 }
 
+
 bool UAuraAbilitySystemLibrary::IsCrit(const FGameplayEffectContextHandle& EffectContextHandle)
 {
 	if (const FAuraGameplayEffectContext* AuraEffectContext =  static_cast<const FAuraGameplayEffectContext*>(EffectContextHandle.Get()))
@@ -155,6 +204,7 @@ void UAuraAbilitySystemLibrary::SetIsCrit(FGameplayEffectContextHandle& EffectCo
 		AuraEffectContext->SetIsCrit(bInIsCrit);
 	}
 }
+
 
 bool UAuraAbilitySystemLibrary::IsStaggerDamage(const FGameplayEffectContextHandle& EffectContextHandle)
 {
@@ -172,11 +222,12 @@ void UAuraAbilitySystemLibrary::SetIsStaggerDamage(FGameplayEffectContextHandle&
 	}
 }
 
+
 bool UAuraAbilitySystemLibrary::IsShowDamageOnTarget(const FGameplayEffectContextHandle& EffectContextHandle)
 {
 	if (const FAuraGameplayEffectContext* AuraEffectContext =  static_cast<const FAuraGameplayEffectContext*>(EffectContextHandle.Get()))
 	{
-		return AuraEffectContext->IsShowDamageOnTarget();
+		return AuraEffectContext->bShowDamageOnTarget;
 	}
 	return false;
 }
@@ -184,7 +235,29 @@ void UAuraAbilitySystemLibrary::SetIsShowDamageOnTarget(FGameplayEffectContextHa
 {
 	if (FAuraGameplayEffectContext* AuraEffectContext =  static_cast<FAuraGameplayEffectContext*>(EffectContext.Get()))
 	{
-		AuraEffectContext->SetIsShowDamageOnTarget(bShowDamageOnTarget);
+		AuraEffectContext->bShowDamageOnTarget = bShowDamageOnTarget;
+	}
+}
+#pragma endregion
+
+
+/*
+ * ==================================================================================================================================
+ */
+#pragma region GameplayCue
+TArray<FVector_NetQuantize> UAuraAbilitySystemLibrary::GetCueLocations(const FGameplayEffectContextHandle& EffectContextHandle)
+{
+	if (const FAuraGameplayEffectContext* AuraEffectContext =  static_cast<const FAuraGameplayEffectContext*>(EffectContextHandle.Get()))
+	{
+		return AuraEffectContext->CueLocations;
+	}
+	return TArray<FVector_NetQuantize>();
+}
+void UAuraAbilitySystemLibrary::SetCueLocations(FGameplayEffectContextHandle& EffectContextHandle, const TArray<FVector_NetQuantize> InLocations)
+{
+	if (FAuraGameplayEffectContext* AuraEffectContext =  static_cast<FAuraGameplayEffectContext*>(EffectContextHandle.Get()))
+	{
+		AuraEffectContext->CueLocations = InLocations;
 	}
 }
 #pragma endregion

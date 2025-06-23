@@ -40,7 +40,7 @@ public:
 	/**
 	 * Future note: make this a TArray
 	 */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(TitleProperty="{AttributeName} - {GameplayAttribute}", ForceInlineRow))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(TitleProperty="{AttributeName} - {GameplayAttribute}", ForceInlineRow, GameplayTagFilter="Attributes"))
 	TMap<FGameplayTag, FAuraAttributeInfo> AttributeInformation;
 	
 	/**
