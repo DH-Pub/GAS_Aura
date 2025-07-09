@@ -3,8 +3,10 @@
 
 #include "UI/WidgetController/OverlayWidgetController.h"
 
+#include "AuraGameplayTags.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/AuraAttributeSet.h"
+#include "AbilitySystem/Data/AbilityDataAsset.h"
 
 void UOverlayWidgetController::BindCallbacksDependencies()
 {
@@ -14,22 +16,27 @@ void UOverlayWidgetController::BindCallbacksDependencies()
 	BindGameplayAttributeToBroadcast(AuraAttributeSet->GetMaxHealthAttribute(), OnMaxHealthChanged);
 	BindGameplayAttributeToBroadcast(AuraAttributeSet->GetManaAttribute(), OnManaChanged);
 	BindGameplayAttributeToBroadcast(AuraAttributeSet->GetMaxManaAttribute(), OnMaxManaChanged);
-	
-	// Receive broadcast from AuraAbilitySystemComponent
-	Cast<UAuraAbilitySystemComponent>(AbilitySystemComponent)->EffectAssetTags.AddLambda(
-		[this](const FGameplayTagContainer& AssetTags)
+
+	if (UAuraAbilitySystemComponent* AuraASC = Cast<UAuraAbilitySystemComponent>(AbilitySystemComponent))
+	{
+		if (!AuraASC->AbilitiesGivenDelegate.IsBound())
+		{
+			AuraASC->AbilitiesGivenDelegate.AddUObject(this, &UOverlayWidgetController::BroadcastAbilityData);
+		}
+		// Receive broadcast from AuraAbilitySystemComponent
+		AuraASC->EffectAssetTags.AddLambda([this](const FGameplayTagContainer& AssetTags)
 		{
 			for (const FGameplayTag Tag : AssetTags)
 			{
 				// "A.1".MatchesTag("A") will return True, "A".MatchesTag("A.1") will return False
-				if (Tag.MatchesTag(FGameplayTag::RequestGameplayTag(FName("Message"))))
+				// if (Tag.MatchesTag(FGameplayTag::RequestGameplayTag(FName("Message"))))
+				if (Tag.MatchesTag(MessageTags::Message))
 				{
-					const FAuraMessageInfo Info = MessageInfo->FindMessageInfoForTag(Tag);
-					MessageWidgetInfoDelegate.Broadcast(Info); // Broadcast to BP
+					MessageWidgetInfoDelegate.Broadcast(MessageInfo->FindMessageInfoForTag(Tag)); // Broadcast to BP
 				}
 			}
-		}
-	);
+		});
+	}
 }
 
 void UOverlayWidgetController::BroadcastInitialValues()
@@ -39,4 +46,20 @@ void UOverlayWidgetController::BroadcastInitialValues()
 	OnMaxHealthChanged.Broadcast(AuraAttributeSet->GetMaxHealth());
 	OnManaChanged.Broadcast(AuraAttributeSet->GetMana());
 	OnMaxManaChanged.Broadcast(AuraAttributeSet->GetMaxMana());
+}
+
+void UOverlayWidgetController::BroadcastAbilityData(UAuraAbilitySystemComponent* AuraASC)
+{
+	//TODO: Get info about all given abilities, broadcast them
+	FForEachAbility AbilityDelegate;
+	AbilityDelegate.BindLambda([this](const FGameplayAbilitySpec& AbilitySpec)
+	{
+		FAuraAbilityDataAsset Data = AbilityData->FindAbilityDataByTag(AbilitySpec.Ability->GetAssetTags());
+		for (FGameplayTag Tag : AbilitySpec.GetDynamicSpecSourceTags())
+		{
+			if (Tag.MatchesTag(AuraGameplayTags::Input)) Data.InputTag = Tag; break;
+		}
+		AbilityDataDelegate.Broadcast(Data);
+	});
+	AuraASC->ForEachAbility(AbilityDelegate); // Execute the above lambda with ASC GetActivatableAbilities()
 }

@@ -37,6 +37,7 @@ namespace AuraGameplayTags
 
 	
 #pragma region Input
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_LMB)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_RMB)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_1)
@@ -58,9 +59,18 @@ namespace AuraGameplayTags
 		{Damage_Arcane, Attributes_Resistance_Arcane},
 		{Damage_Physical, Attributes_Resistance_Physical},
 	};
-	
+
+	//TODO next proj: Change to singular
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Abilities)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Abilities_Attack)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Abilities_Summon)
+
+	
+	// Abilities with CD =============================================================================================
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Abilities_Fire_FireBolt)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cooldown_Fire_FireBolt)
+	//================================================================================================================
+	
 	
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(CombatSocket_Weapon)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(CombatSocket_RightHand)

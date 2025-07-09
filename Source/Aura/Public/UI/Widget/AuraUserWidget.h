@@ -6,6 +6,7 @@
 #include "Blueprint/UserWidget.h"
 #include "AuraUserWidget.generated.h"
 
+class UAuraWidgetController;
 /**
  * 
  */
@@ -14,12 +15,13 @@ class AURA_API UAuraUserWidget : public UUserWidget
 {
 	GENERATED_BODY()
 public:
+	// Set WidgetController and call Event WidgetControllerSet()
 	UFUNCTION(BlueprintCallable)
-	void SetWidgetController(UObject* InWidgetController);
+	virtual void SetWidgetController(UAuraWidgetController* InWidgetController);
 
 	/** Widget will have a Controller that will send delegate to it */
 	UPROPERTY(BlueprintReadOnly)
-	TObjectPtr<UObject> WidgetController;
+	TObjectPtr<UAuraWidgetController> WidgetController;
 protected:
 	/** Bind changed event to widget in BP */
 	UFUNCTION(BlueprintImplementableEvent)

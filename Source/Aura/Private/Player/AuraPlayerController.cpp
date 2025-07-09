@@ -11,10 +11,15 @@
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "Aura/Aura.h"
+#include "Camera/CameraComponent.h"
+#include "Character/AuraCharacter.h"
+#include "Components/CapsuleComponent.h"
 #include "Components/SplineComponent.h"
 #include "GameFramework/PawnMovementComponent.h"
+#include "GameFramework/SpringArmComponent.h"
 #include "Input/AuraInputComponent.h"
 #include "Interaction/EnemyInterface.h"
+#include "Kismet/KismetMaterialLibrary.h"
 
 
 AAuraPlayerController::AAuraPlayerController()
@@ -30,6 +35,12 @@ void AAuraPlayerController::PlayerTick(const float DeltaTime)
 	AutoRun();
 }
 
+void AAuraPlayerController::SetPawn(APawn* InPawn)
+{
+	Super::SetPawn(InPawn);
+	SetCameraCapsule();
+}
+
 void AAuraPlayerController::CursorTrace()
 {
 	GetHitResultUnderCursor(ECC_Mouse, false, CursorHitResult);
@@ -37,7 +48,7 @@ void AAuraPlayerController::CursorTrace()
 
 	LastActor = CurrentActor;
 	CurrentActor = CursorHitResult.GetActor(); // cast to IEnemyInterface, nullptr if can't (i.e. Floor -> nullptr)
-	
+
 	if (CurrentActor != LastActor)
 	{
 		if (LastActor) LastActor->UnHighlightActor();
@@ -47,14 +58,14 @@ void AAuraPlayerController::CursorTrace()
 void AAuraPlayerController::AutoRun()
 {
 	if (!bAutoRunning) return;
-	if (ControlledPawn)
+	if (GetPawn())
 	{
 		const FVector LocationOnSpline = Spline->FindLocationClosestToWorldLocation(
-			ControlledPawn->GetActorLocation(), ESplineCoordinateSpace::World);
+			GetPawn()->GetActorLocation(), ESplineCoordinateSpace::World);
 		// FVector Direction = Spline->FindDirectionClosestToWorldLocation(LocationOnSpline, ESplineCoordinateSpace::World);
-		FVector Direction = Spline->FindTangentClosestToWorldLocation(ControlledPawn->GetActorLocation(), ESplineCoordinateSpace::World);
-		Direction += LocationOnSpline - ControlledPawn->GetActorLocation();
-		ControlledPawn->AddMovementInput(Direction);
+		FVector Direction = Spline->FindTangentClosestToWorldLocation(GetPawn()->GetActorLocation(), ESplineCoordinateSpace::World);
+		Direction += LocationOnSpline - GetPawn()->GetActorLocation();
+		GetPawn()->AddMovementInput(Direction);
 		
 		const float DistanceToDestinationSquared = (LocationOnSpline - CachedDestination).SizeSquared();
 		if (DistanceToDestinationSquared < AutoRunAcceptanceRadius * AutoRunAcceptanceRadius)
@@ -69,10 +80,8 @@ void AAuraPlayerController::BeginPlay()
 {
 	check(AuraContext); // check/verify/ensure
 	Super::BeginPlay();
-	ControlledPawn = GetPawn();
 
-	if (UEnhancedInputLocalPlayerSubsystem* InputSystem = ULocalPlayer::GetSubsystem<
-		UEnhancedInputLocalPlayerSubsystem>(
+	if (UEnhancedInputLocalPlayerSubsystem* InputSystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(
 		GetLocalPlayer()))
 	{
 		InputSystem->AddMappingContext(AuraContext, 0);
@@ -88,7 +97,6 @@ void AAuraPlayerController::BeginPlay()
 
 	NavSystem = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
 }
-
 void AAuraPlayerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
@@ -98,13 +106,74 @@ void AAuraPlayerController::SetupInputComponent()
 	AuraInputComponent->BindAction(ShiftAction, ETriggerEvent::Started, this, &AAuraPlayerController::ShiftPress);
 	AuraInputComponent->BindAction(ShiftAction, ETriggerEvent::Completed, this, &AAuraPlayerController::ShiftReleased);
 	
-	AuraInputComponent->BindAbilityActions(
-		InputConfig, this, &ThisClass::AbilityInputTagPressed, &ThisClass::AbilityInputTagReleased,
-		&ThisClass::AbilityInputTagHeld);
+	AuraInputComponent->BindAbilityActions(InputConfig, this,
+		&ThisClass::AbilityInputTagPressed, &ThisClass::AbilityInputTagReleased, &ThisClass::AbilityInputTagHeld);
 }
+
+
+// ======================================================================================================================================
+#pragma region Occlusion
+void AAuraPlayerController::SetCameraCapsule()
+{
+	// APawn::Controller might replicate before AController::Pawn so GetPawn() might be nullptr
+	if (!IsLocalController()) return;
+	if (AAuraCharacter* AuraCharacter = Cast<AAuraCharacter>(GetPawn()))
+	{
+		ActiveSpringArm = Cast<USpringArmComponent>(AuraCharacter->GetComponentByClass(USpringArmComponent::StaticClass()));
+		ActiveCamera = Cast<UCameraComponent>(AuraCharacter->GetComponentByClass(UCameraComponent::StaticClass()));
+		CameraCapsule = Cast<UCapsuleComponent>(AuraCharacter->GetCameraCapsule());
+		if (CameraCapsule->OnComponentBeginOverlap.IsBound() || CameraCapsule->OnComponentEndOverlap.IsBound())
+		{
+			CameraCapsule->OnComponentBeginOverlap.Clear();
+			CameraCapsule->OnComponentEndOverlap.Clear();
+		}
+		CameraCapsule->OnComponentBeginOverlap.AddDynamic(this, &AAuraPlayerController::OnCameraCapsuleOverlap);
+		CameraCapsule->OnComponentEndOverlap.AddDynamic(this, &AAuraPlayerController::OnCameraCapsuleEndOverlap);
+	}
+}
+
+void AAuraPlayerController::OnCameraCapsuleOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+                                                   UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	TArray<UStaticMeshComponent*> StaticMeshes;
+	OtherActor->GetComponents(UStaticMeshComponent::StaticClass(), StaticMeshes);
+	for (UStaticMeshComponent* Mesh : StaticMeshes)
+	{
+		FCameraOccludedStaticMesh OccludedStaticMesh;
+		int32 i = 0;
+		for (auto Material : Mesh->GetMaterials())
+		{
+			UMaterialInstanceDynamic* FadeMID = UKismetMaterialLibrary::CreateDynamicMaterialInstance(this, FadeMaterial);
+			OccludedStaticMesh.Materials.Add(Material, FadeMID);
+			Mesh->SetMaterial(i++, FadeMID);
+			FadeMID->SetScalarParameterValue(FName("Fade"), FadeIntensity);
+		}
+		OccludedMeshes.Add(Mesh, OccludedStaticMesh);
+	}
+}
+void AAuraPlayerController::OnCameraCapsuleEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+                                                      UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	TArray<UStaticMeshComponent*> StaticMeshes;
+	OtherActor->GetComponents(UStaticMeshComponent::StaticClass(), StaticMeshes);
+	for (UStaticMeshComponent* Mesh : StaticMeshes)
+	{
+		int32 i = 0;
+		for (TPair Material : OccludedMeshes.FindRef(Mesh).Materials)
+		{
+			// Material.Value->SetScalarParameterValue(FName("Fade"), 1.f);
+			Mesh->SetMaterial(i++, Material.Key);
+		}
+		OccludedMeshes.Remove(Mesh);
+	}
+}
+#pragma endregion
+// ==================================================================================================================================
+
 
 void AAuraPlayerController::Move(const FInputActionValue& InputActionValue)
 {
+	if (GetPawn() == nullptr) return;
 	bAutoRunning = false;
 	const FVector2D InputAxisVector = InputActionValue.Get<FVector2D>();
 	const FRotator Rotation = GetControlRotation();
@@ -114,12 +183,9 @@ void AAuraPlayerController::Move(const FInputActionValue& InputActionValue)
 	const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
 	const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 
-	if (ControlledPawn)
-	{
-		ControlledPawn->GetMovementComponent()->AddInputVector(ForwardDirection * InputAxisVector.Y + RightDirection * InputAxisVector.X);
-		/*ControlledPawn->AddMovementInput(ForwardDirection, InputAxisVector.Y);
-		ControlledPawn->AddMovementInput(RightDirection, InputAxisVector.X);*/
-	}
+	GetPawn()->GetMovementComponent()->AddInputVector(ForwardDirection * InputAxisVector.Y + RightDirection * InputAxisVector.X);
+	/*GetPawn()->AddMovementInput(ForwardDirection, InputAxisVector.Y);
+	GetPawn()->AddMovementInput(RightDirection, InputAxisVector.X);*/
 }
 
 void AAuraPlayerController::AbilityInputTagPressed(FGameplayTag InputTag)
@@ -130,7 +196,6 @@ void AAuraPlayerController::AbilityInputTagPressed(FGameplayTag InputTag)
 		bAutoRunning = false;
 	}
 }
-
 void AAuraPlayerController::AbilityInputTagReleased(FGameplayTag InputTag)
 {
 	if (GetASC()) AbilitySystemComponent->AbilityInputTagReleased(InputTag);
@@ -146,9 +211,8 @@ void AAuraPlayerController::AbilityInputTagReleased(FGameplayTag InputTag)
 			if (NavSystem->ProjectPointToNavigation(CursorHitResult.ImpactPoint, ImpactPointNavLocation, NavExtent,
 			                                        &GetNavAgentPropertiesRef()))
 			{
-				if (ControlledPawn == nullptr) ControlledPawn = GetPawn();
 				UNavigationPath* NavPath = UNavigationSystemV1::FindPathToLocationSynchronously(
-					this, ControlledPawn->GetActorLocation(), CachedDestination);
+					this, GetPawn()->GetActorLocation(), CachedDestination);
 				if (NavPath && !NavPath->PathPoints.IsEmpty())
 				{
 					Spline->ClearSplinePoints();
@@ -160,9 +224,7 @@ void AAuraPlayerController::AbilityInputTagReleased(FGameplayTag InputTag)
 						if (bDrawNavBox) DrawDebugSphere(GetWorld(), NavPath->PathPoints[i], 25.f, 6, FColor::Yellow, false, 1.f);
 					}
 					// for (const FVector& PointLoc : NavPath->PathPoints)
-					// {
-					// 	Spline->AddSplinePoint(PointLoc, ESplineCoordinateSpace::World);
-					// }
+					// { Spline->AddSplinePoint(PointLoc, ESplineCoordinateSpace::World); }
 					CachedDestination = NavPath->PathPoints.Last();
 					bAutoRunning = true;
 				}
@@ -189,10 +251,10 @@ void AAuraPlayerController::AbilityInputTagHeld(FGameplayTag InputTag)
 			CachedDestination = CursorHitResult.ImpactPoint;
 		}
 
-		if (ControlledPawn)
+		if (GetPawn())
 		{
-			const FVector WorldDirection = (CachedDestination - ControlledPawn->GetActorLocation()).GetSafeNormal();
-			ControlledPawn->AddMovementInput(WorldDirection);
+			const FVector WorldDirection = (CachedDestination - GetPawn()->GetActorLocation()).GetSafeNormal();
+			GetPawn()->AddMovementInput(WorldDirection);
 		}
 	}
 }
@@ -201,8 +263,7 @@ UAuraAbilitySystemComponent* AAuraPlayerController::GetASC()
 {
 	if (AbilitySystemComponent == nullptr)
 	{
-		AbilitySystemComponent = Cast<UAuraAbilitySystemComponent>(
-			UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(ControlledPawn));
+		AbilitySystemComponent = Cast<UAuraAbilitySystemComponent>(UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(GetPawn()));
 	}
 	return AbilitySystemComponent;
 }

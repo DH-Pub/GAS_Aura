@@ -7,7 +7,7 @@
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
 #include "Camera/CameraComponent.h"
-#include "GameFramework/CharacterMovementComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Player/AuraPlayerController.h"
 #include "Player/AuraPlayerState.h"
@@ -28,6 +28,14 @@ AAuraCharacter::AAuraCharacter()
 	
 	Camera = CreateDefaultSubobject<UCameraComponent>("Camera");
 	Camera->SetupAttachment(SpringArm);
+
+	CameraCapsule = CreateDefaultSubobject<UCapsuleComponent>("CameraCapsule");
+	CameraCapsule->SetupAttachment(Camera);
+	CameraCapsule->SetRelativeRotation(FRotator(90., 0., 0.));
+	CameraCapsule->SetRelativeLocation(FVector(400., 0., 0.));
+	CameraCapsule->SetCapsuleHalfHeight(500.f);
+	CameraCapsule->SetCollisionResponseToAllChannels(ECR_Ignore);
+	CameraCapsule->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Overlap);
 }
 
 

@@ -45,6 +45,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	virtual void BroadcastInitialValues() {};
 
+
+	// Create WidgetController if none and BindCallbacksDependencies()
 	template <typename ControllerT = UAuraWidgetController>
 	static ControllerT* CreateOrGetWidgetController(UObject* Outer, TObjectPtr<ControllerT>& WC,
 		TSubclassOf<UAuraWidgetController> WCClass, const FWidgetControllerParams& WCParams)
@@ -58,7 +60,7 @@ public:
 		}
 		return WC;
 	}
-protected:
+
 	UPROPERTY(BlueprintReadOnly, Category="WidgetController")
 	TObjectPtr<APlayerController> PlayerController;
 	UPROPERTY(BlueprintReadOnly, Category="WidgetController")

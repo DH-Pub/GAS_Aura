@@ -8,7 +8,7 @@
 
 UAuraGameplayAbility::UAuraGameplayAbility()
 {
-	// InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
+	InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
 	// bRetriggerInstancedAbility = true;
 }
 

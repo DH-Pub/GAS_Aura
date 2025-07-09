@@ -19,6 +19,8 @@ class UGameplayEffect;
 class UAbilitySystemComponent;
 class UAttributeSet;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDeathSignature);
+
 UCLASS(Abstract)
 class AURA_API AAuraCharacterBase : public ACharacter, public IAbilitySystemInterface, public ICombatInterface
 {
@@ -45,10 +47,11 @@ public:
 	virtual bool IsDead_Implementation() const override {return bIsDead;}
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="Combat")
 	bool bIsDead = false;
-	virtual AActor* GetAvatar_Implementation() override {return this;}
+	UPROPERTY(BlueprintAssignable, Category = "Combat")
+	FOnDeathSignature OnDeathDelegate;
 	virtual UNiagaraSystem* GetBloodEffect_Implementation() override {return BloodEffect;}
 	virtual FTaggedMontage GetTaggedMontageByTag_Implementation(const FGameplayTag& MontageTag) override;
-	virtual int32 GetMinionCount_Implementation() const override {return MinionCount;}
+	virtual int32 IncrementMinionCount_Implementation(int32 Amount = 1) override;
 #pragma endregion
 	/*
 	 * Interface end ========================================================================================
@@ -62,6 +65,8 @@ public:
 	TObjectPtr<AActor> CombatTarget;
 	UPROPERTY(BlueprintReadWrite, Category="Combat")
 	bool bTracking = false;
+	UPROPERTY()
+	int32 MinionCount = 0;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat")
 	bool bHitReacting = false;
@@ -103,10 +108,6 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Combat")
 	TObjectPtr<USoundBase> DeathSound;
-
-	/* Minions*/
-	UPROPERTY()
-	int32 MinionCount = 0;
 private:
 	UPROPERTY(EditAnywhere, Category="GameplayAbility|Abilities")
 	TArray<TSubclassOf<UGameplayAbility>> StartupAbilities;
@@ -115,6 +116,7 @@ private:
 	TObjectPtr<UAnimMontage> HitReactMontage;
 	UPROPERTY(EditDefaultsOnly, meta=(ForceInlineRow, TitleProperty="{MontageTag} - {SocketTag}"), Category="Combat")
 	TArray<FTaggedMontage> AttackMontages;
+
 	
 	/*UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<UDamageTextComponent> DamageTextComponentClass;*/

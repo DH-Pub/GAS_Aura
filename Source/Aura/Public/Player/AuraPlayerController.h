@@ -8,15 +8,25 @@
 #include "AuraPlayerController.generated.h"
 
 class UAuraAttributeSet;
-class UDamageTextComponent;
-class UNavigationSystemV1;
-class USplineComponent;
 class UAuraAbilitySystemComponent;
 class UAuraInputConfig;
 class UInputAction;
 class IEnemyInterface;
 class UInputMappingContext;
 struct FInputActionValue;
+
+USTRUCT(BlueprintType)
+struct FCameraOccludedStaticMesh
+{
+	GENERATED_BODY()
+	
+	UPROPERTY(BlueprintReadWrite)
+	TMap<TObjectPtr<UMaterialInterface>, TObjectPtr<UMaterialInstanceDynamic>> Materials;
+	UPROPERTY(BlueprintReadWrite)
+	bool IsOccluded = true;
+	
+	FCameraOccludedStaticMesh(){}
+};
 /**
  * 
  */
@@ -28,16 +38,40 @@ class AURA_API AAuraPlayerController : public APlayerController
 public:
 	AAuraPlayerController();
 	virtual void PlayerTick(float DeltaTime) override; // Processes player input
-
+	virtual void SetPawn(APawn* InPawn) override;
 	// return CursorHitResult
 	FORCEINLINE FHitResult GetCursorHitResult() { return CursorHitResult; }
 protected:
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
 
+// =========================================================================================================================================
+#pragma region Occlusion
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<class USpringArmComponent> ActiveSpringArm;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<class UCameraComponent> ActiveCamera;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<class UCapsuleComponent> CameraCapsule;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="CameraOcclusion")
+	TObjectPtr<UMaterialInterface> FadeMaterial;
+	UPROPERTY(EditDefaultsOnly, Category="CameraOcclusion")
+	float FadeIntensity = .25f;
+	UPROPERTY(BlueprintReadWrite, Category="CameraOcclusion")
+	TMap<const UStaticMeshComponent*, FCameraOccludedStaticMesh> OccludedMeshes;
+
+	void SetCameraCapsule();
+	UFUNCTION(BlueprintCallable)
+	void OnCameraCapsuleOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
+	UFUNCTION(BlueprintCallable)
+	void OnCameraCapsuleEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+#pragma endregion
+// ==========================================================================================================================================
+
+	
 private:
-	UPROPERTY()
-	TObjectPtr<APawn> ControlledPawn;
 	UPROPERTY(EditDefaultsOnly, Category = "Inputs")
 	TObjectPtr<UInputMappingContext> AuraContext;
 
@@ -80,7 +114,7 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category="SplineController")
 	FVector NavExtent = FVector(300.f, 300.f, 600.f);
 	UPROPERTY()
-	TObjectPtr<UNavigationSystemV1> NavSystem;
+	TObjectPtr<class UNavigationSystemV1> NavSystem;
 
 	FVector CachedDestination = FVector::ZeroVector;
 	float FollowTime = 0.f;
@@ -92,7 +126,7 @@ private:
 	float AutoRunAcceptanceRadius = 25.f;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess))
-	TObjectPtr<USplineComponent> Spline;
+	TObjectPtr<class USplineComponent> Spline;
 
 	void AutoRun();
 #pragma endregion

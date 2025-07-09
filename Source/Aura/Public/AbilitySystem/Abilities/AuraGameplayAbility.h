@@ -16,7 +16,7 @@ enum EOutcome
 	Failure,
 };
 /**
- * 
+ * Gameplay Ability is only replicated to the owning player by default
  */
 UCLASS()
 class AURA_API UAuraGameplayAbility : public UGameplayAbility
@@ -24,6 +24,8 @@ class AURA_API UAuraGameplayAbility : public UGameplayAbility
 	GENERATED_BODY()
 public:
 	UAuraGameplayAbility();
+	
+	// This is Added to GetDynamicSpecSourceTags() during AddCharacterAbilities()
 	UPROPERTY(EditDefaultsOnly, Category="Inputs", meta=(GameplayTagFilter="Inputs"))
 	FGameplayTag StartupInputTag;
 protected:
@@ -37,5 +39,5 @@ protected:
 	UPROPERTY(BlueprintReadOnly)
 	TScriptInterface<IEnemyInterface> AvatarEnemyInterface;
 	UPROPERTY(BlueprintReadOnly)
-	AActor* AvatarActor;
+	AActor* AvatarActor = nullptr;
 };

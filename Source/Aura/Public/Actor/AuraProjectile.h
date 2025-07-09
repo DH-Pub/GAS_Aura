@@ -24,6 +24,10 @@ public:
 	AAuraProjectile();
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UProjectileMovementComponent> ProjectileMovement;
+
+	// Pitch when projectile is spawned
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	float StartPitch = 0.f;
 	
 	UPROPERTY(BlueprintReadOnly, meta=(ExposeOnSpawn)) // Expose pin on spawn
 	FGameplayEffectSpecHandle DamageEffectSpecHandle;

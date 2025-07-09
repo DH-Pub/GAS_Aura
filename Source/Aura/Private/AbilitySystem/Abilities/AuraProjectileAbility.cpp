@@ -21,7 +21,8 @@ void UAuraProjectileAbility::ActivateAbility(const FGameplayAbilitySpecHandle Ha
 	// HasAuthority(&ActivationInfo);
 }
 
-void UAuraProjectileAbility::SpawnProjectile(const FVector& ProjectileTargetLocation, FGameplayTag SocketTag, const bool bStartFromCharacter, float SpawnDistance, float SpawnHeightAdd)
+void UAuraProjectileAbility::SpawnProjectile(const FVector& ProjectileTargetLocation, FGameplayTag SocketTag, const bool bStartFromCharacter,
+	float SpawnDistance, float SpawnHeightAdd)
 {
 	if (!AvatarActor->HasAuthority()) return; // GetCurrentActivationInfo()
 	if (!AvatarActor->Implements<UCombatInterface>()) return;
@@ -42,7 +43,6 @@ void UAuraProjectileAbility::SpawnProjectile(const FVector& ProjectileTargetLoca
 	// SPAWNING
 	FTransform SpawnTransform;
 	SpawnTransform.SetLocation(SpawnLocation);
-	SpawnTransform.SetRotation(Rotation.Quaternion());
 	AAuraProjectile* Projectile = GetWorld()->SpawnActorDeferred<AAuraProjectile>(ProjectileClass, SpawnTransform,
 		AvatarActor, Cast<APawn>(AvatarActor), ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
 
@@ -60,6 +60,8 @@ void UAuraProjectileAbility::SpawnProjectile(const FVector& ProjectileTargetLoca
 	{
 		Projectile->DamageEffectSpecHandle.Data->SetSetByCallerMagnitude(Pair.Key, Pair.Value.GetValueAtLevel(GetAbilityLevel()));
 	}
-	
+
+	Rotation.Pitch = Projectile->StartPitch;
+	SpawnTransform.SetRotation(Rotation.Quaternion());
 	Projectile->FinishSpawning(SpawnTransform);
 }

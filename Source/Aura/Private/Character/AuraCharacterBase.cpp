@@ -43,6 +43,7 @@ AAuraCharacterBase::AAuraCharacterBase()
 
 void AAuraCharacterBase::Die()
 {
+	OnDeathDelegate.Broadcast();
 	MulticastHandleDeath();
 }
 void AAuraCharacterBase::MulticastHandleDeath_Implementation()
@@ -123,6 +124,11 @@ FTaggedMontage AAuraCharacterBase::GetTaggedMontageByTag_Implementation(const FG
 		if (TaggedMontage.MontageTag == MontageTag) return TaggedMontage;
 	}
 	return FTaggedMontage();
+}
+
+int32 AAuraCharacterBase::IncrementMinionCount_Implementation(const int32 Amount)
+{
+	return MinionCount += Amount;
 }
 
 void AAuraCharacterBase::AddCharacterAbilities() const

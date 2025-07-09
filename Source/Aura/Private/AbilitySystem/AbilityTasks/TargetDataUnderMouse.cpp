@@ -1,15 +1,14 @@
 // Copyright Hung
 
 
-#include "AbilitySystem/Tasks/TargetDataUnderMouse.h"
+#include "Aura/Public/AbilitySystem/AbilityTasks/TargetDataUnderMouse.h"
 
 #include "AbilitySystemComponent.h"
 #include "Player/AuraPlayerController.h"
 
 UTargetDataUnderMouse* UTargetDataUnderMouse::CreateTargetDataUnderMouse(UGameplayAbility* OwningAbility)
 {
-	UTargetDataUnderMouse* MyObj = NewAbilityTask<UTargetDataUnderMouse>(OwningAbility);
-	return MyObj;
+	return NewAbilityTask<UTargetDataUnderMouse>(OwningAbility);
 }
 
 void UTargetDataUnderMouse::Activate()
@@ -33,8 +32,10 @@ void UTargetDataUnderMouse::Activate()
 
 void UTargetDataUnderMouse::SendMouseCursorData() const
 {
-	// Struct is not meant to be used
-	// Required to set Prediction
+	/*
+	 * Struct that is not meant to be used, automatically finish when out of scope
+	 * Required to set Prediction
+	 */
 	FScopedPredictionWindow(AbilitySystemComponent.Get());
 	
 	AAuraPlayerController* PC = Cast<AAuraPlayerController>(Ability->GetCurrentActorInfo()->PlayerController.Get());
@@ -46,18 +47,12 @@ void UTargetDataUnderMouse::SendMouseCursorData() const
 	AbilitySystemComponent->ServerSetReplicatedTargetData(GetAbilitySpecHandle(),GetActivationPredictionKey(),
 		DataHandle, FGameplayTag(),AbilitySystemComponent->ScopedPredictionKey);
 
-	if (ShouldBroadcastAbilityTaskDelegates())
-	{
-		ValidData.Broadcast(DataHandle);
-	}
+	if (ShouldBroadcastAbilityTaskDelegates()) ValidData.Broadcast(DataHandle);
 }
 
 void UTargetDataUnderMouse::OnTargetDataReplicatedCallback(const FGameplayAbilityTargetDataHandle& DataHandle,
                                                            FGameplayTag ActivationTag) const
 {
 	AbilitySystemComponent->ConsumeClientReplicatedTargetData(GetAbilitySpecHandle(), GetActivationPredictionKey());
-	if (ShouldBroadcastAbilityTaskDelegates())
-	{
-		ValidData.Broadcast(DataHandle);
-	}
+	if (ShouldBroadcastAbilityTaskDelegates()) ValidData.Broadcast(DataHandle);
 }

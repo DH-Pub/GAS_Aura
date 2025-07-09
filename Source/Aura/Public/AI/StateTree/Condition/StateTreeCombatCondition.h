@@ -2,9 +2,7 @@
 
 #pragma once
 
-#include "AITypes.h"
 #include "StateTreeConditionBase.h"
-#include "StateTreeAnyEnum.h"
 #include "StateTreeCombatCondition.generated.h"
 
 class AAuraEnemy;

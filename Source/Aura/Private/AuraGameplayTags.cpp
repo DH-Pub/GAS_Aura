@@ -34,6 +34,7 @@ namespace AuraGameplayTags
 
 
 #pragma region Input
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input, "Input", "Inputs' Parent") // ==PARENT==
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_LMB, "Input.MnK.LMB", "Left")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_RMB, "Input.MnK.RMB", "")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_1, "Input.MnK.1", "")
@@ -51,8 +52,16 @@ namespace AuraGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Damage_Physical, "Damage.Physical", "Physical type damage")
 
 	// Abilities
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Abilities, "Abilities", "Abilities' Parent") // ==PARENT==
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Abilities_Attack, "Abilities.Attack", "Attack Gameplay Ability")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Abilities_Summon, "Abilities.Summon", "Summon Gameplay Ability")
+
+	
+	// Abilities with Cooldown ============================================================================================
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Abilities_Fire_FireBolt, "Abilities.Fire.FireBolt", "FireBolt Gameplay Ability")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Cooldown_Fire_FireBolt, "Cooldown.Fire.FireBolt", "FireBolt Cooldown")
+	// =======================================================================================================================
+
 	
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(CombatSocket_Weapon, "CombatSocket.Weapon", "Socket for attack using weapon")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(CombatSocket_RightHand, "CombatSocket.RightHand", "Socket for attack using right hand")

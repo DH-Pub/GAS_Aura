@@ -21,12 +21,16 @@ public:
 	//~ Combat Interface
 	virtual int32 GetCharacterLevel() override;
 	//~ End Combat Interface
+
+	UCapsuleComponent* GetCameraCapsule() {return CameraCapsule;}
 protected:
 	virtual void BeginPlay() override;
 	virtual void InitAbilityActorInfo() override;
-private:
-	UPROPERTY(VisibleAnywhere)
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<class USpringArmComponent> SpringArm;
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<class UCameraComponent> Camera;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UCapsuleComponent> CameraCapsule;
 };

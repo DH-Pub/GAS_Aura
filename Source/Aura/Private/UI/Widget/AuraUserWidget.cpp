@@ -3,7 +3,7 @@
 
 #include "UI/Widget/AuraUserWidget.h"
 
-void UAuraUserWidget::SetWidgetController(UObject* InWidgetController)
+void UAuraUserWidget::SetWidgetController(UAuraWidgetController* InWidgetController)
 {
 	WidgetController = InWidgetController;
 	WidgetControllerSet(); // Call event in blueprint

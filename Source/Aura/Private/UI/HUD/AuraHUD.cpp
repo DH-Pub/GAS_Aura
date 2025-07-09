@@ -6,7 +6,6 @@
 #include "UI/WidgetController/AttributeMenuWidgetController.h"
 #include "UI/WidgetController/OverlayWidgetController.h"
 
-// Create or Get  OvelayWidgetController
 UOverlayWidgetController* AAuraHUD::GetOverlayWidgetController(const FWidgetControllerParams& WCParams)
 {
 	return UAuraWidgetController::CreateOrGetWidgetController<UOverlayWidgetController>(
@@ -26,7 +25,10 @@ void AAuraHUD::InitOverlay(APlayerController* PC, APlayerState* PS, UAbilitySyst
 	OverlayWidget = CreateWidget<UAuraUserWidget>(GetWorld(), OverlayWidgetClass);
 	OverlayWidget->AddToViewport();
 
-	const FWidgetControllerParams WidgetControllerParams(PC, PS, ASC, AS);
-	OverlayWidget->SetWidgetController(GetOverlayWidgetController(WidgetControllerParams)); // Set WidgetController and Call event SetWidgetController in blueprints
+	 /**
+	  * Create/Get WidgetController, BindCallbacksDependencies()
+	  * Set WidgetController, Call WidgetControllerSet Event (Which will assign AbilityDataDelegate)
+	  */
+	OverlayWidget->SetWidgetController(GetOverlayWidgetController(FWidgetControllerParams(PC, PS, ASC, AS)));
 	OverlayWidgetController->BroadcastInitialValues();
 }

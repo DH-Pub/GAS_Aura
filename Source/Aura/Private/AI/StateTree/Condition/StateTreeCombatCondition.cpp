@@ -6,7 +6,8 @@
 #include "Character/AuraEnemy.h"
 #include "StateTreeNodeDescriptionHelpers.h" // UE::StateTree::DescHelpers::GetInvertText
 
-#define LOCTEXT_NAMESPACE "StateTree"
+// MUST be #undef before end of file 
+#define LOCTEXT_NAMESPACE "StateTreeCombatCondition"
 
 bool FStateTreeCombatCondition::TestCondition(FStateTreeExecutionContext& Context) const
 {
@@ -37,3 +38,5 @@ FText FStateTreeCombatCondition::GetDescription(const FGuid& ID, FStateTreeDataV
 		TEXT("Range"), Range);
 }
 #endif
+
+#undef LOCTEXT_NAMESPACE

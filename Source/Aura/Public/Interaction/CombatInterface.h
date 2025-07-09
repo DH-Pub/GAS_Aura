@@ -63,12 +63,10 @@ public:
 	virtual void Die() = 0;
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	bool IsDead() const;
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
-	AActor* GetAvatar();
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	FTaggedMontage GetTaggedMontageByTag(const FGameplayTag& MontageTag);
-
+	
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
-	int32 GetMinionCount() const;
+	int32 IncrementMinionCount(int32 Amount = 1);
 };

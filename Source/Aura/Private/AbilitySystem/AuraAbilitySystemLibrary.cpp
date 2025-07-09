@@ -144,7 +144,6 @@ void UAuraAbilitySystemLibrary::GetLivePlayersInRadius(const UObject* WorldConte
 		{
 			if (Overlap.GetActor()->Implements<UCombatInterface>() && !ICombatInterface::Execute_IsDead(Overlap.GetActor()))
 			{
-				// OutActors.AddUnique(ICombatInterface::Execute_GetAvatar(Overlap.GetActor()));
 				OutActors.AddUnique(Overlap.GetActor());
 			}
 		}
