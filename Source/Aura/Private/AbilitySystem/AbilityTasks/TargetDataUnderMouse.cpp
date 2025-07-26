@@ -33,8 +33,8 @@ void UTargetDataUnderMouse::Activate()
 void UTargetDataUnderMouse::SendMouseCursorData() const
 {
 	/*
-	 * Struct that is not meant to be used, automatically finish when out of scope
-	 * Required to set Prediction
+	 * Struct that is not meant to be used, automatically finish when out of scope. REQUIRED to set Prediction
+	 * Player input SHOULD be instantly predicted (e.g. 'hold down and charge')
 	 */
 	FScopedPredictionWindow(AbilitySystemComponent.Get());
 	

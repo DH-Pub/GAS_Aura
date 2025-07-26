@@ -9,33 +9,44 @@
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "NiagaraComponent.h"
+#include "Components/WidgetComponent.h"
 #include "Player/AuraPlayerController.h"
 #include "Player/AuraPlayerState.h"
 #include "UI/HUD/AuraHUD.h"
+#include "UI/Widget/AuraUserWidget.h"
+#include "UI/WidgetController/CharacterWidgetController.h"
 
 AAuraCharacter::AAuraCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
-	
+
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>("SpringArm");
 	SpringArm->SetupAttachment(RootComponent);
 	SpringArm->SetRelativeRotation(FRotator(-45., 0., 0.));
-	SpringArm->TargetArmLength = 750.0f;
+	SpringArm->SetUsingAbsoluteRotation(true);
+	SpringArm->TargetArmLength = 800.f;
 	SpringArm->bEnableCameraLag = true;
 	SpringArm->CameraLagSpeed = 25.f;
 	SpringArm->bInheritPitch = SpringArm->bInheritRoll = SpringArm->bInheritYaw = false;
 	SpringArm->bDoCollisionTest = false;
 	
 	Camera = CreateDefaultSubobject<UCameraComponent>("Camera");
-	Camera->SetupAttachment(SpringArm);
+	Camera->SetupAttachment(SpringArm, USpringArmComponent::SocketName);
+	Camera->bUsePawnControlRotation = false;
 
 	CameraCapsule = CreateDefaultSubobject<UCapsuleComponent>("CameraCapsule");
 	CameraCapsule->SetupAttachment(Camera);
-	CameraCapsule->SetRelativeRotation(FRotator(90., 0., 0.));
-	CameraCapsule->SetRelativeLocation(FVector(400., 0., 0.));
-	CameraCapsule->SetCapsuleHalfHeight(500.f);
+	CameraCapsule->SetRelativeLocationAndRotation(FVector(370., 0., 0.), FRotator(90., 0., 0.));
 	CameraCapsule->SetCollisionResponseToAllChannels(ECR_Ignore);
 	CameraCapsule->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Overlap);
+	
+	LevelUpNiagaraComponent = CreateDefaultSubobject<UNiagaraComponent>("LevelUpNiagara");
+	LevelUpNiagaraComponent->SetupAttachment(GetRootComponent());
+	LevelUpNiagaraComponent->bAutoActivate = false;
+
+	LevelUpWidgetComponent = CreateDefaultSubobject<UWidgetComponent>("LevelUpWidget");
+	LevelUpWidgetComponent->SetupAttachment(GetRootComponent());
 }
 
 
@@ -44,7 +55,7 @@ void AAuraCharacter::PossessedBy(AController* NewController)
 	Super::PossessedBy(NewController);
 	// for the server
 	InitAbilityActorInfo();
-	AddCharacterAbilities();
+	AddCharacterStartupAbilities();
 }
 void AAuraCharacter::OnRep_PlayerState()
 {
@@ -53,17 +64,37 @@ void AAuraCharacter::OnRep_PlayerState()
 	InitAbilityActorInfo();
 }
 
-
-int32 AAuraCharacter::GetCharacterLevel()
+int32 AAuraCharacter::GetCharacterLevel_Implementation()
 {
 	const AAuraPlayerState* AuraPlayerState = GetPlayerState<AAuraPlayerState>();
-	return AuraPlayerState->GetCharacterLevel();
+	return AuraPlayerState->GetPlayerLevel();
 }
 
+void AAuraCharacter::MulticastLevelUpEffects_Implementation(int32 Level)
+{
+	if (IsValid(LevelUpNiagaraComponent))
+	{
+		const FRotator CameraRotation = Camera->GetComponentRotation();
+		LevelUpNiagaraComponent->SetWorldRotation(FRotator(CameraRotation.Pitch * -1., CameraRotation.Yaw + 180., 0.));
+		LevelUpNiagaraComponent->Activate(true);
+	}
+	if (CharacterWidgetController)
+	{
+		CharacterWidgetController->OnLevelUpDelegate.Broadcast(Level);
+	}
+	BP_LevelUpEffects(Level);
+}
 
 void AAuraCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (UAuraUserWidget* LevelUpWidget = Cast<UAuraUserWidget>(LevelUpWidgetComponent->GetUserWidgetObject()))
+	{
+		UAuraWidgetController::CreateOrGetWidgetController(this, CharacterWidgetController, CharacterWidgetClass,
+			FWidgetControllerParams(nullptr, GetPlayerState(), AbilitySystemComponent, AttributeSet));
+		LevelUpWidget->SetWidgetController(CharacterWidgetController);
+	}
 }
 
 void AAuraCharacter::InitAbilityActorInfo()

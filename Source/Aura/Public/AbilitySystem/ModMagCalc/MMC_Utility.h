@@ -7,7 +7,7 @@
 #include "MMC_Utility.generated.h"
 
 /**
- * MaxHealth
+ * MaxHealth =======================================================================================================
  */
 UCLASS()
 class AURA_API UMMC_MaxHealth : public UGameplayModMagnitudeCalculation
@@ -33,4 +33,33 @@ public:
 	virtual float CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const override;
 private:
 	FGameplayEffectAttributeCaptureDefinition IntelligenceDef;
+};
+
+
+/**
+ * Cooldown =======================================================================================================
+ */
+UCLASS()
+class AURA_API UMMC_CooldownDuration : public UGameplayModMagnitudeCalculation
+{
+	GENERATED_BODY()
+
+public:
+	UMMC_CooldownDuration();
+	virtual float CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const override;
+private:
+	FGameplayEffectAttributeCaptureDefinition IntelligenceDef;
+};
+
+
+/**
+ * Cost =======================================================================================================
+ */
+UCLASS()
+class UMMC_AbilityCost : public UGameplayModMagnitudeCalculation
+{
+	GENERATED_BODY()
+public:
+	UMMC_AbilityCost();
+	virtual float CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const override;
 };

@@ -6,6 +6,7 @@
 #include "GameplayEffectTypes.h"
 #include "AuraGameplayEffectTypes.generated.h"
 
+struct FInstancedStruct;
 class UNiagaraSystem;
 
 USTRUCT(BlueprintType)
@@ -21,11 +22,14 @@ struct FAuraGameplayEffectContext : public FGameplayEffectContext
 	
 	bool IsStagger() const {return bStagger;}
 	void SetIsStagger(const bool bIn) {bStagger = bIn;}
+
+	FInstancedStruct* GetInstancedStruct() const {return InstancedStruct.Get();}
+	void AddInstancedStruct(const FInstancedStruct& InStruct);
 	
 	UPROPERTY()
 	bool bShowDamageOnTarget = false;
-	UPROPERTY()
-	TArray<FVector_NetQuantize> CueLocations = TArray<FVector_NetQuantize>();
+	/*UPROPERTY()
+	TArray<FVector_NetQuantize> CueLocations = TArray<FVector_NetQuantize>();*/
 	
 	/** Returns the actual struct used for serialization, subclasses must override this! */
 	virtual UScriptStruct* GetScriptStruct() const override
@@ -55,6 +59,19 @@ protected:
 	bool bIsCrit = false;
 	UPROPERTY()
 	bool bStagger = false;
+
+	
+	/*USTRUCT(BlueprintType)
+	struct FMyStruct
+	{
+		GENERATED_BODY()
+		UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		int MyInt = 0;
+	}
+	// This will show a drop-down in the editor, containing only MyStruct and its children structs
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BaseStruct = "/Script/MyModule.MyStruct"))
+	FInstancedStruct MyInstancedStruct;*/
+	TSharedPtr<FInstancedStruct> InstancedStruct; // TSharedPtr cannot be UPROPERTY
 };
 
 template<>

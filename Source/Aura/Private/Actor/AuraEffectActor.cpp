@@ -13,6 +13,7 @@ AAuraEffectActor::AAuraEffectActor()
 	bReplicates = true;
 	
 	SetRootComponent(CreateDefaultSubobject<USceneComponent>("SceneRoot"));
+	
 }
 
 
@@ -21,18 +22,18 @@ void AAuraEffectActor::BeginPlay()
 	Super::BeginPlay();
 }
 
-void AAuraEffectActor::ApplyEffectToTarget(AActor* TargetActor, const FEffectType& EffectType, const FHitResult& HitResult)
+void AAuraEffectActor::ApplyEffectToTarget(AActor* TargetActor, const FEffectType& EffectType)
 {
 	if (IsNotForEnemy(TargetActor)) return;
-	if (UAbilitySystemComponent* TargetAbilitySystem = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(TargetActor))
+	if (UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(TargetActor))
 	{
 		check(EffectType.GameplayEffectClass);
-		FGameplayEffectContextHandle EffectContextHandle = TargetAbilitySystem->MakeEffectContext();
+		FGameplayEffectContextHandle EffectContextHandle = TargetASC->MakeEffectContext();
 		EffectContextHandle.AddSourceObject(this);
+		// EffectContextHandle.AddOrigin() // DEPRECATED: for showing dmg, but using ActorLocation
 		UAuraAbilitySystemLibrary::SetIsShowDamageOnTarget(EffectContextHandle, true);
-		const FGameplayEffectSpecHandle EffectSpecHandle = TargetAbilitySystem->MakeOutgoingSpec(EffectType.GameplayEffectClass, ActorLevel, EffectContextHandle);
-		EffectSpecHandle.Data->GetContext().AddHitResult(HitResult);
-		const FActiveGameplayEffectHandle ActiveEffectHandle = TargetAbilitySystem->ApplyGameplayEffectSpecToSelf(*EffectSpecHandle.Data);
+		const FGameplayEffectSpecHandle EffectSpecHandle = TargetASC->MakeOutgoingSpec(EffectType.GameplayEffectClass, ActorLevel, EffectContextHandle);
+		const FActiveGameplayEffectHandle ActiveEffectHandle = TargetASC->ApplyGameplayEffectSpecToSelf(*EffectSpecHandle.Data);
 		
 		// if (EffectSpecHandle.Data->Def->DurationPolicy == EGameplayEffectDurationType::Infinite
 		// 	&& InfiniteEffectRemovalPolicy == EEffectRemovalPolicy::RemoveOnEndOverlap)
@@ -46,7 +47,7 @@ void AAuraEffectActor::ApplyEffectToTarget(AActor* TargetActor, const FEffectTyp
 }
 
 
-void AAuraEffectActor::OnOverlap(AActor* TargetActor, const FHitResult HitResult)
+void AAuraEffectActor::OnOverlap(AActor* TargetActor)
 {
 	if (IsNotForEnemy(TargetActor)) return;
 
@@ -55,7 +56,7 @@ void AAuraEffectActor::OnOverlap(AActor* TargetActor, const FHitResult HitResult
 	{
 		if (Effect.ApplicationPolicy == EEffectApplicationPolicy::ApplyOnOverlap)
 		{
-			ApplyEffectToTarget(TargetActor, Effect, HitResult);
+			ApplyEffectToTarget(TargetActor, Effect);
 		}
 	}
 }
@@ -69,7 +70,7 @@ void AAuraEffectActor::OnEndOverlap(AActor* TargetActor)
 		if (Effect.ApplicationPolicy == EEffectApplicationPolicy::ApplyOnEndOverlap)
 		{
 			FHitResult HitResult;
-			ApplyEffectToTarget(TargetActor, Effect, HitResult);
+			ApplyEffectToTarget(TargetActor, Effect);
 		}
 
 		if (Effect.GameplayEffectClass.GetDefaultObject()->DurationPolicy == EGameplayEffectDurationType::Infinite

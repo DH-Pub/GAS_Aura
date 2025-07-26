@@ -33,9 +33,12 @@ namespace AuraGameplayTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Attributes_Resistance_Lightning)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Attributes_Resistance_Arcane)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Attributes_Resistance_Physical)
+	
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Attributes_Meta_IncomingXP)
 #pragma endregion 
 
-	
+
+	// TODO: next proj, use proper naming for Input instead of using Controls
 #pragma region Input
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_LMB)
@@ -44,9 +47,36 @@ namespace AuraGameplayTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_2)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_3)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_4)
+
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Controls)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Controls_UI_AttributeMenu)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Controls_Move)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Controls_Point_Move)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Controls_Combat_Ability_1)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Controls_Combat_Ability_2)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Controls_Combat_Ability_3)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Controls_Combat_Ability_4)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Controls_Combat_Ability_5)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Controls_Combat_Ability_6)
+#pragma endregion 
+
+	
+#pragma region Abilities
+	//TODO next proj: Change to singular
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Abilities)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Abilities_Attack)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Abilities_Summon)
+	
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Abilities_Cooldown_Reduce)
+	
+	// Abilities with CD =============================================================================================
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Abilities_Fire_FireBolt)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cooldown)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cooldown_Fire_FireBolt)
+	//================================================================================================================
 #pragma endregion
 
-
+	
 #pragma region Combat
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Damage)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Damage_Fire)
@@ -59,18 +89,6 @@ namespace AuraGameplayTags
 		{Damage_Arcane, Attributes_Resistance_Arcane},
 		{Damage_Physical, Attributes_Resistance_Physical},
 	};
-
-	//TODO next proj: Change to singular
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Abilities)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Abilities_Attack)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Abilities_Summon)
-
-	
-	// Abilities with CD =============================================================================================
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Abilities_Fire_FireBolt)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cooldown_Fire_FireBolt)
-	//================================================================================================================
-	
 	
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(CombatSocket_Weapon)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(CombatSocket_RightHand)

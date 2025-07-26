@@ -9,8 +9,6 @@
 #include "AuraGameplayTags.h"
 #include "Components/SphereComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
-#include "Kismet/GameplayStatics.h"
-#include "NiagaraFunctionLibrary.h"
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
 #include "Aura/Aura.h"
 #include "Components/AudioComponent.h"
@@ -70,12 +68,14 @@ void AAuraProjectile::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, 
 		FGameplayEffectContextHandle GE_ContextHandle = DamageEffectSpecHandle.Data->GetContext();
 		if (SweepResult.Distance == 0.f)
 		{
-			FHitResult HitResult;
-			HitResult.Location = OtherActor->GetActorLocation();
+			FHitResult* ZeroResult = const_cast<FHitResult*>(&SweepResult);
+			ZeroResult->ImpactPoint = GetActorLocation();
+			/*FHitResult HitResult;
+			HitResult.Location = GE_ContextHandle.GetOrigin();
 			HitResult.ImpactPoint = GetActorLocation();
-			GE_ContextHandle.AddHitResult(HitResult);
+			GE_ContextHandle.AddHitResult(HitResult);*/
 		}
-		else GE_ContextHandle.AddHitResult(SweepResult);
+		GE_ContextHandle.AddHitResult(SweepResult);
 		
 		if (UAbilitySystemComponent* InstigatorASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(GetInstigator()))
 		{

@@ -7,7 +7,7 @@
 #include "UI/WidgetController/AuraWidgetController.h"
 #include "AttributeMenuWidgetController.generated.h"
 
-class UAttributeInfo;
+class UAttributeDataAsset;
 
 /**
  * Constructed in AuraHUD like OverlayWidgetController
@@ -22,7 +22,12 @@ public:
 
 	UPROPERTY(BlueprintAssignable, Category="GAS|Attributes")
 	FAttributeInfoSignature AttributeInfoDelegate;
+
+	UPROPERTY(BlueprintAssignable, Category="GAS|Attributes")
+	FOnPlayerStatChangedSignature AttributePointsToUIDelegate;
+	UPROPERTY(BlueprintAssignable, Category="GAS|Attributes")
+	FOnPlayerStatChangedSignature SpellPointsToUIDelegate;
 protected:
 	UPROPERTY(EditDefaultsOnly, Category="GAS|WidgetData")
-	TObjectPtr<UAttributeInfo> AttributeInfo;
+	TObjectPtr<UAttributeDataAsset> AttributeInfo;
 };

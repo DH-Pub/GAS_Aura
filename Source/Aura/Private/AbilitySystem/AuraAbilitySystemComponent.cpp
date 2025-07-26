@@ -6,6 +6,7 @@
 #include "AuraGameplayTags.h"
 #include "AbilitySystem/Abilities/AuraGameplayAbility.h"
 #include "Aura/AuraLogChannels.h"
+#include "Character/AuraCharacterBase.h"
 
 void UAuraAbilitySystemComponent::AbilityActorInfoSet()
 {
@@ -21,6 +22,7 @@ void UAuraAbilitySystemComponent::ClientEffectApplied_Implementation(UAbilitySys
 }
 
 
+#pragma region Add Startup Abilities
 void UAuraAbilitySystemComponent::AddCharacterAbilities(const TArray<TSubclassOf<UGameplayAbility>>& StartupAbilities)
 {
 	for (const TSubclassOf AbilityClass : StartupAbilities)
@@ -33,9 +35,19 @@ void UAuraAbilitySystemComponent::AddCharacterAbilities(const TArray<TSubclassOf
 			// GiveAbilityAndActivateOnce(AbilitySpec);
 		}
 	}
-	AbilitiesGivenDelegate.Broadcast(this);
 }
+void UAuraAbilitySystemComponent::AddCharacterPassives(const TArray<TSubclassOf<UGameplayAbility>>& StartupPassives)
+{
+	for (const TSubclassOf AbilityClass : StartupPassives)
+	{
+		FGameplayAbilitySpec AbilitySpec(AbilityClass, 1);
+		GiveAbilityAndActivateOnce(AbilitySpec);
+	}
+}
+#pragma endregion
 
+
+#pragma region AbilityReleased/Held
 void UAuraAbilitySystemComponent::AbilityInputTagReleased(const FGameplayTag& InputTag)
 {
 	if (!InputTag.IsValid()) return;
@@ -47,7 +59,6 @@ void UAuraAbilitySystemComponent::AbilityInputTagReleased(const FGameplayTag& In
 		}
 	}
 }
-
 void UAuraAbilitySystemComponent::AbilityInputTagHeld(const FGameplayTag& InputTag)
 {
 	if (!InputTag.IsValid()) return;
@@ -60,8 +71,39 @@ void UAuraAbilitySystemComponent::AbilityInputTagHeld(const FGameplayTag& InputT
 		}
 	}
 }
+#pragma endregion
 
-void UAuraAbilitySystemComponent::ForEachAbility(const FForEachAbility& Delegate)
+
+void UAuraAbilitySystemComponent::ReduceCooldownByTag(const FGameplayTagContainer& TagContainer, const float Amount, const float Percent)
+{
+	if (!GetAvatarActor()->HasAuthority()) return;
+	const FGameplayEffectQuery Query = FGameplayEffectQuery::MakeQuery_MatchAnyOwningTags(TagContainer);
+	TArray<FActiveGameplayEffectHandle> ActiveCooldownHandles = GetActiveEffects(Query);
+	for (const FActiveGameplayEffectHandle& Handle : ActiveCooldownHandles)
+	{
+		if (const FActiveGameplayEffect* ActiveGameplayEffect = GetActiveGameplayEffect(Handle))
+		{
+			const float TimeRemaining = ActiveGameplayEffect->GetTimeRemaining(GetWorld()->GetTimeSeconds());
+			float NewTime = 0.004f; // Cannot apply effect with 0 duration
+			if (Amount > 0.f) NewTime = FMath::Max(TimeRemaining - Amount, NewTime);
+			if (Percent > 0.f) NewTime = FMath::Max(NewTime * (1 - Percent), NewTime);
+			
+			if (const TSubclassOf<UGameplayEffect> CooldownEffectClass = ActiveGameplayEffect->Spec.Def->GetClass())
+			{
+				FGameplayEffectSpecHandle NewSpecHandle = MakeOutgoingSpec(CooldownEffectClass,
+					ActiveGameplayEffect->Spec.GetLevel(), ActiveGameplayEffect->Spec.GetEffectContext());
+				NewSpecHandle.Data->SetDuration(NewTime, true);
+				NewSpecHandle.Data->DynamicGrantedTags = ActiveGameplayEffect->Spec.DynamicGrantedTags;
+
+				RemoveActiveGameplayEffect(Handle);
+				ApplyGameplayEffectSpecToSelf(*NewSpecHandle.Data);
+			}
+		}
+	}
+}
+
+
+/*void UAuraAbilitySystemComponent::ForEachAbility(const FForEachAbility& Delegate)
 {
 	FScopedAbilityListLock AbilityListLock(*this);
 	for (const FGameplayAbilitySpec& AbilitySpec : GetActivatableAbilities())
@@ -71,12 +113,46 @@ void UAuraAbilitySystemComponent::ForEachAbility(const FForEachAbility& Delegate
 			UE_LOG(LogAura, Error, TEXT("Failed to execute delegate in %hs"), __FUNCTION__);
 		}
 	}
-}
+}*/
 
+
+#pragma region On Give/Remove Ability
 void UAuraAbilitySystemComponent::OnRep_ActivateAbilities()
 {
-	Super::OnRep_ActivateAbilities(); // Replicate ActivatableAbilities
-
-	// Replicate to clients
-	AbilitiesGivenDelegate.Broadcast(this);
+	Super::OnRep_ActivateAbilities();
+	if (const AAuraCharacterBase* Character = Cast<AAuraCharacterBase>(GetAvatarActor()))
+	{
+		if (Character->IsPlayerControlled())
+		{
+			for (const auto& AbilitySpec : GetActivatableAbilities())
+			{
+				// OnGiveAbilityDelegate.Broadcast(AbilitySpec);
+				//TODO: Find something to do with this
+			}
+		}
+	}
 }
+void UAuraAbilitySystemComponent::OnGiveAbility(FGameplayAbilitySpec& AbilitySpec)
+{
+	Super::OnGiveAbility(AbilitySpec);
+	if (const AAuraCharacterBase* Character = Cast<AAuraCharacterBase>(GetAvatarActor()))
+	{
+		if (Character->IsPlayerControlled())
+		{
+			// AbilitiesGivenDelegate.Broadcast(this);
+			OnGiveAbilityDelegate.Broadcast(AbilitySpec);
+		}
+	}
+}
+void UAuraAbilitySystemComponent::OnRemoveAbility(FGameplayAbilitySpec& AbilitySpec)
+{
+	Super::OnRemoveAbility(AbilitySpec);
+	if (const AAuraCharacterBase* Character = Cast<AAuraCharacterBase>(GetAvatarActor()))
+	{
+		if (Character->IsPlayerControlled())
+		{
+			//TODO: Add Remove Broadcast
+		}
+	}
+}
+#pragma endregion

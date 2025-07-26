@@ -7,6 +7,7 @@
 #include "UObject/Interface.h"
 #include "CombatInterface.generated.h"
 
+enum class ECharacterClass : uint8;
 class UNiagaraSystem;
 
 USTRUCT(BlueprintType)
@@ -29,6 +30,7 @@ struct FTaggedMontage
 	TObjectPtr<UNiagaraSystem> Effects = nullptr;
 };
 
+
 // This class does not need to be modified.
 UINTERFACE(MinimalAPI, BlueprintType)
 class UCombatInterface : public UInterface
@@ -36,16 +38,21 @@ class UCombatInterface : public UInterface
 	GENERATED_BODY()
 };
 
-/**
+// TODO: Remember this
+/** if BlueprintNativeEvent, Interface::Execute_ is required
  * 
+ * Use UObject->Implements<Interface>() to detect interface because if interface is implement directly on a Blueprint
+ * C++ Cast<Interface> will always return nullptr
  */
 class AURA_API ICombatInterface
 {
 	GENERATED_BODY()
-
-	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
-	virtual int32 GetCharacterLevel() {return 0;}
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	int32 GetCharacterLevel();
+	
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	ECharacterClass GetCharacterClass(); // BlueprintNativeEvent requires Execute_
 	
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	FVector GetCombatSocketLocation(const FGameplayTag& MontageTag);
@@ -59,7 +66,7 @@ public:
 	FTaggedMontage GetRandomAttackMontage();
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	UNiagaraSystem* GetBloodEffect();
-	
+
 	virtual void Die() = 0;
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	bool IsDead() const;

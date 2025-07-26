@@ -6,6 +6,7 @@
 #include "GameFramework/GameModeBase.h"
 #include "AuraGameModeBase.generated.h"
 
+class AAuraPlayerController;
 class UCharacterClassDataAsset;
 /**
  * 
@@ -17,4 +18,9 @@ class AURA_API AAuraGameModeBase : public AGameModeBase
 public:
 	UPROPERTY(EditDefaultsOnly, Category="CharacterClassDefaults")
 	TObjectPtr<UCharacterClassDataAsset> CharacterClassData;
+	
+	virtual void PostLogin(APlayerController* NewPlayer) override;
+	virtual void Logout(AController* Exiting) override;
+	UPROPERTY()
+	TArray<AAuraPlayerController*> PlayerControllers;
 };

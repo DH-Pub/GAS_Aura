@@ -10,7 +10,6 @@
 
 class UAttributeMenuWidgetController;
 class UAbilitySystemComponent;
-class UAttributeSet;
 class UAuraUserWidget;
 class UOverlayWidgetController;
 
@@ -25,10 +24,11 @@ class AURA_API AAuraHUD : public AHUD
 	GENERATED_BODY()
 public:
 	/** Bind callbacks if not yet and return controller */
-	UOverlayWidgetController* GetOverlayWidgetController(const FWidgetControllerParams& WCParams);
-	UAttributeMenuWidgetController* GetAttributeMenuWidgetController(const FWidgetControllerParams& WCParams);
+	UOverlayWidgetController* CreateOrGetOverlayWC(const FWidgetControllerParams& WCParams);
+	UAttributeMenuWidgetController* CreateOrGetAttributeMenuWC(const FWidgetControllerParams& WCParams);
 
-	void InitOverlay(APlayerController* PC, APlayerState* PS, UAbilitySystemComponent* ASC, UAttributeSet* AS);
+	// Create and Set Overlay's WidgetController, then broadcast initial values
+	void InitOverlay(APlayerController* PC, APlayerState* PS, UAbilitySystemComponent* ASC, UAuraAttributeSet* AS);
 protected:
 
 private:

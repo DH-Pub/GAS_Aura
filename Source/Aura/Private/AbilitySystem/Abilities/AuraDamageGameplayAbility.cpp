@@ -5,6 +5,7 @@
 
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
+#include "AuraGameplayEffectTypes.h"
 #include "AuraGameplayTags.h"
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
 
@@ -26,7 +27,7 @@ void UAuraDamageGameplayAbility::CauseDamage(AActor* TargetActor)
 		UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(TargetActor));
 }
 
-void UAuraDamageGameplayAbility::CauseDamageToActors(TArray<AActor*> Actors, FGameplayTag GameplayCueTag,
+void UAuraDamageGameplayAbility::CauseDamageToActors(TArray<AActor*> Actors, const FGameplayTag GameplayCueTag,
 	FGameplayCueParameters& GameplayCueParameters, const bool bStagger)
 {
 	if (Actors.IsEmpty()) return;
@@ -34,9 +35,10 @@ void UAuraDamageGameplayAbility::CauseDamageToActors(TArray<AActor*> Actors, FGa
 	FGameplayEffectContextHandle EffectContextHandle = MakeEffectContext(GetCurrentAbilitySpecHandle(), GetCurrentActorInfo());
 	EffectContextHandle.AddSourceObject(AvatarActor);
 	UAuraAbilitySystemLibrary::SetIsStaggerDamage(EffectContextHandle, bStagger);
-	const FGameplayEffectSpecHandle GESpecHandle = SourceASC->MakeOutgoingSpec(DamageEffectClass, 1.f, EffectContextHandle);
+	FGameplayEffectSpecHandle GESpecHandle = SourceASC->MakeOutgoingSpec(DamageEffectClass, 1.f, EffectContextHandle);
 	for (AActor* Actor : Actors)
 	{
+		// GESpecHandle.Data->GetContext().AddOrigin(Actor->GetActorLocation()); // for showing dmg // DEPRECATED: Using ActorLocation
 		if (UAuraAbilitySystemLibrary::IsNotFriend(AvatarActor, Actor))
 		{
 			for (TPair Pair: DamageTypes)
@@ -51,9 +53,9 @@ void UAuraDamageGameplayAbility::CauseDamageToActors(TArray<AActor*> Actors, FGa
 			GameplayCueParameters.SourceObject = Actor;
 			SourceASC->ExecuteGameplayCue(GameplayCueTag, GameplayCueParameters);
 			/* GameplayAbility only replicated on "Owning Client" and "Server"
-			*  UNiagaraFunctionLibrary::SpawnSystemAtLocation(Actor, ICombatInterface::Execute_GetBloodEffect(Actor), Actor->GetActorLocation());
-			*  The above effects won't show up on others
-			*/
+			 * UNiagaraFunctionLibrary::SpawnSystemAtLocation(Actor, ICombatInterface::Execute_GetBloodEffect(Actor), Actor->GetActorLocation());
+			 * The above effects won't show up on others
+			 */
 		}
 	}
 }

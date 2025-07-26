@@ -6,6 +6,15 @@
 #include "AbilitySystem/Abilities/AuraGameplayAbility.h"
 #include "AuraSummonAbility.generated.h"
 
+struct FInstancedStruct;
+
+USTRUCT(BlueprintType)
+struct FSummonInfo
+{
+	GENERATED_BODY()
+	UPROPERTY(BlueprintReadWrite)
+	TArray<FVector_NetQuantize> Locations;
+};
 /**
  * 
  */
@@ -17,7 +26,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SetSpawnLocations();
 	UFUNCTION(BlueprintPure)
-	TSubclassOf<APawn> GetRandomMinionsClass();
+	TSubclassOf<APawn> GetRandomMinionsClass() {return MinionClasses[FMath::RandRange(0, MinionClasses.Num() - 1)];}
 
 	UPROPERTY(EditDefaultsOnly, meta=(UIMin=0), Category="Summoning")
 	int32 NumMinions = 5;
@@ -26,7 +35,7 @@ public:
 	TArray<TSubclassOf<APawn>> MinionClasses;
 
 	UPROPERTY(BlueprintReadWrite, Category="Summoning")
-	TArray<FVector_NetQuantize> SpawnLocations;
+	FSummonInfo SummonInfo = FSummonInfo();
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Summoning")
 	int32 SpawnLocationIndex;
 
@@ -36,4 +45,12 @@ public:
 	float MaxSpawnDistance = 350.f;
 	UPROPERTY(EditDefaultsOnly, meta=(ClampMin=0.f, UIMax= 360.f, Delta=1.f), Category="Summoning")
 	float SpawnSpread = 120.f;
+	
+	UFUNCTION(BlueprintCallable, meta=(ExpandEnumAsExecs="Outcome"))
+	static void InstancedStructToSummonInfo(TEnumAsByte<EOutcome>& Outcome, const FInstancedStruct& InstancedStruct,
+		TArray<FVector_NetQuantize>& Locations);
+
+protected:
+	virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
+		const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
 };

@@ -7,6 +7,9 @@
 #include "Engine/DataAsset.h"
 #include "AbilityDataAsset.generated.h"
 
+struct FGameplayAbilitySpecHandle;
+class UGameplayAbility;
+
 USTRUCT(BlueprintType)
 struct FAuraAbilityDataAsset
 {
@@ -16,14 +19,14 @@ struct FAuraAbilityDataAsset
 	FGameplayTag AbilityTag = FGameplayTag();
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(GameplayTagFilter="Cooldown"))
 	FGameplayTag CooldownTag = FGameplayTag();
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<UTexture2D> Icon = nullptr;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<UMaterialInterface> BackgroundMaterial = nullptr;
+	
 	UPROPERTY(BlueprintReadOnly, meta=(GameplayTagFilter="Input"))
 	FGameplayTag InputTag = FGameplayTag();
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	TObjectPtr<const UTexture2D> Icon = nullptr;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	TObjectPtr<const UMaterialInterface> BackgroundMaterial = nullptr;
 };
 
 /**

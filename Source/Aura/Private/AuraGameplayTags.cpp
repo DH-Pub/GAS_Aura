@@ -30,6 +30,8 @@ namespace AuraGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Resistance_Lightning, "Attributes.Resistance.Lightning", "Resistance to Lightning")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Resistance_Arcane, "Attributes.Resistance.Arcane", "Resistance to Arcane")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Resistance_Physical, "Attributes.Resistance.Physical", "Resistance to Physical")
+	
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Meta_IncomingXP, "Attributes.Meta.IncomingXP", "Receive XP")
 #pragma endregion
 
 
@@ -43,25 +45,43 @@ namespace AuraGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_4, "Input.MnK.4", "")
 #pragma endregion
 
+	
+#pragma region Controls
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Controls, "Controls", "Controls") // ==PARENT==
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Controls_UI_AttributeMenu, "Controls.UI.AttributeMenu", "Controls")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Controls_Move, "Controls.Move", "Controls")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Controls_Point_Move, "Controls.Point.Move", "Controls")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Controls_Combat_Ability_1, "Controls.Combat.Ability.1", "Controls")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Controls_Combat_Ability_2, "Controls.Combat.Ability.2", "Controls")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Controls_Combat_Ability_3, "Controls.Combat.Ability.3", "Controls")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Controls_Combat_Ability_4, "Controls.Combat.Ability.4", "Controls")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Controls_Combat_Ability_5, "Controls.Combat.Ability.5", "Controls")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Controls_Combat_Ability_6, "Controls.Combat.Ability.6", "Controls")
+#pragma endregion
 
+	
+#pragma region Abilities
+	// Abilities
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Abilities, "Abilities", "Abilities' Parent") // ==PARENT==
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Abilities_Attack, "Abilities.Attack", "Attack Gameplay Ability")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Abilities_Summon, "Abilities.Summon", "Summon Gameplay Ability")
+
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Abilities_Cooldown_Reduce, "Abilities.Cooldown.Reduce", "")
+	
+	// Abilities with Cooldown ============================================================================================
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Abilities_Fire_FireBolt, "Abilities.Fire.FireBolt", "FireBolt Gameplay Ability")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Cooldown, "Cooldown", "Cooldowns' Parent") // ==PARENT==
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Cooldown_Fire_FireBolt, "Cooldown.Fire.FireBolt", "FireBolt Cooldown")
+	// =======================================================================================================================
+#pragma endregion
+
+	
 #pragma region Combat
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Damage, "Damage", "Incoming Damage pass from UAuraGameplayAbility (UAuraProjectileAbility,...) to GE_Damage: ExecCalc_Damage")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Damage_Fire, "Damage.Fire", "Fire type damage")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Damage_Lightning, "Damage.Lightning", "Lightning type damage")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Damage_Arcane, "Damage.Arcane", "Arcane type damage")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Damage_Physical, "Damage.Physical", "Physical type damage")
-
-	// Abilities
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Abilities, "Abilities", "Abilities' Parent") // ==PARENT==
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Abilities_Attack, "Abilities.Attack", "Attack Gameplay Ability")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Abilities_Summon, "Abilities.Summon", "Summon Gameplay Ability")
-
-	
-	// Abilities with Cooldown ============================================================================================
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Abilities_Fire_FireBolt, "Abilities.Fire.FireBolt", "FireBolt Gameplay Ability")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Cooldown_Fire_FireBolt, "Cooldown.Fire.FireBolt", "FireBolt Cooldown")
-	// =======================================================================================================================
-
 	
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(CombatSocket_Weapon, "CombatSocket.Weapon", "Socket for attack using weapon")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(CombatSocket_RightHand, "CombatSocket.RightHand", "Socket for attack using right hand")
@@ -73,7 +93,7 @@ namespace AuraGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Montage_Attack_3, "Montage.Attack.3", "Attack 3")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Montage_Attack_4, "Montage.Attack.4", "Attack 4")
 	
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Effects_HitReact, "Effects.HitReact", "Use to activate react animation when has been hit")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Effects_HitReact, "Effects.HitReact", "RegisterGameplayTagEvent to change movement speed")
 #pragma endregion
 
 	

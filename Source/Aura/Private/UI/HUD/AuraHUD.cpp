@@ -6,18 +6,18 @@
 #include "UI/WidgetController/AttributeMenuWidgetController.h"
 #include "UI/WidgetController/OverlayWidgetController.h"
 
-UOverlayWidgetController* AAuraHUD::GetOverlayWidgetController(const FWidgetControllerParams& WCParams)
+UOverlayWidgetController* AAuraHUD::CreateOrGetOverlayWC(const FWidgetControllerParams& WCParams)
 {
 	return UAuraWidgetController::CreateOrGetWidgetController<UOverlayWidgetController>(
 		this,OverlayWidgetController, OverlayWidgetControllerClass, WCParams);
 }
-UAttributeMenuWidgetController* AAuraHUD::GetAttributeMenuWidgetController(const FWidgetControllerParams& WCParams)
+UAttributeMenuWidgetController* AAuraHUD::CreateOrGetAttributeMenuWC(const FWidgetControllerParams& WCParams)
 {
 	return UAuraWidgetController::CreateOrGetWidgetController<UAttributeMenuWidgetController>(
 		this, AttributeMenuWidgetController, AttributeMenuWidgetControllerClass, WCParams);
 }
 
-void AAuraHUD::InitOverlay(APlayerController* PC, APlayerState* PS, UAbilitySystemComponent* ASC, UAttributeSet* AS)
+void AAuraHUD::InitOverlay(APlayerController* PC, APlayerState* PS, UAbilitySystemComponent* ASC, UAuraAttributeSet* AS)
 {
 	checkf(OverlayWidgetClass, TEXT("Overlay Widget Class uninitialized, please fill out in BP_AuraHUD"));
 
@@ -29,6 +29,6 @@ void AAuraHUD::InitOverlay(APlayerController* PC, APlayerState* PS, UAbilitySyst
 	  * Create/Get WidgetController, BindCallbacksDependencies()
 	  * Set WidgetController, Call WidgetControllerSet Event (Which will assign AbilityDataDelegate)
 	  */
-	OverlayWidget->SetWidgetController(GetOverlayWidgetController(FWidgetControllerParams(PC, PS, ASC, AS)));
+	OverlayWidget->SetWidgetController(CreateOrGetOverlayWC(FWidgetControllerParams(PC, PS, ASC, AS)));
 	OverlayWidgetController->BroadcastInitialValues();
 }

@@ -5,6 +5,7 @@
 
 #include "AuraGameplayEffectTypes.h"
 #include "AbilitySystem/Abilities/AuraGameplayAbility.h"
+#include "AbilitySystem/AuraAttributeSet.h"
 #include "Components/CanvasPanel.h"
 #include "Components/Overlay.h"
 #include "Game/AuraGameModeBase.h"
@@ -12,6 +13,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Player/AuraPlayerState.h"
+#include "StructUtils/InstancedStruct.h"
 #include "UI/HUD/AuraHUD.h"
 #include "UI/Widget/AuraUserWidget.h"
 #include "UI/WidgetController/AuraWidgetController.h"
@@ -26,10 +28,12 @@ UOverlayWidgetController* UAuraAbilitySystemLibrary::GetOverlayWidgetController(
 	{
 		if (AAuraHUD* AuraHUD = Cast<AAuraHUD>(PC->GetHUD()))
 		{
-			AAuraPlayerState* PS = PC->GetPlayerState<AAuraPlayerState>();
-			UAbilitySystemComponent* ASC = PS->GetAbilitySystemComponent();
-			UAttributeSet* AS = PS->GetAttributeSet();
-			return AuraHUD->GetOverlayWidgetController(FWidgetControllerParams(PC, PS, ASC, AS));
+			if (AAuraPlayerState* PS = PC->GetPlayerState<AAuraPlayerState>())
+			{
+				UAbilitySystemComponent* ASC = PS->GetAbilitySystemComponent();
+				UAuraAttributeSet* AS = PS->GetAttributeSet();
+				return AuraHUD->CreateOrGetOverlayWC(FWidgetControllerParams(PC, PS, ASC, AS));
+			}
 		}
 	}
 	return nullptr;
@@ -44,8 +48,8 @@ UAttributeMenuWidgetController* UAuraAbilitySystemLibrary::GetAttributeMenuWidge
 		{
 			AAuraPlayerState* PS = PC->GetPlayerState<AAuraPlayerState>();
 			UAbilitySystemComponent* ASC = PS->GetAbilitySystemComponent();
-			UAttributeSet* AS = PS->GetAttributeSet();
-			return AuraHUD->GetAttributeMenuWidgetController(FWidgetControllerParams(PC, PS, ASC, AS));
+			UAuraAttributeSet* AS = PS->GetAttributeSet();
+			return AuraHUD->CreateOrGetAttributeMenuWC(FWidgetControllerParams(PC, PS, ASC, AS));
 		}
 	}
 	return nullptr;
@@ -83,14 +87,24 @@ void UAuraAbilitySystemLibrary::GiveStartupAbilities(const UObject* WorldContext
 	}
 	const FCharacterClassDefaultInfo ClassDefaultInfo = ClassData->GetClassDefaultInfo(CharacterClass);
 	
-	if (ICombatInterface* CombatInterface = Cast<ICombatInterface>(ASC->GetAvatarActor()))
+	if (ASC->GetAvatarActor()->Implements<UCombatInterface>())
 	{
 		for (TSubclassOf Ability : ClassDefaultInfo.ClassAbilities)
 		{
-			FGameplayAbilitySpec AbilitySpec(Ability, CombatInterface->GetCharacterLevel());
+			FGameplayAbilitySpec AbilitySpec(Ability, ICombatInterface::Execute_GetCharacterLevel(ASC->GetAvatarActor()));
 			ASC->GiveAbility(AbilitySpec);
 		}
 	}
+}
+int32 UAuraAbilitySystemLibrary::GetXPRewardForClassAndLevel(const UObject* WorldContextObject,
+	ECharacterClass CharacterClass, int32 CharacterLevel)
+{
+	UCharacterClassDataAsset* ClassData = GetCharacterClassDataAsset(WorldContextObject);
+	if (ClassData == nullptr) return 0;
+
+	const FCharacterClassDefaultInfo Info = ClassData->GetClassDefaultInfo(CharacterClass);
+	const float XPReward = Info.XPReward.GetValueAtLevel(CharacterLevel);
+	return static_cast<int32>(XPReward);
 }
 
 void UAuraAbilitySystemLibrary::AddWidgetToRootCanvasPanel(const UObject* WorldContextObject, UUserWidget* InNewWidget, TEnumAsByte<EOutcome>& Outcome)
@@ -99,18 +113,18 @@ void UAuraAbilitySystemLibrary::AddWidgetToRootCanvasPanel(const UObject* WorldC
 	if (InNewWidget == nullptr) return;
 	if (const APlayerController* PC = GEngine->GetFirstLocalPlayerController(WorldContextObject->GetWorld()))
 	{
-		if (AAuraHUD* AuraHUD = Cast<AAuraHUD>(PC->GetHUD()))
+		AAuraHUD* AuraHUD = Cast<AAuraHUD>(PC->GetHUD());
+		if (AuraHUD == nullptr) return;
+		const UAuraUserWidget* RootOverlay = AuraHUD->GetOverlayWidget();
+		if (RootOverlay == nullptr) return;
+		if (const UCanvasPanel* CanvasPanel = Cast<UCanvasPanel>(RootOverlay->GetRootWidget()))
 		{
-			const UAuraUserWidget* RootOverlay = AuraHUD->GetOverlayWidget();
-			if (UCanvasPanel* CanvasPanel = Cast<UCanvasPanel>(RootOverlay->GetRootWidget()))
+			if (UOverlay* OverlayGame = Cast<UOverlay>(CanvasPanel->GetChildAt(0)))
 			{
-				if (UOverlay* OverlayGame = Cast<UOverlay>(CanvasPanel->GetChildAt(0)))
-				{
-					OverlayGame->AddChildToOverlay(InNewWidget);
-				}
-				// CanvasPanel->AddChild(InNewWidget);
-				Outcome = EOutcome::Success;
+				OverlayGame->AddChildToOverlay(InNewWidget);
 			}
+			// CanvasPanel->AddChild(InNewWidget);
+			Outcome = EOutcome::Success;
 		}
 	}
 }
@@ -130,7 +144,7 @@ void UAuraAbilitySystemLibrary::YawActorToLocation(TEnumAsByte<EOutcome>& Outcom
 }
 
 void UAuraAbilitySystemLibrary::GetLivePlayersInRadius(const UObject* WorldContextObject, TArray<AActor*>& OutActors,
-	const TArray<AActor*>& ActorsToIgnore, float Radius, const FVector& Origin)
+	const TArray<AActor*>& ActorsToIgnore, const float Radius, const FVector& Origin)
 {
 	FCollisionQueryParams SphereParams;
 	SphereParams.AddIgnoredActors(ActorsToIgnore);
@@ -168,7 +182,7 @@ UCharacterClassDataAsset* UAuraAbilitySystemLibrary::GetCharacterClassDataAsset(
 
 
 /*
- * =======================================================================================================================================
+ * =============== FAuraGameplayEffectContext ========================================================================================================================
  */
 #pragma region Damage
 bool UAuraAbilitySystemLibrary::IsBlocked(const FGameplayEffectContextHandle& EffectContextHandle)
@@ -186,7 +200,6 @@ void UAuraAbilitySystemLibrary::SetIsBlocked(FGameplayEffectContextHandle& Effec
 		AuraEffectContext->SetIsBlocked(bInIsBlocked);
 	}
 }
-
 
 bool UAuraAbilitySystemLibrary::IsCrit(const FGameplayEffectContextHandle& EffectContextHandle)
 {
@@ -243,20 +256,22 @@ void UAuraAbilitySystemLibrary::SetIsShowDamageOnTarget(FGameplayEffectContextHa
 /*
  * ==================================================================================================================================
  */
-#pragma region GameplayCue
-TArray<FVector_NetQuantize> UAuraAbilitySystemLibrary::GetCueLocations(const FGameplayEffectContextHandle& EffectContextHandle)
+#pragma region InstancedStruct
+FInstancedStruct UAuraAbilitySystemLibrary::GetInstancedStruct(const FGameplayEffectContextHandle& EffectContextHandle)
 {
 	if (const FAuraGameplayEffectContext* AuraEffectContext =  static_cast<const FAuraGameplayEffectContext*>(EffectContextHandle.Get()))
 	{
-		return AuraEffectContext->CueLocations;
+		return *AuraEffectContext->GetInstancedStruct();
 	}
-	return TArray<FVector_NetQuantize>();
+	return FInstancedStruct();
 }
-void UAuraAbilitySystemLibrary::SetCueLocations(FGameplayEffectContextHandle& EffectContextHandle, const TArray<FVector_NetQuantize> InLocations)
+void UAuraAbilitySystemLibrary::SetInstancedStruct(FGameplayEffectContextHandle& EffectContextHandle,
+	const FInstancedStruct& InStruct)
 {
 	if (FAuraGameplayEffectContext* AuraEffectContext =  static_cast<FAuraGameplayEffectContext*>(EffectContextHandle.Get()))
 	{
-		AuraEffectContext->CueLocations = InLocations;
+		AuraEffectContext->AddInstancedStruct(InStruct);
 	}
 }
+
 #pragma endregion

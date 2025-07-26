@@ -27,7 +27,7 @@ AAuraEnemy::AAuraEnemy()
 
 	AbilitySystemComponent = CreateDefaultSubobject<UAuraAbilitySystemComponent>("AbilitySystemComponent");
 	AbilitySystemComponent->SetIsReplicated(true);
-	AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Minimal);
+	AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Minimal); // Save bandwidth
 
 	AttributeSet = CreateDefaultSubobject<UAuraAttributeSet>("AttributeSet");
 
@@ -49,7 +49,7 @@ void AAuraEnemy::PossessedBy(AController* NewController)
 		// AuraAIController->RunBehaviorTree(BehaviorTree);
 		// AuraAIController->GetBlackboardComponent()->SetValueAsBool(FName("HitReacting"), false);
 		// AuraAIController->GetBlackboardComponent()->SetValueAsBool(FName("RangedAttacker"), CharacterClass != ECharacterClass::Warrior);
-	} // Behavior Tree (DEPRECATED)
+	}
 }
 
 void AAuraEnemy::HighlightActor()
@@ -84,8 +84,11 @@ void AAuraEnemy::BeginPlay()
 		HealthBarController->BroadcastInitialValues();
 	}
 
-	AbilitySystemComponent->RegisterGameplayTagEvent(AuraGameplayTags::Effects_HitReact,
-		EGameplayTagEventType::NewOrRemoved).AddUObject(this, &AAuraEnemy::HitReactChanged);
+	AbilitySystemComponent->RegisterGameplayTagEvent(AuraGameplayTags::Effects_HitReact, EGameplayTagEventType::NewOrRemoved)
+	.AddLambda([this](const FGameplayTag CallbackTag, const int NewCount)
+	{
+		GetCharacterMovement()->MaxWalkSpeed = NewCount > 0 ? 0.f : BaseWalkSpeed;
+	});
 }
 
 void AAuraEnemy::InitAbilityActorInfo()
@@ -109,36 +112,10 @@ void AAuraEnemy::Die()
 		AuraAIController->GetBrainComponent()->StopLogic(TEXT("Death"));
 	} 
 }
+
 void AAuraEnemy::MulticastHandleDeath_Implementation()
 {
 	Super::MulticastHandleDeath_Implementation();
 	HealthBar->DetachFromComponent(FDetachmentTransformRules(EDetachmentRule::KeepWorld, true));
 	// HealthBar->SetVisibility(false);
-}
-
-void AAuraEnemy::HitReactChanged(const FGameplayTag CallbackTag, const int NewCount)
-{
-	bHitReacting = NewCount > 0;
-	GetCharacterMovement()->MaxWalkSpeed = bHitReacting ? 0.f : BaseWalkSpeed;
-
-	if (HasAuthority())
-	{
-		// AuraAIController->GetBlackboardComponent()->SetValueAsBool(FName("HitReacting"), bHitReacting);
-	} // BehaviorTree (DEPRECATED)
-}
-
-void AAuraEnemy::Tick(float DeltaSeconds)
-{
-	Super::Tick(DeltaSeconds);
-	if (bTracking && CombatTarget)
-	{
-		TEnumAsByte Outcome = Failure;
-		UAuraAbilitySystemLibrary::YawActorToLocation(Outcome, this, CombatTarget->GetActorLocation(), DeltaSeconds,
-			GetCharacterMovement()->RotationRate.Yaw * 2);
-		// const FRotator ResultRot = UKismetMathLibrary::RInterpTo_Constant(
-		// 	GetCapsuleComponent()->GetComponentRotation(),
-		// 	UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), CombatTarget->GetActorLocation()),
-		// 	DeltaSeconds, GetCharacterMovement()->RotationRate.Yaw * 2);
-		// GetCapsuleComponent()->SetWorldRotation(ResultRot);
-	}
 }

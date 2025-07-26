@@ -3,6 +3,13 @@
 
 #include "AuraGameplayEffectTypes.h"
 
+#include "StructUtils/InstancedStruct.h"
+
+void FAuraGameplayEffectContext::AddInstancedStruct(const FInstancedStruct& InStruct)
+{
+	InstancedStruct = TSharedPtr<FInstancedStruct>(new FInstancedStruct(InStruct));
+}
+
 bool FAuraGameplayEffectContext::NetSerialize(FArchive& Ar, class UPackageMap* Map, bool& bOutSuccess)
 {
 	// -------------------------------------------------------
@@ -39,26 +46,15 @@ bool FAuraGameplayEffectContext::NetSerialize(FArchive& Ar, class UPackageMap* M
 		}
 		
 		// Custom -----------------------------------------------------------------------------------------------
-		if (bIsBlocked)
-		{
-			RepBits |= 1 << 7;
-		}
-		if (bIsCrit)
-		{
-			RepBits |= 1 << 8;
-		}
-		if (bStagger)
-		{
-			RepBits |= 1 << 9;
-		}
-		if (bShowDamageOnTarget)
-		{
-			RepBits |= 1 << 10;
-		}
+		if (bIsBlocked) RepBits |= 1 << 7;
+		if (bIsCrit) RepBits |= 1 << 8;
+		if (bStagger)RepBits |= 1 << 9;
+		if (bShowDamageOnTarget) RepBits |= 1 << 10;
+		if (InstancedStruct.IsValid()) RepBits |= 1 << 11;
 		// End -----------------------------------------------------------------------------------------------------
 	}
 
-	Ar.SerializeBits(&RepBits, 10); // 0-8
+	Ar.SerializeBits(&RepBits, 12); // 0-11
 
 	if (RepBits & (1 << 0))
 	{
@@ -106,15 +102,23 @@ bool FAuraGameplayEffectContext::NetSerialize(FArchive& Ar, class UPackageMap* M
 	bIsCrit = RepBits & (1 << 8);
 	bStagger = RepBits & (1 << 9);
 	bShowDamageOnTarget = RepBits & (1 << 10);
+	if (RepBits & (1 << 11))
+	{
+		if (Ar.IsLoading() && !InstancedStruct.IsValid())
+		{
+			InstancedStruct = TSharedPtr<FInstancedStruct>(new FInstancedStruct());
+		}
+		InstancedStruct->NetSerialize(Ar, Map, bOutSuccess);
+	}
 	// End ====================================================================================================
 
 	if (Ar.IsLoading())
 	{
 		AddInstigator(Instigator.Get(), EffectCauser.Get()); // Just to initialize InstigatorAbilitySystemComponent
-	}	
+	}
 	
-	// bOutSuccess = true;
-	// Must add NetCore in Build.cs
-	bOutSuccess &= SafeNetSerializeTArray_WithNetSerialize<31>(Ar, CueLocations, Map);
+	bOutSuccess = true;
+	/*// Must add NetCore in Build.cs
+	bOutSuccess &= SafeNetSerializeTArray_WithNetSerialize<31>(Ar, CueLocations, Map);*/
 	return true;
 }

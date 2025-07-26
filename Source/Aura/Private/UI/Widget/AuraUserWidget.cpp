@@ -6,5 +6,9 @@
 void UAuraUserWidget::SetWidgetController(UAuraWidgetController* InWidgetController)
 {
 	WidgetController = InWidgetController;
-	WidgetControllerSet(); // Call event in blueprint
+	WidgetControllerSet(InWidgetController); // Call event in blueprint
+}
+
+void UAuraUserWidget::WidgetControllerSet_Implementation(UAuraWidgetController* Controller)
+{
 }

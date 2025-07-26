@@ -48,9 +48,9 @@ protected:
 	virtual void BeginPlay() override;
 
 	UFUNCTION(BlueprintCallable)
-	void ApplyEffectToTarget(AActor* TargetActor, const FEffectType& EffectType, const FHitResult& HitResult);
+	void ApplyEffectToTarget(AActor* TargetActor, const FEffectType& EffectType);
 	UFUNCTION(BlueprintCallable)
-	void OnOverlap(AActor* TargetActor, FHitResult HitResult);
+	void OnOverlap(AActor* TargetActor);
 	UFUNCTION(BlueprintCallable)
 	void OnEndOverlap(AActor* TargetActor);
 	
@@ -67,5 +67,6 @@ protected:
 	float ActorLevel = 1.f;
 private:
 	// TMap<FActiveGameplayEffectHandle, UAbilitySystemComponent*> ActiveEffectHandles;
+	// Check if Actor is NOT Enemy and effect does not apply to enemy
 	bool IsNotForEnemy(const AActor* Actor) const {return Actor->ActorHasTag(FName("Enemy")) && !bApplyEffectsToEnemies;}
 };

@@ -13,8 +13,10 @@
 	GAMEPLAYATTRIBUTE_VALUE_SETTER(PropertyName) \
 	GAMEPLAYATTRIBUTE_VALUE_INITTER(PropertyName)
 
-USTRUCT()
-struct FEffectActor
+class AAuraCharacterBase;
+
+/*USTRUCT()
+struct FEffectActor // NOT in use
 {
 	GENERATED_BODY()
 
@@ -25,8 +27,8 @@ struct FEffectActor
 	UPROPERTY(Transient)
 	AController* Controller = nullptr;
 	UPROPERTY(Transient)
-	ACharacter* Character = nullptr;
-};
+	AAuraCharacterBase* Character = nullptr;
+};*/
 
 USTRUCT()
 struct FEffectProperties
@@ -51,7 +53,7 @@ struct FEffectProperties
 	UPROPERTY()
 	AController* SourceController = nullptr;
 	UPROPERTY()
-	ACharacter* SourceCharacter = nullptr;
+	AAuraCharacterBase* SourceCharacter = nullptr; // AvatarActor cast into AuraCharacterBase
 
 	UPROPERTY()
 	UAbilitySystemComponent* TargetASC = nullptr;
@@ -60,7 +62,7 @@ struct FEffectProperties
 	UPROPERTY()
 	AController* TargetController = nullptr;
 	UPROPERTY()
-	ACharacter* TargetCharacter = nullptr;
+	AAuraCharacterBase* TargetCharacter = nullptr; // AvatarActor cast into AuraCharacterBase
 };
 
 /**
@@ -84,25 +86,29 @@ public:
 	FGameplayAttributeData Strength;
 	ATTRIBUTE_ACCESSORS(UAuraAttributeSet, Strength)
 	UFUNCTION()
-	void OnRep_Strength(const FGameplayAttributeData& OldStrength) const;
+	void OnRep_Strength(const FGameplayAttributeData& OldStrength) const
+	{GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, Strength, OldStrength);}
 
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_Intelligence, Category="Attributes|Primary")
 	FGameplayAttributeData Intelligence;
 	ATTRIBUTE_ACCESSORS(UAuraAttributeSet, Intelligence)
 	UFUNCTION()
-	void OnRep_Intelligence(const FGameplayAttributeData& OldIntelligence) const;
+	void OnRep_Intelligence(const FGameplayAttributeData& OldIntelligence) const
+	{GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, Intelligence, OldIntelligence);}
 
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_Resilience, Category="Attributes|Primary")
 	FGameplayAttributeData Resilience;
 	ATTRIBUTE_ACCESSORS(UAuraAttributeSet, Resilience)
 	UFUNCTION()
-	void OnRep_Resilience(const FGameplayAttributeData& OldResilience) const;
+	void OnRep_Resilience(const FGameplayAttributeData& OldResilience) const
+	{GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, Resilience, OldResilience);}
 
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_Vigor, Category="Attributes|Primary")
 	FGameplayAttributeData Vigor;
 	ATTRIBUTE_ACCESSORS(UAuraAttributeSet, Vigor)
 	UFUNCTION()
-	void OnRep_Vigor(const FGameplayAttributeData& OldVigor) const;
+	void OnRep_Vigor(const FGameplayAttributeData& OldVigor) const
+	{GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, Vigor, OldVigor);}
 #pragma endregion
 
 
@@ -219,9 +225,14 @@ public:
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_IncomingDamage, Category="Attributes|Meta")
 	FGameplayAttributeData IncomingDamage;
 	ATTRIBUTE_ACCESSORS(UAuraAttributeSet, IncomingDamage)
-	UFUNCTION()
-	void OnRep_IncomingDamage(const FGameplayAttributeData& OldDamage) const
+	UFUNCTION() void OnRep_IncomingDamage(const FGameplayAttributeData& OldDamage) const
 	{GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, IncomingDamage, OldDamage);}
+	
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_IncomingXP, Category="Attributes|Meta")
+	FGameplayAttributeData IncomingXP;
+	ATTRIBUTE_ACCESSORS(UAuraAttributeSet, IncomingXP)
+	UFUNCTION() void OnRep_IncomingXP(const FGameplayAttributeData& OldXP) const
+	{GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, IncomingXP, OldXP);}
 #pragma endregion
 
 

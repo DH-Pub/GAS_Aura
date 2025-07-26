@@ -19,11 +19,13 @@ public:
 	UFUNCTION(BlueprintCallable)
 	virtual void SetWidgetController(UAuraWidgetController* InWidgetController);
 
-	/** Widget will have a Controller that will send delegate to it */
+	/** Widget will have a Controller that will send delegate to it
+	 * This might not be used and opted for Event Parameter instead
+	 */
 	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<UAuraWidgetController> WidgetController;
 protected:
 	/** Bind changed event to widget in BP */
-	UFUNCTION(BlueprintImplementableEvent)
-	void WidgetControllerSet();
+	UFUNCTION(BlueprintNativeEvent)
+	void WidgetControllerSet(UAuraWidgetController* Controller);
 };

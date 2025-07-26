@@ -9,8 +9,11 @@
 #include "GameplayEffectExtension.h" // FGameplayEffectModCallbackData.EvaluatedData
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
 #include "Character/AuraCharacterBase.h"
-#include "GameFramework/Character.h"
+#include "Game/AuraGameModeBase.h"
 #include "Interaction/CombatInterface.h"
+#include "Interaction/PlayerInterface.h"
+#include "Player/AuraPlayerController.h"
+#include "Player/AuraPlayerState.h"
 
 UAuraAttributeSet::UAuraAttributeSet()
 {
@@ -50,6 +53,7 @@ void UAuraAttributeSet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 
 	// Meta
 	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, IncomingDamage, COND_None, REPNOTIFY_Always)
+	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, IncomingXP, COND_None, REPNOTIFY_Always)
 }
 
 // Each Attribute has BaseValue and CurrentValue
@@ -85,8 +89,7 @@ void UAuraAttributeSet::SetEffectProperties(const FGameplayEffectModCallbackData
 				Props.SourceController = Pawn->GetController();
 			}
 		}
-		if (Props.SourceController)
-			Props.SourceCharacter = Cast<ACharacter>(Props.SourceController->GetPawn());
+		if (Props.SourceController) Props.SourceCharacter = Cast<AAuraCharacterBase>(Props.SourceController->GetPawn());
 	}
 
 	if (const TSharedPtr<FGameplayAbilityActorInfo> TargetAbilityActorInfo = Data.Target.AbilityActorInfo;
@@ -94,10 +97,12 @@ void UAuraAttributeSet::SetEffectProperties(const FGameplayEffectModCallbackData
 	{
 		Props.TargetAvatarActor = TargetAbilityActorInfo->AvatarActor.Get();
 		Props.TargetController = TargetAbilityActorInfo->PlayerController.Get();
-		Props.TargetCharacter = Cast<ACharacter>(Props.TargetAvatarActor);
+		Props.TargetCharacter = Cast<AAuraCharacterBase>(Props.TargetAvatarActor);
 		Props.TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Props.TargetAvatarActor);
 	}
 }
+
+
 // Called just before BaseValue is changed, can also be used to clamp
 void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data)
 {
@@ -105,11 +110,12 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 
 	FEffectProperties Props;
 	SetEffectProperties(Data, Props);
-	// UE_LOG(LogTemp, Warning, TEXT("%s: %f"), *Props.TargetAvatarActor->GetName(), GetHealth());
-
+	
+	#pragma region IncomingDamage =======================================================================================
 	if (Data.EvaluatedData.Attribute == GetIncomingDamageAttribute())
 	{
-		if (const float LocalIncomingDamage = GetIncomingDamage(); LocalIncomingDamage > 0)
+		const float LocalIncomingDamage = GetIncomingDamage(); // SetIncomingDamage(0.f); // Old Damage overriden in ExecCalc_Damage
+		if (LocalIncomingDamage > 0)
 		{
 			const float NewHealth = GetHealth() - LocalIncomingDamage;
 			SetHealth(FMath::Clamp(NewHealth, 0.f, GetMaxHealth()));
@@ -119,56 +125,77 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 				if (UAuraAbilitySystemLibrary::IsStaggerDamage(Props.EffectContextHandle)) // HitReact
 				{
 					const FGameplayTagContainer TagContainer(AuraGameplayTags::Effects_HitReact); // Container with 1 default
-					// Activate GA_HitReact which has AssetTag(Effects.HitReact)
-					// GameplayAbility Added to Character through UAuraAbilitySystemLibrary::GiveStartupAbilities(CommonAbilities)
-					// Abilities needs to be given to first so that those with abilities can Activate it
+					// Activate GA_HitReact which has AssetTag(Effects.HitReact) given in GiveStartupAbilities(CommonAbilities)
 					Props.TargetASC->TryActivateAbilitiesByTag(TagContainer);
 				}
 			}
 			else
 			{
-				if (ICombatInterface* CombatInterface = Cast<ICombatInterface>(Props.TargetAvatarActor)) CombatInterface->Die();
+				Props.TargetCharacter->Die();
+				
+				// Send XP To Source on death =====================================================================================
+				const int32 TargetLevel = ICombatInterface::Execute_GetCharacterLevel(Props.TargetCharacter);
+				const ECharacterClass TargetClass = ICombatInterface::Execute_GetCharacterClass(Props.TargetCharacter);
+				
+				FGameplayEventData Payload;
+				Payload.EventTag = AuraGameplayTags::Attributes_Meta_IncomingXP;
+				Payload.EventMagnitude = UAuraAbilitySystemLibrary::GetXPRewardForClassAndLevel(Props.TargetCharacter, TargetClass, TargetLevel);
+				// GA_ListenForEvent waits to receive
+				UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(Props.SourceCharacter, Payload.EventTag, Payload); // For last hit player
+
+				Payload.EventMagnitude *= .5f;
+				AAuraGameModeBase* GameMode = Cast<AAuraGameModeBase>(GetWorld()->GetAuthGameMode());
+				for (AAuraPlayerController* Controller : GameMode->PlayerControllers)
+				{
+					if (Controller == Props.SourceController) continue;
+					UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(Controller->GetPawn(), Payload.EventTag, Payload);
+				}
 			}
 			
 			// if (Props.SourceCharacter != Props.TargetCharacter)
-			if (AAuraCharacterBase* Chara = Cast<AAuraCharacterBase>(Props.TargetCharacter))
+			const bool bBlocked = UAuraAbilitySystemLibrary::IsBlocked(Props.EffectContextHandle);
+			const bool bCrit = UAuraAbilitySystemLibrary::IsCrit(Props.EffectContextHandle);
+			FVector HitLoc = Props.TargetAvatarActor->GetActorLocation();
+			if (const FHitResult* HitResult = Props.EffectContextHandle.GetHitResult())
 			{
-				const bool bBlocked = UAuraAbilitySystemLibrary::IsBlocked(Props.EffectContextHandle);
-				const bool bCrit = UAuraAbilitySystemLibrary::IsCrit(Props.EffectContextHandle);
-				FVector HitLocation = Props.TargetAvatarActor->GetActorLocation();
-				if (const FHitResult* HitResult = Props.EffectContextHandle.GetHitResult())
-				{
-					if (HitResult->Distance > 0.f) HitLocation = HitResult->ImpactPoint;
-					else HitLocation = Cast<AActor>(Props.EffectContextHandle.GetSourceObject())->GetActorLocation();
-				}
-				// if (UAuraAbilitySystemLibrary::IsShowDamageOnTarget(Props.EffectContextHandle)) HitLocation = Props.TargetAvatarActor->GetActorLocation();
-				Chara->ShowDamageNumber(Props.SourceController, HitLocation, LocalIncomingDamage, bBlocked, bCrit);
+				HitLoc = HitResult->ImpactPoint;
+			}
+			Props.TargetCharacter->ShowDamageNumber(Props.SourceController, HitLoc, LocalIncomingDamage, bBlocked, bCrit);
+		}
+	}
+	#pragma endregion
+
+	
+	#pragma region IncomingXP ==========================================================================================
+	if (Data.EvaluatedData.Attribute == GetIncomingXPAttribute())
+	{
+		const float LocalIncomingXP = GetIncomingXP();
+		// SetIncomingXP(0.f); // Clear IncomingXP after storing value if GE_EventIncomingXP is not "Override"
+
+		//TODO: see if we should level up
+
+		
+		// Source Character is the owner, since GA_ListenForEvents applies GE_EventIncomingXP
+		if (AAuraPlayerState* AuraAS = Props.SourceController->GetPlayerState<AAuraPlayerState>())
+		{
+			const int32 OldLevel = AuraAS->GetPlayerLevel();
+			AuraAS->AddToXP(LocalIncomingXP);
+			if (OldLevel < AuraAS->GetPlayerLevel())
+			{
+				SetHealth(GetMaxHealth());
+				SetMana(GetMaxMana());
 			}
 		}
-		// SetIncomingDamage(0.f); // prevent stacking old damage if Modifier Op is Add instead of Override
+		/*if (Props.SourceCharacter->Implements<UPlayerInterface>()) // Source == Target
+		{
+			IPlayerInterface::Execute_AddToXP(Props.SourceCharacter, LocalIncomingXP);
+		}*/
 	}
+	#pragma endregion 
 }
 
-#pragma region Primary
-void UAuraAttributeSet::OnRep_Strength(const FGameplayAttributeData& OldStrength) const
-{
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, Strength, OldStrength);
-}
-void UAuraAttributeSet::OnRep_Intelligence(const FGameplayAttributeData& OldIntelligence) const
-{
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, Intelligence, OldIntelligence);
-}
-void UAuraAttributeSet::OnRep_Resilience(const FGameplayAttributeData& OldResilience) const
-{
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, Resilience, OldResilience);
-}
-void UAuraAttributeSet::OnRep_Vigor(const FGameplayAttributeData& OldVigor) const
-{
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, Vigor, OldVigor);
-}
-#pragma endregion
 
-
+// OnRep ---------------------------------------------------------------------------------------------------------------
 #pragma region Secondary
 void UAuraAttributeSet::OnRep_Armor(const FGameplayAttributeData& OldArmor) const
 {

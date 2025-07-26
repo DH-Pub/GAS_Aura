@@ -188,9 +188,10 @@ void AAuraPlayerController::Move(const FInputActionValue& InputActionValue)
 	GetPawn()->AddMovementInput(RightDirection, InputAxisVector.X);*/
 }
 
+
 void AAuraPlayerController::AbilityInputTagPressed(FGameplayTag InputTag)
 {
-	if (InputTag.MatchesTagExact(AuraGameplayTags::Input_RMB))
+	if (InputTag.MatchesTagExact(AuraGameplayTags::Controls_Move))
 	{
 		bTargeting = CurrentActor ? true : false;
 		bAutoRunning = false;
@@ -199,7 +200,7 @@ void AAuraPlayerController::AbilityInputTagPressed(FGameplayTag InputTag)
 void AAuraPlayerController::AbilityInputTagReleased(FGameplayTag InputTag)
 {
 	if (GetASC()) AbilitySystemComponent->AbilityInputTagReleased(InputTag);
-	if (!InputTag.MatchesTagExact(AuraGameplayTags::Input_RMB) || bTargeting)
+	if (!InputTag.MatchesTagExact(AuraGameplayTags::Controls_Move) || bTargeting)
 	{
 		if (GetASC()) AbilitySystemComponent->AbilityInputTagReleased(InputTag);
 	}
@@ -216,7 +217,7 @@ void AAuraPlayerController::AbilityInputTagReleased(FGameplayTag InputTag)
 				if (NavPath && !NavPath->PathPoints.IsEmpty())
 				{
 					Spline->ClearSplinePoints();
-					for (int i = 0; i < NavPath->PathPoints.Num(); i++)
+					for (int32 i = 0; i < NavPath->PathPoints.Num(); i++)
 					{
 						FVector Position = Spline->GetComponentTransform().InverseTransformPosition(NavPath->PathPoints[i]);
 						FSplinePoint SplinePoint(i, Position, ESplinePointType::Linear);
@@ -235,12 +236,15 @@ void AAuraPlayerController::AbilityInputTagReleased(FGameplayTag InputTag)
 		bTargeting = false;
 	}
 }
-
-void AAuraPlayerController::AbilityInputTagHeld(FGameplayTag InputTag)
+void AAuraPlayerController::AbilityInputTagHeld(const FGameplayTag InputTag)
 {
-	if (!InputTag.MatchesTagExact(AuraGameplayTags::Input_RMB) || bTargeting || bShiftKeyDown)
+	if (!InputTag.MatchesTagExact(AuraGameplayTags::Controls_Move) || bTargeting || bShiftKeyDown)
 	{
-		if (GetASC()) AbilitySystemComponent->AbilityInputTagHeld(InputTag);
+		// Call AbilitySystemComponent
+		if (GetASC())
+		{
+			AbilitySystemComponent->AbilityInputTagHeld(InputTag);
+		}
 	}
 	else if (!bTargeting)
 	{
@@ -259,10 +263,13 @@ void AAuraPlayerController::AbilityInputTagHeld(FGameplayTag InputTag)
 	}
 }
 
+
 UAuraAbilitySystemComponent* AAuraPlayerController::GetASC()
 {
 	if (AbilitySystemComponent == nullptr)
 	{
+		APawn* PlayerPawn = GetPawn();
+		UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(PlayerPawn);
 		AbilitySystemComponent = Cast<UAuraAbilitySystemComponent>(UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(GetPawn()));
 	}
 	return AbilitySystemComponent;

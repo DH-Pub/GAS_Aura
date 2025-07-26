@@ -8,6 +8,8 @@
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "AuraAbilitySystemLibrary.generated.h"
 
+struct FAuraGameplayEffectContext;
+struct FInstancedStruct;
 struct FGameplayEffectContextHandle;
 class UAuraUserWidget;
 class UAuraWorldUserWidget;
@@ -36,6 +38,9 @@ public:
 	UFUNCTION(BlueprintCallable, meta=(DefaultToSelf="WorldContextObject"), Category = "AuraAbilitySystemLibrary|CharacterClassDefaults")
 	static void GiveStartupAbilities(const UObject* WorldContextObject, UAbilitySystemComponent* ASC, ECharacterClass CharacterClass = ECharacterClass::DefaultClass);
 
+	UFUNCTION(BlueprintPure, meta=(DefaultToSelf="WorldContextObject"), Category = "AuraAbilitySystemLibrary|XP")
+	static int32 GetXPRewardForClassAndLevel(const UObject* WorldContextObject, ECharacterClass CharacterClass, int32 CharacterLevel);
+	
 #pragma region ActorFunctions
 	/**
 	 * Add widget to OverlayWidget -> Canvas -> Overlay_Game
@@ -64,7 +69,9 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, meta=(DefaultToSelf="WorldContextObject"), Category="AuraAbilitySystemLibrary|UI")
 	static UCharacterClassDataAsset* GetCharacterClassDataAsset(const UObject* WorldContextObject);
-	
+
+
+// FAuraGameplayEffectContext ========================================================================================================
 #pragma region Damage
 	UFUNCTION(BlueprintPure, Category="AuraAbilitySystemLibrary|GameplayEffects")
 	static bool IsBlocked(const FGameplayEffectContextHandle& EffectContextHandle);
@@ -86,11 +93,10 @@ public:
 	static void SetIsShowDamageOnTarget(UPARAM(ref) FGameplayEffectContextHandle& EffectContext, bool bShowDamageOnTarget);
 #pragma endregion
 
-	
-#pragma region GameplayCue
+#pragma region InstancedStruct
 	UFUNCTION(BlueprintPure, Category="AuraAbilitySystemLibrary|Cue")
-	static TArray<FVector_NetQuantize> GetCueLocations(const FGameplayEffectContextHandle& EffectContextHandle);
+	static FInstancedStruct GetInstancedStruct(const FGameplayEffectContextHandle& EffectContextHandle);
 	UFUNCTION(BlueprintCallable, Category="AuraAbilitySystemLibrary|Cue")
-	static void SetCueLocations(UPARAM(ref) FGameplayEffectContextHandle& EffectContextHandle, TArray<FVector_NetQuantize> InLocations);
+	static void SetInstancedStruct(UPARAM(ref) FGameplayEffectContextHandle& EffectContextHandle, const FInstancedStruct& InStruct);
 #pragma endregion
 };

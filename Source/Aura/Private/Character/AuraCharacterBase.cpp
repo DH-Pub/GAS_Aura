@@ -7,6 +7,8 @@
 #include "AbilitySystemComponent.h"
 #include "AuraGameplayTags.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
+#include "AbilitySystem/AuraAbilitySystemLibrary.h"
+#include "AbilitySystem/Abilities/AuraGameplayAbility.h"
 #include "Aura/Aura.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
@@ -29,6 +31,8 @@ AAuraCharacterBase::AAuraCharacterBase()
 	Weapon = CreateDefaultSubobject<USkeletalMeshComponent>("Weapon");
 	Weapon->SetupAttachment(GetMesh(), FName("WeaponHandSocket"));
 	Weapon->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Weapon->SetCollisionObjectType(ECC_PhysicsBody);
+	Weapon->SetCollisionResponseToAllChannels(ECR_Ignore);
 
 	// GetCharacterMovement()->bUseControllerDesiredRotation = true;
 	GetCharacterMovement()->bOrientRotationToMovement = true;
@@ -41,11 +45,23 @@ AAuraCharacterBase::AAuraCharacterBase()
 	bUseControllerRotationPitch = bUseControllerRotationRoll = bUseControllerRotationYaw = false;
 }
 
-void AAuraCharacterBase::Die()
+void AAuraCharacterBase::Tick(float DeltaSeconds)
 {
-	OnDeathDelegate.Broadcast();
-	MulticastHandleDeath();
+	Super::Tick(DeltaSeconds);
+	if (CombatTarget) TargetLocation = CombatTarget->GetActorLocation();
+	if (bTracking)
+	{
+		TEnumAsByte<EOutcome> Outcome = Failure;
+		UAuraAbilitySystemLibrary::YawActorToLocation(Outcome, this, TargetLocation, DeltaSeconds,
+			GetCharacterMovement()->RotationRate.Yaw * 2);
+		// const FRotator ResultRot = UKismetMathLibrary::RInterpTo_Constant(
+		// 	GetCapsuleComponent()->GetComponentRotation(),
+		// 	UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), CombatTarget->GetActorLocation()),
+		// 	DeltaSeconds, GetCharacterMovement()->RotationRate.Yaw * 2);
+		// GetCapsuleComponent()->SetWorldRotation(ResultRot);
+	}
 }
+
 void AAuraCharacterBase::MulticastHandleDeath_Implementation()
 {
 	if (Weapon->GetSkeletalMeshAsset())
@@ -54,6 +70,7 @@ void AAuraCharacterBase::MulticastHandleDeath_Implementation()
 		Weapon->SetSimulatePhysics(true);
 		Weapon->SetEnableGravity(true);
 		Weapon->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
+		Weapon->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
 	}
 	GetMesh()->SetSimulatePhysics(true);
 	GetMesh()->SetEnableGravity(true);
@@ -79,8 +96,8 @@ void AAuraCharacterBase::ShowDamageNumber_Implementation(const AController* Sour
 		DmgTxt->SetWorldLocation(GetActorLocation());
 		DmgTxt->BP_SetDamageText(Damage);
 	}*/
-	const APlayerController* LocalPlayerController = GEngine->GetFirstLocalPlayerController(GetWorld());
-	// if (LocalPlayerController && LocalPlayerController == SourceController)// check if damage dealer is the local player
+	/*const APlayerController* LocalPlayerController = GEngine->GetFirstLocalPlayerController(GetWorld());
+	if (LocalPlayerController && LocalPlayerController == SourceController)// check if damage dealer is the local player*/
 	{
 		BP_ShowDamageNumber(HitLocation, Damage, bBlocked, bCrit);
 	}
@@ -99,21 +116,13 @@ FTaggedMontage AAuraCharacterBase::GetRandomAttackMontage_Implementation()
 FVector AAuraCharacterBase::GetCombatSocketLocation_Implementation(const FGameplayTag& MontageTag)
 {
 	if (IsValid(Weapon->GetSkeletalMeshAsset()) && MontageTag.MatchesTagExact(AuraGameplayTags::CombatSocket_Weapon))
-	{
-		return Weapon->GetSocketLocation("Attack_Socket");
-	}
+	{return Weapon->GetSocketLocation("Attack_Socket");}
 	if (MontageTag.MatchesTagExact(AuraGameplayTags::CombatSocket_LeftHand))
-	{
-		return GetMesh()->GetSocketLocation("Hand_L_Socket");
-	}
+	{return GetMesh()->GetSocketLocation("Hand_L_Socket");}
 	if (MontageTag.MatchesTagExact(AuraGameplayTags::CombatSocket_RightHand))
-	{
-		return GetMesh()->GetSocketLocation("Hand_R_Socket");
-	}
+	{return GetMesh()->GetSocketLocation("Hand_R_Socket");}
 	if (MontageTag.MatchesTagExact(AuraGameplayTags::CombatSocket_Tail))
-	{
-		return GetMesh()->GetSocketLocation("Tail_Socket");
-	}
+	{return GetMesh()->GetSocketLocation("Tail_Socket");}
 	return GetActorLocation();
 }
 
@@ -126,16 +135,13 @@ FTaggedMontage AAuraCharacterBase::GetTaggedMontageByTag_Implementation(const FG
 	return FTaggedMontage();
 }
 
-int32 AAuraCharacterBase::IncrementMinionCount_Implementation(const int32 Amount)
+void AAuraCharacterBase::AddCharacterStartupAbilities() const
 {
-	return MinionCount += Amount;
-}
-
-void AAuraCharacterBase::AddCharacterAbilities() const
-{
+	if (!HasAuthority()) return;
 	UAuraAbilitySystemComponent* AuraASC = CastChecked<UAuraAbilitySystemComponent>(AbilitySystemComponent);
-	
-	if (HasAuthority()) AuraASC->AddCharacterAbilities(StartupAbilities); // Grant ability from server
+	// Grant ability from server
+	AuraASC->AddCharacterAbilities(StartupAbilities);
+	AuraASC->AddCharacterPassives(StartupPassives);
 }
 
 void AAuraCharacterBase::Dissolve()

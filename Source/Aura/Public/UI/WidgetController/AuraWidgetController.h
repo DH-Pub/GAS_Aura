@@ -6,16 +6,19 @@
 #include "AbilitySystemComponent.h"
 #include "AuraWidgetController.generated.h"
 
+class UAuraAttributeSet;
 class UAbilitySystemComponent;
-class UAttributeSet;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerStatChangedSignature, int32, NewValue);
+
+// Used to set Controller, State, ASC, AttributeSet
 USTRUCT(BlueprintType)
 struct FWidgetControllerParams
 {
 	GENERATED_BODY()
 
 	FWidgetControllerParams(){}
-	FWidgetControllerParams(APlayerController* PC, APlayerState* PS, UAbilitySystemComponent* ASC, UAttributeSet* AS)
+	FWidgetControllerParams(APlayerController* PC, APlayerState* PS, UAbilitySystemComponent* ASC, UAuraAttributeSet* AS)
 	: PlayerController(PC), PlayerState(PS), AbilitySystemComponent(ASC), AttributeSet(AS) {}
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -26,7 +29,7 @@ struct FWidgetControllerParams
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TObjectPtr<UAttributeSet> AttributeSet = nullptr;
+	TObjectPtr<UAuraAttributeSet> AttributeSet = nullptr;
 };
 
 /**
@@ -69,16 +72,14 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category="WidgetController")
 	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
 	UPROPERTY(BlueprintReadOnly, Category="WidgetController")
-	TObjectPtr<UAttributeSet> AttributeSet;
+	TObjectPtr<UAuraAttributeSet> AttributeSet;
 
+	// Bind AbilitySystemComponent's FOnGameplayAttributeValueChange to 
 	template<typename DelegateT = TBaseDynamicMulticastDelegate>
 	void BindGameplayAttributeToBroadcast(const struct FGameplayAttribute& Attribute, const DelegateT& AttributeChanged)
 	{
-		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(Attribute).AddLambda(
-			[&AttributeChanged](const FOnAttributeChangeData& Data)
-			{
-				AttributeChanged.Broadcast(Data.NewValue);
-			}
-		);
+		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(Attribute)
+		.AddLambda([&AttributeChanged](const FOnAttributeChangeData& Data)
+		{AttributeChanged.Broadcast(Data.NewValue);});
 	}
 };

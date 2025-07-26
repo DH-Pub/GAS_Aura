@@ -6,10 +6,10 @@
 #include "AttributeSet.h"
 #include "GameplayTagContainer.h"
 #include "Engine/DataAsset.h"
-#include "AttributeInfo.generated.h"
+#include "AttributeDataAsset.generated.h"
 
 USTRUCT(BlueprintType)
-struct FAuraAttributeInfo
+struct FAuraAttributeData
 {
 	GENERATED_BODY()
 
@@ -30,18 +30,18 @@ struct FAuraAttributeInfo
  * 
  */
 UCLASS()
-class AURA_API UAttributeInfo : public UDataAsset
+class AURA_API UAttributeDataAsset : public UDataAsset
 {
 	GENERATED_BODY()
 public:
-	FAuraAttributeInfo FindAttributeInfoForTag(const FGameplayTag& AttributeTag, bool bLogNotFound = false) const
-	{return AttributeInformation.FindRef(AttributeTag);}
+	FAuraAttributeData FindAttributeInfoForTag(const FGameplayTag& AttributeTag, bool bLogNotFound = false) const
+	{return AttributeDataList.FindRef(AttributeTag);}
 
 	/**
 	 * Future note: make this a TArray
 	 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(TitleProperty="{AttributeName} - {GameplayAttribute}", ForceInlineRow, GameplayTagFilter="Attributes"))
-	TMap<FGameplayTag, FAuraAttributeInfo> AttributeInformation;
+	TMap<FGameplayTag, FAuraAttributeData> AttributeDataList;
 	
 	/**
 	 * Editor

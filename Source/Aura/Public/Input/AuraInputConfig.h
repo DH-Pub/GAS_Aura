@@ -8,17 +8,17 @@
 #include "Misc/DataValidation.h"
 #include "AuraInputConfig.generated.h"
 
-// USTRUCT(BlueprintType)
-// struct FAuraInputAction
-// {
-// 	GENERATED_BODY()
-//
-// 	UPROPERTY(EditDefaultsOnly)
-// 	const class UInputAction* InputAction = nullptr;
-//
-// 	UPROPERTY(EditDefaultsOnly)
-// 	const FGameplayTag InputTag = FGameplayTag();
-// };
+USTRUCT(BlueprintType)
+struct FAuraInputAction
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditDefaultsOnly)
+	class UInputAction* InputAction = nullptr;
+	
+	UPROPERTY(EditDefaultsOnly, meta=(GameplayTagFilter="Controls"))
+	FGameplayTag InputTag = FGameplayTag();
+};
 
 class UInputAction;
 /**
@@ -29,20 +29,18 @@ class AURA_API UAuraInputConfig : public UDataAsset
 {
 	GENERATED_BODY()
 public:
-	UInputAction* FindAbilityInputActionForTag(const FGameplayTag& InputTag) const;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(ForceInlineRow, GameplayTagFilter="Input"))
-	TMap<FGameplayTag, TObjectPtr<UInputAction>> AbilityInputActions;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(GameplayTagFilter="Controls", TitleProperty="{InputTag} - {InputAction}"))
+	TArray<FAuraInputAction> AbilityInputActions;
 
-	
+
 #if WITH_EDITOR
 	virtual EDataValidationResult IsDataValid(class FDataValidationContext& Context) const override
 	{
 		EDataValidationResult Result = CombineDataValidationResults(Super::IsDataValid(Context), EDataValidationResult::Valid);
 		unsigned int i = 0;
-		for (const TTuple<FGameplayTag, TObjectPtr<UInputAction>>& Input : AbilityInputActions)
+		for (const auto& [InputAction, InputTag] : AbilityInputActions)
 		{
-			if (!Input.Key.IsValid() || Input.Value == nullptr)
+			if (InputAction == nullptr || !InputTag.IsValid())
 			{
 				Result = EDataValidationResult::Invalid;
 				const FText ErrorMsg = FText::FromString("Tag and Input are required!!!");

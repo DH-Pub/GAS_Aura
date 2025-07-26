@@ -1,14 +1,14 @@
 // Copyright Hung
 
 
-#include "AbilitySystem/Data/AttributeInfo.h"
+#include "AbilitySystem/Data/AttributeDataAsset.h"
 
 #include "AuraGameplayTags.h"
 
 #if WITH_EDITOR
-void UAttributeInfo::PopulateDataAsset()
+void UAttributeDataAsset::PopulateDataAsset()
 {
-	for (TTuple<FGameplayTag, FAuraAttributeInfo>& Info : AttributeInformation)
+	for (TTuple<FGameplayTag, FAuraAttributeData>& Info : AttributeDataList)
 	{
 		const FName TagName = Info.Key.GetTagName();
 		FString TagComment;

@@ -17,7 +17,6 @@ class UDamageTextComponent;
 class UGameplayAbility;
 class UGameplayEffect;
 class UAbilitySystemComponent;
-class UAttributeSet;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDeathSignature);
 
@@ -28,10 +27,13 @@ class AURA_API AAuraCharacterBase : public ACharacter, public IAbilitySystemInte
 
 public:
 	AAuraCharacterBase();
+	virtual void Tick(float DeltaSeconds) override;
+	
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; }
-	UAttributeSet* GetAttributeSet() const { return AttributeSet; }
+	UAuraAttributeSet* GetAttributeSet() const { return AttributeSet; }
+	
 	// Call MulticastHandleDeath(), which should be overriden
-	virtual void Die() override;
+	virtual void Die() override {OnDeathDelegate.Broadcast(); MulticastHandleDeath();}
 	// Handle Ragdoll, physics called in Die
 	UFUNCTION(NetMulticast, Reliable)
 	virtual void MulticastHandleDeath();
@@ -41,17 +43,23 @@ public:
 	 * Interface start ====================================================================================
 	 */
 #pragma region Interfaces
+	virtual ECharacterClass GetCharacterClass_Implementation() override {return CharacterClass;}
+	
+	virtual FVector GetCombatSocketLocation_Implementation(const FGameplayTag& MontageTag) override;
+	
 	virtual UAnimMontage* GetHitReactMontage_Implementation() override {return HitReactMontage;}
 	virtual FTaggedMontage GetRandomAttackMontage_Implementation() override;
-	virtual FVector GetCombatSocketLocation_Implementation(const FGameplayTag& MontageTag) override;
+	
 	virtual bool IsDead_Implementation() const override {return bIsDead;}
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="Combat")
 	bool bIsDead = false;
 	UPROPERTY(BlueprintAssignable, Category = "Combat")
 	FOnDeathSignature OnDeathDelegate;
+	
 	virtual UNiagaraSystem* GetBloodEffect_Implementation() override {return BloodEffect;}
 	virtual FTaggedMontage GetTaggedMontageByTag_Implementation(const FGameplayTag& MontageTag) override;
-	virtual int32 IncrementMinionCount_Implementation(int32 Amount = 1) override;
+	
+	virtual int32 IncrementMinionCount_Implementation(const int32 Amount = 1) override {return MinionCount += Amount;}
 #pragma endregion
 	/*
 	 * Interface end ========================================================================================
@@ -63,8 +71,12 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat")
 	TObjectPtr<AActor> CombatTarget;
+
 	UPROPERTY(BlueprintReadWrite, Category="Combat")
-	bool bTracking = false;
+	FVector TargetLocation = FVector();
+	UPROPERTY(BlueprintReadWrite, Category="Combat")
+	bool bTracking = false; // Facing Target
+	
 	UPROPERTY()
 	int32 MinionCount = 0;
 	
@@ -83,14 +95,14 @@ protected:
 	TObjectPtr<USkeletalMeshComponent> Weapon;
 
 	UPROPERTY()
-	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
+	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;// AvatarActor: Character, Owner: PlayerState (Player) / Character (AI)
 	UPROPERTY()
-	TObjectPtr<UAttributeSet> AttributeSet;
+	TObjectPtr<UAuraAttributeSet> AttributeSet;
 	// ASC->InitAbility and Set
 	virtual void InitAbilityActorInfo() {}
 	
 	// Add startup abilities (from server)
-	void AddCharacterAbilities() const;
+	void AddCharacterStartupAbilities() const;
 
 	// Dissolve Effects
 	void Dissolve();
@@ -111,6 +123,8 @@ protected:
 private:
 	UPROPERTY(EditAnywhere, Category="GameplayAbility|Abilities")
 	TArray<TSubclassOf<UGameplayAbility>> StartupAbilities;
+	UPROPERTY(EditAnywhere, Category="GameplayAbility|Abilities")
+	TArray<TSubclassOf<UGameplayAbility>> StartupPassives;
 
 	UPROPERTY(EditDefaultsOnly, Category="Combat")
 	TObjectPtr<UAnimMontage> HitReactMontage;
