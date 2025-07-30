@@ -17,7 +17,7 @@ UAttributeMenuWidgetController* AAuraHUD::CreateOrGetAttributeMenuWC(const FWidg
 		this, AttributeMenuWidgetController, AttributeMenuWidgetControllerClass, WCParams);
 }
 
-void AAuraHUD::InitOverlay(APlayerController* PC, APlayerState* PS, UAbilitySystemComponent* ASC, UAuraAttributeSet* AS)
+void AAuraHUD::InitOverlay(APlayerController* PC, APlayerState* PS, UAuraAbilitySystemComponent* ASC, UAuraAttributeSet* AS)
 {
 	checkf(OverlayWidgetClass, TEXT("Overlay Widget Class uninitialized, please fill out in BP_AuraHUD"));
 

@@ -5,10 +5,11 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "AbilitySystemInterface.h"
-#include "AbilitySystem/Data/CharacterClassDataAsset.h"
 #include "Interaction/CombatInterface.h"
 #include "AuraCharacterBase.generated.h"
 
+enum class ECharacterClass : uint8;
+class UAuraAbilitySystemComponent;
 class UNiagaraSystem;
 class UAuraWorldUserWidget;
 struct FGameplayAttribute;
@@ -20,6 +21,10 @@ class UAbilitySystemComponent;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDeathSignature);
 
+/**
+ * UAbilitySystemGlobals::GetAbilitySystemComponentFromActor checks for IAbilitySystemInterface
+ * 
+ */
 UCLASS(Abstract)
 class AURA_API AAuraCharacterBase : public ACharacter, public IAbilitySystemInterface, public ICombatInterface
 {
@@ -28,8 +33,8 @@ class AURA_API AAuraCharacterBase : public ACharacter, public IAbilitySystemInte
 public:
 	AAuraCharacterBase();
 	virtual void Tick(float DeltaSeconds) override;
-	
-	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; }
+
+	UAuraAbilitySystemComponent* GetAuraAbilitySystemComponent() const {return AbilitySystemComponent;}
 	UAuraAttributeSet* GetAttributeSet() const { return AttributeSet; }
 	
 	// Call MulticastHandleDeath(), which should be overriden
@@ -43,6 +48,10 @@ public:
 	 * Interface start ====================================================================================
 	 */
 #pragma region Interfaces
+	// IAbilitySystemInterface
+	// Define in .cpp or we need to #include "AbilitySystem/AuraAbilitySystemComponent.h" in this file
+	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+	
 	virtual ECharacterClass GetCharacterClass_Implementation() override {return CharacterClass;}
 	
 	virtual FVector GetCombatSocketLocation_Implementation(const FGameplayTag& MontageTag) override;
@@ -67,7 +76,7 @@ public:
 
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Character Class Defaults")
-	ECharacterClass CharacterClass = ECharacterClass::DefaultClass;
+	ECharacterClass CharacterClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat")
 	TObjectPtr<AActor> CombatTarget;
@@ -75,7 +84,7 @@ public:
 	UPROPERTY(BlueprintReadWrite, Category="Combat")
 	FVector TargetLocation = FVector();
 	UPROPERTY(BlueprintReadWrite, Category="Combat")
-	bool bTracking = false; // Facing Target
+	bool bTracking = false; // true if Facing Target
 	
 	UPROPERTY()
 	int32 MinionCount = 0;
@@ -95,7 +104,7 @@ protected:
 	TObjectPtr<USkeletalMeshComponent> Weapon;
 
 	UPROPERTY()
-	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;// AvatarActor: Character, Owner: PlayerState (Player) / Character (AI)
+	TObjectPtr<UAuraAbilitySystemComponent> AbilitySystemComponent;// AvatarActor: Character, Owner: PlayerState (Player) / Character (AI)
 	UPROPERTY()
 	TObjectPtr<UAuraAttributeSet> AttributeSet;
 	// ASC->InitAbility and Set

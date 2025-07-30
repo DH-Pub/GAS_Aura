@@ -46,9 +46,8 @@ public:
 	UPROPERTY(EditDefaultsOnly, meta=(ClampMin=0.f, UIMax= 360.f, Delta=1.f), Category="Summoning")
 	float SpawnSpread = 120.f;
 	
-	UFUNCTION(BlueprintCallable, meta=(ExpandEnumAsExecs="Outcome"))
-	static void InstancedStructToSummonInfo(TEnumAsByte<EOutcome>& Outcome, const FInstancedStruct& InstancedStruct,
-		TArray<FVector_NetQuantize>& Locations);
+	UFUNCTION(BlueprintCallable, meta=(ExpandBoolAsExecs = "ReturnValue"))
+	static bool InstancedStructToSummonInfo(const FInstancedStruct& InstancedStruct, TArray<FVector_NetQuantize>& Locations);
 
 protected:
 	virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,

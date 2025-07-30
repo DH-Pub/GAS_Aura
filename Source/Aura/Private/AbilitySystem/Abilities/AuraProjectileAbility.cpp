@@ -25,7 +25,8 @@ void UAuraProjectileAbility::SpawnProjectile(const FVector& ProjectileTargetLoca
 {
 	if (!AvatarActor->HasAuthority()) return; // GetCurrentActivationInfo()
 	if (!AvatarActor->Implements<UCombatInterface>()) return;
-	FVector SpawnLocation = bStartFromCharacter ? AvatarActor->GetActorLocation() + AvatarActor->GetActorForwardVector() * SpawnDistance
+	FVector SpawnLocation = bStartFromCharacter ?
+		AvatarActor->GetActorLocation() + AvatarActor->GetActorForwardVector() * SpawnDistance
 		: ICombatInterface::Execute_GetCombatSocketLocation(AvatarActor, SocketTag);
 
 	// stop projectile from hitting the floor on spawned

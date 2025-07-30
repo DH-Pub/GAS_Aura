@@ -3,7 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "NativeGameplayTags.h"
 
 constexpr int32 GCustom_Depth_Red{250};
 

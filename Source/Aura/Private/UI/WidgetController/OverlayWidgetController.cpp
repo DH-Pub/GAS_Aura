@@ -12,23 +12,20 @@
 
 void UOverlayWidgetController::BindCallbacksDependencies()
 {
-	const UAuraAttributeSet* AuraAttributeSet = CastChecked<UAuraAttributeSet>(AttributeSet);
-
-	BindGameplayAttributeToBroadcast(AuraAttributeSet->GetHealthAttribute(), OnHealthChanged);
-	BindGameplayAttributeToBroadcast(AuraAttributeSet->GetMaxHealthAttribute(), OnMaxHealthChanged);
-	BindGameplayAttributeToBroadcast(AuraAttributeSet->GetManaAttribute(), OnManaChanged);
-	BindGameplayAttributeToBroadcast(AuraAttributeSet->GetMaxManaAttribute(), OnMaxManaChanged);
+	BindGameplayAttributeToBroadcast(AttributeSet->GetHealthAttribute(), OnHealthChanged);
+	BindGameplayAttributeToBroadcast(AttributeSet->GetMaxHealthAttribute(), OnMaxHealthChanged);
+	BindGameplayAttributeToBroadcast(AttributeSet->GetManaAttribute(), OnManaChanged);
+	BindGameplayAttributeToBroadcast(AttributeSet->GetMaxManaAttribute(), OnMaxManaChanged);
 
 	AAuraPlayerState* AuraPS = Cast<AAuraPlayerState>(PlayerState);
 	AuraPS->OnXPChangedDelegate.AddUObject(this, &UOverlayWidgetController::BroadcastXPToUI);
 	
-	UAuraAbilitySystemComponent* AuraASC = Cast<UAuraAbilitySystemComponent>(AbilitySystemComponent);
-	if (!AuraASC->OnGiveAbilityDelegate.IsBound())
+	if (!AbilitySystemComponent->OnGiveAbilityDelegate.IsBound())
 	{
-		AuraASC->OnGiveAbilityDelegate.AddUObject(this, &UOverlayWidgetController::BroadcastGivenAbility);
+		AbilitySystemComponent->OnGiveAbilityDelegate.AddUObject(this, &UOverlayWidgetController::BroadcastGivenAbility);
 	}
 	// Receive broadcast from AuraAbilitySystemComponent
-	AuraASC->EffectAssetTags.AddLambda([this](const FGameplayTagContainer& AssetTags)
+	AbilitySystemComponent->EffectAssetTags.AddLambda([this](const FGameplayTagContainer& AssetTags)
 	{
 		for (const FGameplayTag Tag : AssetTags)
 		{
@@ -44,11 +41,10 @@ void UOverlayWidgetController::BindCallbacksDependencies()
 
 void UOverlayWidgetController::BroadcastInitialValues()
 {
-	const UAuraAttributeSet* AuraAttributeSet = CastChecked<UAuraAttributeSet>(AttributeSet);
-	OnHealthChanged.Broadcast(AuraAttributeSet->GetHealth());
-	OnMaxHealthChanged.Broadcast(AuraAttributeSet->GetMaxHealth());
-	OnManaChanged.Broadcast(AuraAttributeSet->GetMana());
-	OnMaxManaChanged.Broadcast(AuraAttributeSet->GetMaxMana());
+	OnHealthChanged.Broadcast(AttributeSet->GetHealth());
+	OnMaxHealthChanged.Broadcast(AttributeSet->GetMaxHealth());
+	OnManaChanged.Broadcast(AttributeSet->GetMana());
+	OnMaxManaChanged.Broadcast(AttributeSet->GetMaxMana());
 
 	// if AddCharacterStartupAbilities is called on the server before InitAbilityActorInfo on client
 	for (const auto& AbilitySpec : AbilitySystemComponent->GetActivatableAbilities())

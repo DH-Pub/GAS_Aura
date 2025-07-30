@@ -31,8 +31,6 @@ public:
 	TObjectPtr<class UNiagaraComponent> LevelUpNiagaraComponent;
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastLevelUpEffects(int32 Level);
-	UFUNCTION(BlueprintImplementableEvent, Category="Combat")
-	void BP_LevelUpEffects(int32 Level);
 protected:
 	virtual void BeginPlay() override;
 	virtual void InitAbilityActorInfo() override;

@@ -4,11 +4,9 @@
 #include "Character/AuraCharacterBase.h"
 
 #include "Components/CapsuleComponent.h"
-#include "AbilitySystemComponent.h"
 #include "AuraGameplayTags.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
-#include "AbilitySystem/Abilities/AuraGameplayAbility.h"
 #include "Aura/Aura.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
@@ -29,7 +27,7 @@ AAuraCharacterBase::AAuraCharacterBase()
 	GetMesh()->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
 	
 	Weapon = CreateDefaultSubobject<USkeletalMeshComponent>("Weapon");
-	Weapon->SetupAttachment(GetMesh(), FName("WeaponHandSocket"));
+	Weapon->SetupAttachment(GetMesh(), FName(TEXT("WeaponHandSocket")));
 	Weapon->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	Weapon->SetCollisionObjectType(ECC_PhysicsBody);
 	Weapon->SetCollisionResponseToAllChannels(ECR_Ignore);
@@ -51,16 +49,12 @@ void AAuraCharacterBase::Tick(float DeltaSeconds)
 	if (CombatTarget) TargetLocation = CombatTarget->GetActorLocation();
 	if (bTracking)
 	{
-		TEnumAsByte<EOutcome> Outcome = Failure;
-		UAuraAbilitySystemLibrary::YawActorToLocation(Outcome, this, TargetLocation, DeltaSeconds,
+		UAuraAbilitySystemLibrary::YawActorToLocation(this, TargetLocation, DeltaSeconds,
 			GetCharacterMovement()->RotationRate.Yaw * 2);
-		// const FRotator ResultRot = UKismetMathLibrary::RInterpTo_Constant(
-		// 	GetCapsuleComponent()->GetComponentRotation(),
-		// 	UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), CombatTarget->GetActorLocation()),
-		// 	DeltaSeconds, GetCharacterMovement()->RotationRate.Yaw * 2);
-		// GetCapsuleComponent()->SetWorldRotation(ResultRot);
 	}
 }
+
+UAbilitySystemComponent* AAuraCharacterBase::GetAbilitySystemComponent() const { return AbilitySystemComponent; }
 
 void AAuraCharacterBase::MulticastHandleDeath_Implementation()
 {
@@ -138,10 +132,9 @@ FTaggedMontage AAuraCharacterBase::GetTaggedMontageByTag_Implementation(const FG
 void AAuraCharacterBase::AddCharacterStartupAbilities() const
 {
 	if (!HasAuthority()) return;
-	UAuraAbilitySystemComponent* AuraASC = CastChecked<UAuraAbilitySystemComponent>(AbilitySystemComponent);
 	// Grant ability from server
-	AuraASC->AddCharacterAbilities(StartupAbilities);
-	AuraASC->AddCharacterPassives(StartupPassives);
+	AbilitySystemComponent->AddCharacterAbilities(StartupAbilities);
+	AbilitySystemComponent->AddCharacterPassives(StartupPassives);
 }
 
 void AAuraCharacterBase::Dissolve()

@@ -30,6 +30,8 @@ void AAuraPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(AAuraPlayerState, SpellPoints);
 }
 
+UAbilitySystemComponent* AAuraPlayerState::GetAbilitySystemComponent() const {return AbilitySystemComponent;}
+
 void AAuraPlayerState::SetXP(const int32 NewXP)
 {
 	checkf(LevelUpDataAsset, TEXT("Unable to find LevelUpData. Please fill out AuraPlayerState"));
@@ -43,7 +45,8 @@ void AAuraPlayerState::SetXP(const int32 NewXP)
 			Character->MulticastLevelUpEffects(Level);
 		}
 		const FAuraLevelUpData& LevelUpData = LevelUpDataAsset->LevelUpDataList[Level];
-		// TODO Add rewards
+		AddToAttributePoints(LevelUpData.AttributePointsGain);
+		AddToSpellPoints(LevelUpData.SpellPointsGain);
 	}
 	OnXPChangedDelegate.Broadcast(XP, Level, LevelUpDataAsset);
 }

@@ -56,6 +56,22 @@ void UAuraAttributeSet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, IncomingXP, COND_None, REPNOTIFY_Always)
 }
 
+void UAuraAttributeSet::PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue)
+{
+	Super::PreAttributeChange(Attribute, NewValue);
+	
+	if (Attribute == GetMaxHealthAttribute())
+	{
+		const float CurrentHealthPercent = GetHealth()/GetMaxHealth();
+		SetHealth(CurrentHealthPercent * NewValue);
+	}
+	else if (Attribute == GetMaxManaAttribute())
+	{
+		const float CurrentManaPercent = GetMana()/GetMaxMana();
+		SetMana(CurrentManaPercent * NewValue);
+	}
+}
+
 // Each Attribute has BaseValue and CurrentValue
 // PreAttributeBaseChange can affect the BaseValue, which affects CurrentValue
 // PreAttributeChange can only affect CurrentValue
@@ -143,7 +159,7 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 				// GA_ListenForEvent waits to receive
 				UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(Props.SourceCharacter, Payload.EventTag, Payload); // For last hit player
 
-				Payload.EventMagnitude *= .5f;
+				Payload.EventMagnitude *= .5f; // For allies
 				AAuraGameModeBase* GameMode = Cast<AAuraGameModeBase>(GetWorld()->GetAuthGameMode());
 				for (AAuraPlayerController* Controller : GameMode->PlayerControllers)
 				{
@@ -182,8 +198,8 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 			AuraAS->AddToXP(LocalIncomingXP);
 			if (OldLevel < AuraAS->GetPlayerLevel())
 			{
-				SetHealth(GetMaxHealth());
-				SetMana(GetMaxMana());
+				bTopOfHealth = true;
+				bTopOfMana = true;
 			}
 		}
 		/*if (Props.SourceCharacter->Implements<UPlayerInterface>()) // Source == Target
@@ -192,6 +208,21 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 		}*/
 	}
 	#pragma endregion 
+}
+
+void UAuraAttributeSet::PostAttributeChange(const FGameplayAttribute& Attribute, float OldValue, float NewValue)
+{
+	Super::PostAttributeChange(Attribute, OldValue, NewValue);
+	if (Attribute == GetMaxHealthAttribute() && bTopOfHealth)
+	{
+		SetHealth(GetMaxHealth());
+		bTopOfHealth = false;
+	}
+	else if (Attribute == GetMaxManaAttribute() && bTopOfMana)
+	{
+		SetMana(GetMaxMana());
+		bTopOfMana = false;
+	}
 }
 
 

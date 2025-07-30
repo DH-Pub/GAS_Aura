@@ -6,10 +6,37 @@
 #include "AbilitySystemComponent.h"
 #include "AuraAbilitySystemComponent.generated.h"
 
+struct FUpgradeAllocation;
+class AAuraPlayerState;
 class UAuraAbilitySystemComponent;
 
+/**
+ * Used by AttributeMenuWidgetController
+ * Placed inside AbilitySystemComponent to avoid circular dependencies
+ * Because AuraWidgetController does #include "AbilitySystem/AuraAbilitySystemComponent.h"  
+ */
+USTRUCT(BlueprintType)
+struct FPointAllocation
+{
+	GENERATED_BODY()
+	
+	FPointAllocation() {}
+	FPointAllocation(FGameplayTag Tag, int32 Points) : AttributeTag(Tag), AddedPoints(Points) {}
+	
+	UPROPERTY(BlueprintReadOnly, meta=(GameplayTagFilter="Attributes"))
+	FGameplayTag AttributeTag;
+	UPROPERTY(BlueprintReadOnly)
+	int32 AddedPoints = 0;
+
+	// This is so that TArray functions works RemoveSingleSwap, Find, ...
+	bool operator==(const FPointAllocation& Other) const
+	{
+		return (AttributeTag == Other.AttributeTag
+			&& AddedPoints == Other.AddedPoints);
+	}
+};
+
 DECLARE_MULTICAST_DELEGATE_OneParam(FEffectAssetTags, const FGameplayTagContainer& /* AssetTags */);
-DECLARE_MULTICAST_DELEGATE_OneParam(FAbilityGiven, UAuraAbilitySystemComponent*);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnGiveAbilitySignature, const FGameplayAbilitySpec&);
 /**
  * 
@@ -20,12 +47,12 @@ class AURA_API UAuraAbilitySystemComponent : public UAbilitySystemComponent
 	GENERATED_BODY()
 public:
 	void AbilityActorInfoSet();
-	FEffectAssetTags EffectAssetTags;
+	
+	FEffectAssetTags EffectAssetTags; // Convert OnGameplayEffectAppliedDelegateToSelf to Client RPC
 	
 	void AddCharacterAbilities(const TArray<TSubclassOf<UGameplayAbility>>& StartupAbilities); // Add Startup Abilities in PossessedBy
 	void AddCharacterPassives(const TArray<TSubclassOf<UGameplayAbility>>& StartupPassives); // Add Startup Passives
 	
-	FAbilityGiven AbilitiesGivenDelegate;
 	FOnGiveAbilitySignature OnGiveAbilityDelegate;
 	
 	void AbilityInputTagReleased(const FGameplayTag& InputTag);
@@ -35,11 +62,18 @@ public:
 	void ReduceCooldownByTag(const FGameplayTagContainer& TagContainer, const float Amount = 0.f, const float Percent = 0.f);
 	/*UFUNCTION(BlueprintCallable)
 	float ReduceCooldownDuration(const FGameplayTagContainer& TagContainer, const float Amount = 0.f, const float Percent = 0.f);*/
+	
+	void UpgradeAttribute(const TArray<FPointAllocation>& PointsAllocated);
+	UFUNCTION(Server, Reliable)
+	void ServerUpgradeAttribute(const TArray<FPointAllocation>& PointsAllocated, AAuraPlayerState* AuraPS); // apply upgrade from server
+	UFUNCTION(Client, Reliable)
+	void ClientFinishUpgrade(const AAuraPlayerState* AuraPS); // Called in Server RPC to broadcast back to client
 protected:
 	virtual void OnRep_ActivateAbilities() override;
 	virtual void OnGiveAbility(FGameplayAbilitySpec& AbilitySpec) override;
 	virtual void OnRemoveAbility(FGameplayAbilitySpec& AbilitySpec) override;
 	
     UFUNCTION(Client, Unreliable) // Remote Procedure Calls (RPCs)
-	void ClientEffectApplied(UAbilitySystemComponent* AbilitySystemComponent, const FGameplayEffectSpec& EffectSpec, FActiveGameplayEffectHandle ActiveGameplayEffectHandle);
+	void ClientEffectApplied(UAbilitySystemComponent* AbilitySystemComponent, const FGameplayEffectSpec& EffectSpec,
+		FActiveGameplayEffectHandle ActiveGameplayEffectHandle);
 };

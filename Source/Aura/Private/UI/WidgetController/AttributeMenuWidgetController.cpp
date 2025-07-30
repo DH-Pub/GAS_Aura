@@ -3,6 +3,7 @@
 
 #include "UI/WidgetController/AttributeMenuWidgetController.h"
 
+#include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "AbilitySystem/Data/AttributeDataAsset.h"
 #include "Player/AuraPlayerState.h"
@@ -23,11 +24,18 @@ void UAttributeMenuWidgetController::BindCallbacksDependencies()
 	AAuraPlayerState* PS = CastChecked<AAuraPlayerState>(PlayerState);
 	PS->OnAttributePointsChangedDelegate.AddLambda([this](const int32 Points)
 	{
-		AttributePointsToUIDelegate.Broadcast(Points);
+		AttributePoints = Points;
+		AttributePointsToUIDelegate.Broadcast(AttributePoints - GetTotalPointsAllocating());
 	});
 	PS->OnSpellPointsChangedDelegate.AddLambda([this](const int32 Points)
 	{
 		SpellPointsToUIDelegate.Broadcast(Points);
+	});
+	
+	PS->OnApplyingStatFinishedDelegate.AddLambda([this]()
+	{
+		bIsApplying = false;
+		BroadcastInitialValues();
 	});
 }
 
@@ -44,6 +52,64 @@ void UAttributeMenuWidgetController::BroadcastInitialValues()
 	}
 	
 	AAuraPlayerState* PS = CastChecked<AAuraPlayerState>(PlayerState);
-	AttributePointsToUIDelegate.Broadcast(PS->GetAttributePoints());
+
+	AttributePoints = PS->GetAttributePoints();
+	PointAllocationList.Empty();
+	AttributePointsToUIDelegate.Broadcast(AttributePoints - GetTotalPointsAllocating());
+	
 	SpellPointsToUIDelegate.Broadcast(PS->GetSpellPoints());
+}
+
+int32& UAttributeMenuWidgetController::FindPointAllocationByTag(const FGameplayTag& Tag, bool& bFound)
+{
+	for (auto& [AttributeTag, AddedPoints] : PointAllocationList)
+	{
+		if (Tag.MatchesTagExact(AttributeTag))
+		{
+			bFound = true;
+			return AddedPoints;
+		}
+	}
+	bFound = false;
+	return ZeroInteger;
+}
+
+int32 UAttributeMenuWidgetController::GetTotalPointsAllocating()
+{
+	int32 TotalPoints = 0;
+	for (const auto& [AttributeTag, AddedPoints] : PointAllocationList)
+	{
+		TotalPoints += AddedPoints;
+	}
+	return TotalPoints;
+}
+
+void UAttributeMenuWidgetController::ApplyUpgrades()
+{
+	bIsApplying = true;
+	CastChecked<UAuraAbilitySystemComponent>(AbilitySystemComponent)->UpgradeAttribute(PointAllocationList);
+}
+
+void UAttributeMenuWidgetController::AllocatePointToAttribute(const FGameplayTag& AttributeTag, const int32 Points)
+{
+	if (Points == 0) return;
+	bool bFound = false;
+	int32& AttributeAllocation = FindPointAllocationByTag(AttributeTag, bFound);
+	if (bFound)
+	{
+		const int32 PointsAboutToUse = GetTotalPointsAllocating() + Points;
+		if (PointsAboutToUse < 0 || PointsAboutToUse > AttributePoints) return; // Invalid Points
+		AttributeAllocation += Points;
+		if (AttributeAllocation == 0) // Remove from array if 0
+		{
+			PointAllocationList.RemoveSingleSwap(FPointAllocation(AttributeTag, 0));
+		}
+		AttributePointsToUIDelegate.Broadcast(AttributePoints - PointsAboutToUse);
+	}
+	else
+	{
+		if (Points < 0 || Points > AttributePoints) return;
+		PointAllocationList.Add(FPointAllocation(AttributeTag, Points));
+		AttributePointsToUIDelegate.Broadcast(AttributePoints - GetTotalPointsAllocating());
+	}
 }

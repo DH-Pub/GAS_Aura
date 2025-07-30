@@ -3,14 +3,15 @@
 
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 
-#include "AuraGameplayTags.h"
+#include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystem/Abilities/AuraGameplayAbility.h"
-#include "Aura/AuraLogChannels.h"
-#include "Character/AuraCharacterBase.h"
+#include "Character/AuraCharacter.h"
+#include "Player/AuraPlayerState.h"
+#include "UI/WidgetController/AttributeMenuWidgetController.h"
 
 void UAuraAbilitySystemComponent::AbilityActorInfoSet()
 {
-	// OnGameplayEffectAppliedDelegateToSelf only called on server -> UFUNCTION(Client, Reliable)
+	// This is only called on server -> needs to convert to UFUNCTION(Client, Reliable)
 	OnGameplayEffectAppliedDelegateToSelf.AddUObject(this, &UAuraAbilitySystemComponent::ClientEffectApplied);
 }
 void UAuraAbilitySystemComponent::ClientEffectApplied_Implementation(UAbilitySystemComponent* AbilitySystemComponent,
@@ -32,7 +33,6 @@ void UAuraAbilitySystemComponent::AddCharacterAbilities(const TArray<TSubclassOf
 		{
 			AbilitySpec.GetDynamicSpecSourceTags().AddTag(AuraAbility->StartupInputTag); // Add Tag to Spec
 			GiveAbility(AbilitySpec);
-			// GiveAbilityAndActivateOnce(AbilitySpec);
 		}
 	}
 }
@@ -41,7 +41,7 @@ void UAuraAbilitySystemComponent::AddCharacterPassives(const TArray<TSubclassOf<
 	for (const TSubclassOf AbilityClass : StartupPassives)
 	{
 		FGameplayAbilitySpec AbilitySpec(AbilityClass, 1);
-		GiveAbilityAndActivateOnce(AbilitySpec);
+		GiveAbilityAndActivateOnce(AbilitySpec); // Passives need to be activated first (ex. GA_ListenForEvent with WaitGameplayEvent, ...)
 	}
 }
 #pragma endregion
@@ -102,6 +102,36 @@ void UAuraAbilitySystemComponent::ReduceCooldownByTag(const FGameplayTagContaine
 	}
 }
 
+void UAuraAbilitySystemComponent::UpgradeAttribute(const TArray<FPointAllocation>& PointsAllocated)
+{
+	if (const AAuraCharacter* Character = Cast<AAuraCharacter>(GetAvatarActor()))
+	{
+		if (AAuraPlayerState* PS = Character->GetPlayerState<AAuraPlayerState>())
+		{
+			ServerUpgradeAttribute(PointsAllocated, PS);
+		}
+	}
+}
+void UAuraAbilitySystemComponent::ServerUpgradeAttribute_Implementation(const TArray<FPointAllocation>& PointsAllocated,
+	AAuraPlayerState* AuraPS)
+{
+	for (const auto& [AttributeTag, AddedPoints] : PointsAllocated)
+	{
+		if (AddedPoints > AuraPS->GetAttributePoints() || AddedPoints < 0) return;
+		FGameplayEventData Payload;
+		Payload.EventTag = AttributeTag;
+		Payload.EventMagnitude = AddedPoints;
+		UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(GetAvatarActor(), Payload.EventTag, Payload);
+		AuraPS->AddToAttributePoints(-Payload.EventMagnitude);
+	}
+	ClientFinishUpgrade(AuraPS);
+}
+void UAuraAbilitySystemComponent::ClientFinishUpgrade_Implementation(const AAuraPlayerState* AuraPS)
+{
+	AuraPS->OnApplyingStatFinishedDelegate.Broadcast();
+}
+
+
 
 /*void UAuraAbilitySystemComponent::ForEachAbility(const FForEachAbility& Delegate)
 {
@@ -116,7 +146,7 @@ void UAuraAbilitySystemComponent::ReduceCooldownByTag(const FGameplayTagContaine
 }*/
 
 
-#pragma region On Give/Remove Ability
+#pragma region On Activate/Give/Remove Ability
 void UAuraAbilitySystemComponent::OnRep_ActivateAbilities()
 {
 	Super::OnRep_ActivateAbilities();
@@ -137,11 +167,7 @@ void UAuraAbilitySystemComponent::OnGiveAbility(FGameplayAbilitySpec& AbilitySpe
 	Super::OnGiveAbility(AbilitySpec);
 	if (const AAuraCharacterBase* Character = Cast<AAuraCharacterBase>(GetAvatarActor()))
 	{
-		if (Character->IsPlayerControlled())
-		{
-			// AbilitiesGivenDelegate.Broadcast(this);
-			OnGiveAbilityDelegate.Broadcast(AbilitySpec);
-		}
+		if (Character->IsPlayerControlled()) OnGiveAbilityDelegate.Broadcast(AbilitySpec);
 	}
 }
 void UAuraAbilitySystemComponent::OnRemoveAbility(FGameplayAbilitySpec& AbilitySpec)

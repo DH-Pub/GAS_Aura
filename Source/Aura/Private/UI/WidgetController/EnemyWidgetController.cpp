@@ -7,18 +7,12 @@
 
 void UEnemyWidgetController::BindCallbacksDependencies()
 {
-	if (const UAuraAttributeSet* AS = Cast<UAuraAttributeSet>(AttributeSet))
-	{
-		BindGameplayAttributeToBroadcast(AS->GetHealthAttribute(), OnHealthChanged);
-		BindGameplayAttributeToBroadcast(AS->GetMaxHealthAttribute(), OnMaxHealthChanged);
-	}
+	BindGameplayAttributeToBroadcast(AttributeSet->GetHealthAttribute(), OnHealthChanged);
+	BindGameplayAttributeToBroadcast(AttributeSet->GetMaxHealthAttribute(), OnMaxHealthChanged);
 }
 
 void UEnemyWidgetController::BroadcastInitialValues()
 {
-	if (const UAuraAttributeSet* AS = Cast<UAuraAttributeSet>(AttributeSet))
-	{
-		OnHealthChanged.Broadcast(AS->GetHealth());
-		OnMaxHealthChanged.Broadcast(AS->GetMaxHealth());
-	}
+	OnHealthChanged.Broadcast(AttributeSet->GetHealth());
+	OnMaxHealthChanged.Broadcast(AttributeSet->GetMaxHealth());
 }

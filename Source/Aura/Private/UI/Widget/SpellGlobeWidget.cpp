@@ -3,7 +3,6 @@
 
 #include "UI/Widget/SpellGlobeWidget.h"
 
-#include "AbilitySystem/Abilities/AuraGameplayAbility.h"
 #include "AbilitySystem/Data/AbilityDataAsset.h"
 #include "Components/Image.h"
 #include "Components/OverlaySlot.h"
@@ -39,27 +38,24 @@ void USpellGlobeWidget::NativeDestruct()
 
 void USpellGlobeWidget::WidgetControllerSet_Implementation(UAuraWidgetController* Controller)
 {
-	OverlayWC = Cast<UOverlayWidgetController>(Controller);
+	OverlayWC = Cast<UOverlayWidgetController>(Controller); check(OverlayWC);
 	WheelMaterialInstance = Image_WheelProgress->GetDynamicMaterial();
 	WheelMaterialInstance->SetScalarParameterValue(WheelPercentParam, 0.f);
 	Image_WheelProgress->SetRenderOpacity(0.f);
 }
 
-void USpellGlobeWidget::AbilityDataUpdate(TEnumAsByte<EOutcome>& Outcome, const FAuraAbilityDataAsset& InAbilityData)
+bool USpellGlobeWidget::SuccessUpdateAbilityData(const FAuraAbilityDataAsset& InAbilityData)
 {
-	Outcome = EOutcome::Failure;
-	if(InputTag.MatchesTagExact(InAbilityData.InputTag))
-	{
-		CooldownTag = InAbilityData.CooldownTag;
-		FSlateBrush ResourceImage;
-		ResourceImage.SetResourceObject(InAbilityData.Icon);
-		Image_SpellIcon->SetBrush(ResourceImage);
-		FSlateBrush BackgroundMaterial;
-		BackgroundMaterial.SetResourceObject(InAbilityData.BackgroundMaterial);
-		Image_Background->SetBrush(BackgroundMaterial);
-		
-		Outcome = EOutcome::Success;
-	}
+	if(!InputTag.MatchesTagExact(InAbilityData.InputTag)) return false;
+	
+	CooldownTag = InAbilityData.CooldownTag;
+	FSlateBrush ResourceImage;
+	ResourceImage.SetResourceObject(InAbilityData.Icon);
+	Image_SpellIcon->SetBrush(ResourceImage);
+	FSlateBrush BackgroundMaterial;
+	BackgroundMaterial.SetResourceObject(InAbilityData.BackgroundMaterial);
+	Image_Background->SetBrush(BackgroundMaterial);
+	return true;
 }
 
 void USpellGlobeWidget::UpdateCooldown(const float InTime, const float InDuration)

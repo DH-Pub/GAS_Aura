@@ -7,14 +7,15 @@
 #include "GameFramework/PlayerState.h"
 #include "AuraPlayerState.generated.h"
 
+class UAuraAbilitySystemComponent;
 struct FAuraLevelUpData;
 class UAuraAttributeSet;
-class UAuraAbilitySystemComponent;
 class ULevelUpDataAsset;
 class UAbilitySystemComponent;
 class UAttributeSet;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnPlayerStatChanged, int32 /*Static value*/)
+DECLARE_MULTICAST_DELEGATE(FOnApplyingStatFinished)
 // (Level, CurrentLevelXp, DeltaLevelReq)
 DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnXPChanged, int32 /*XP*/, int32 /*Level*/, ULevelUpDataAsset* /*Level Up Data Asset*/);
 
@@ -25,16 +26,26 @@ class AURA_API AAuraPlayerState : public APlayerState, public IAbilitySystemInte
 public:
 	AAuraPlayerState();
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; }
+	UAuraAbilitySystemComponent* GetAuraAbilitySystemComponent() const {return AbilitySystemComponent;}
 	UAuraAttributeSet* GetAttributeSet() const { return AttributeSet; }
 
+	// Interfaces ======================================================================================================
+#pragma region Interfaces
+	// IAbilitySystemInterface
+	// Define in .cpp or we need to #include "AbilitySystem/AuraAbilitySystemComponent.h" in this file
+	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+#pragma endregion
+	// End Interface ===================================================================================================
+	
 	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<ULevelUpDataAsset> LevelUpDataAsset;
 	
 	FOnPlayerStatChanged OnLevelChangedDelegate;
 	FOnXPChanged OnXPChangedDelegate;
+	
 	FOnPlayerStatChanged OnAttributePointsChangedDelegate;
 	FOnPlayerStatChanged OnSpellPointsChangedDelegate;
+	FOnApplyingStatFinished OnApplyingStatFinishedDelegate; // for Attribute/Spell Points Finished Applying
 	
 	FORCEINLINE int32 GetPlayerLevel() const {return Level;}
 	void SetLevel(const int32 NewLevel) {Level = NewLevel; OnLevelChangedDelegate.Broadcast(Level);}
@@ -50,10 +61,10 @@ public:
 	
 	FORCEINLINE int32 GetSpellPoints() const {return SpellPoints;}
 	void SetSpellPoints(const int32 NewPoints);
-	void AddToSpellPoints(const int32 InPoints) {SetAttributePoints(SpellPoints + InPoints);}
+	void AddToSpellPoints(const int32 InPoints) {SetSpellPoints(SpellPoints + InPoints);}
 protected:
 	UPROPERTY(VisibleAnywhere)
-	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
+	TObjectPtr<UAuraAbilitySystemComponent> AbilitySystemComponent;
 	UPROPERTY()
 	TObjectPtr<UAuraAttributeSet> AttributeSet;
 	
@@ -69,7 +80,7 @@ private:
 	void OnRep_XP(int32 OldXP) const;
 	
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_AttributePoints)
-	int32 AttributePoints = 1;
+	int32 AttributePoints = 0;
 	UFUNCTION()
 	void OnRep_AttributePoints(int32 OldAttributePoints) const
 	{
@@ -77,7 +88,7 @@ private:
 	};
 	
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_SpellPoints)
-	int32 SpellPoints = 1;
+	int32 SpellPoints = 0;
 	UFUNCTION()
 	void OnRep_SpellPoints(int32 OldSpellPoints) const
 	{

@@ -43,13 +43,12 @@ void UAuraWorldUserWidget::NativeTick(const FGeometry& MyGeometry, float InDelta
 void UAuraWorldUserWidget::SetWorldToScreenTranslation(const FVector& WorldLocation)
 {
 	FVector2D ScreenPosition;
-	const bool bIsOnScreen = UGameplayStatics::ProjectWorldToScreen(GetOwningPlayer(), WorldLocation + WorldOffset, ScreenPosition);
+	const bool bIsOnScreen = UGameplayStatics::ProjectWorldToScreen(GetOwningPlayer(), WorldLocation, ScreenPosition, true);
 	if (bIsOnScreen) // check if widget is not outside camera view
 	{
 		const float Scale = UWidgetLayoutLibrary::GetViewportScale(this);
 		ScreenPosition /= Scale;
-		ScreenPosition -= GetDesiredSize() * 0.5f;
-		ScreenPosition.Y -= 10.f;
+		ScreenPosition -= GetDesiredSize() * .5f + ScreenOffset;
 		SetRenderTranslation(ScreenPosition);
 	}
 	// Avoid unnecessary invalidation is Slate

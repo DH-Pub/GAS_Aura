@@ -66,7 +66,6 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AppliedEffects")
 	float ActorLevel = 1.f;
 private:
-	// TMap<FActiveGameplayEffectHandle, UAbilitySystemComponent*> ActiveEffectHandles;
 	// Check if Actor is NOT Enemy and effect does not apply to enemy
 	bool IsNotForEnemy(const AActor* Actor) const {return Actor->ActorHasTag(FName("Enemy")) && !bApplyEffectsToEnemies;}
 };

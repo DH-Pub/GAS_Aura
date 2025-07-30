@@ -35,14 +35,7 @@ void AAuraEffectActor::ApplyEffectToTarget(AActor* TargetActor, const FEffectTyp
 		const FGameplayEffectSpecHandle EffectSpecHandle = TargetASC->MakeOutgoingSpec(EffectType.GameplayEffectClass, ActorLevel, EffectContextHandle);
 		const FActiveGameplayEffectHandle ActiveEffectHandle = TargetASC->ApplyGameplayEffectSpecToSelf(*EffectSpecHandle.Data);
 		
-		// if (EffectSpecHandle.Data->Def->DurationPolicy == EGameplayEffectDurationType::Infinite
-		// 	&& InfiniteEffectRemovalPolicy == EEffectRemovalPolicy::RemoveOnEndOverlap)
-		// {ActiveEffectHandles.Add(ActiveEffectHandle, TargetAbilitySystem);}
-		// EGameplayEffectDurationType EffectDurationType = EffectSpecHandle.Data.Get()->Def.Get()->DurationPolicy;
-		if (bDestroyOnEffectApplication)
-		{
-			Destroy();
-		}
+		if (bDestroyOnEffectApplication) { Destroy(); }
 	}
 }
 
@@ -69,7 +62,6 @@ void AAuraEffectActor::OnEndOverlap(AActor* TargetActor)
 	{
 		if (Effect.ApplicationPolicy == EEffectApplicationPolicy::ApplyOnEndOverlap)
 		{
-			FHitResult HitResult;
 			ApplyEffectToTarget(TargetActor, Effect);
 		}
 

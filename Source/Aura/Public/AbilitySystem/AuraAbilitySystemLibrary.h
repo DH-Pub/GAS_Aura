@@ -42,18 +42,13 @@ public:
 	static int32 GetXPRewardForClassAndLevel(const UObject* WorldContextObject, ECharacterClass CharacterClass, int32 CharacterLevel);
 	
 #pragma region ActorFunctions
-	/**
-	 * Add widget to OverlayWidget -> Canvas -> Overlay_Game
-	 * @param WorldContextObject 
-	 * @param InNewWidget 
-	 * @return 
-	 */
-	UFUNCTION(BlueprintCallable, meta=(DefaultToSelf="WorldContextObject", ExpandEnumAsExecs="Outcome"), Category="AuraAbilitySystemLibrary|UI")
-	static void AddWidgetToRootCanvasPanel(const UObject* WorldContextObject, UUserWidget* InNewWidget, TEnumAsByte<EOutcome>& Outcome);
+	// Add widget to OverlayWidget -> Canvas -> Overlay_Screen
+	UFUNCTION(BlueprintCallable, meta=(DefaultToSelf="WorldContextObject", ExpandBoolAsExecs="ReturnValue"), Category="AuraAbilitySystemLibrary|UI")
+	static bool AddWidgetToRootCanvasPanel(const UObject* WorldContextObject, UUserWidget* InNewWidget);
 
-	UFUNCTION(BlueprintCallable, meta=(ExpandEnumAsExecs="Outcome"), Category="AuraAbilitySystemLibrary|Actor")
-	static void YawActorToLocation(TEnumAsByte<EOutcome>& Outcome, AActor* InActor, FVector InLocation,
-		float DeltaTime, float InterpSpeed, float DegreeTolerance = 0.1);
+	UFUNCTION(BlueprintCallable, meta=(ExpandBoolAsExecs="ReturnValue"), Category="AuraAbilitySystemLibrary|Actor")
+	static bool YawActorToLocation(AActor* InActor, FVector InLocation,
+		float DeltaTime, float InterpSpeed, float DegreeTolerance = 0.1); // return true if finished
 	
 	UFUNCTION(BlueprintCallable, meta=(DefaultToSelf="WorldContextObject"), Category="AuraAbilitySystemLibrary|GameplayMechanics")
 	static void GetLivePlayersInRadius(const UObject* WorldContextObject,

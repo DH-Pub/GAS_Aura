@@ -3,14 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "AuraAttributeDelegate.h"
 #include "UI/Data/MessageInfo.h"
 #include "UI/WidgetController/AuraWidgetController.h"
 #include "OverlayWidgetController.generated.h"
 
 class ULevelUpDataAsset;
 struct FAuraAbilityDataAsset;
-class UAuraAbilitySystemComponent;
 class UAbilityDataAsset;
 class UMessageInfo;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMessageWidgetInfoSignature, FAuraMessageInfo, Info);

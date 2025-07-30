@@ -3,7 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "AuraAttributeDelegate.h"
 #include "UI/WidgetController/AuraWidgetController.h"
 #include "EnemyWidgetController.generated.h"
 

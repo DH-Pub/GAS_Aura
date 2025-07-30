@@ -268,8 +268,6 @@ UAuraAbilitySystemComponent* AAuraPlayerController::GetASC()
 {
 	if (AbilitySystemComponent == nullptr)
 	{
-		APawn* PlayerPawn = GetPawn();
-		UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(PlayerPawn);
 		AbilitySystemComponent = Cast<UAuraAbilitySystemComponent>(UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(GetPawn()));
 	}
 	return AbilitySystemComponent;

@@ -4,12 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/HUD.h"
-#include "UI/WidgetController/AuraWidgetController.h"
 #include "UI/WidgetController/OverlayWidgetController.h"
 #include "AuraHUD.generated.h"
 
 class UAttributeMenuWidgetController;
-class UAbilitySystemComponent;
 class UAuraUserWidget;
 class UOverlayWidgetController;
 
@@ -28,7 +26,7 @@ public:
 	UAttributeMenuWidgetController* CreateOrGetAttributeMenuWC(const FWidgetControllerParams& WCParams);
 
 	// Create and Set Overlay's WidgetController, then broadcast initial values
-	void InitOverlay(APlayerController* PC, APlayerState* PS, UAbilitySystemComponent* ASC, UAuraAttributeSet* AS);
+	void InitOverlay(APlayerController* PC, APlayerState* PS, UAuraAbilitySystemComponent* ASC, UAuraAttributeSet* AS);
 protected:
 
 private:

@@ -3,7 +3,6 @@
 
 #include "Character/AuraCharacter.h"
 
-#include "AbilitySystemComponent.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
 #include "Camera/CameraComponent.h"
@@ -82,7 +81,6 @@ void AAuraCharacter::MulticastLevelUpEffects_Implementation(int32 Level)
 	{
 		CharacterWidgetController->OnLevelUpDelegate.Broadcast(Level);
 	}
-	BP_LevelUpEffects(Level);
 }
 
 void AAuraCharacter::BeginPlay()
@@ -101,9 +99,9 @@ void AAuraCharacter::InitAbilityActorInfo()
 {
 	AAuraPlayerState* AuraPlayerState = GetPlayerState<AAuraPlayerState>();
 	check(AuraPlayerState);
-	AbilitySystemComponent = AuraPlayerState->GetAbilitySystemComponent();
+	AbilitySystemComponent = AuraPlayerState->GetAuraAbilitySystemComponent();
 	AbilitySystemComponent->InitAbilityActorInfo(AuraPlayerState,this); // Set Owner and Avatar
-	Cast<UAuraAbilitySystemComponent>(AbilitySystemComponent)->AbilityActorInfoSet();
+	AbilitySystemComponent->AbilityActorInfoSet();
 	AttributeSet = AuraPlayerState->GetAttributeSet();
 
 	if (AAuraPlayerController* AuraPlayerController = Cast<AAuraPlayerController>(GetController()))

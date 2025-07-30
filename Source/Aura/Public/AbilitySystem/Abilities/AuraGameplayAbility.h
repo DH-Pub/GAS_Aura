@@ -9,9 +9,6 @@
 class IEnemyInterface;
 class ICombatInterface;
 
-UENUM(BlueprintType)
-enum EOutcome {Success, Failure};
-
 /**
  * Gameplay Ability is only replicated to the owning player by default
  */
@@ -47,7 +44,7 @@ protected:
 	virtual void PreActivate(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
 		const FGameplayAbilityActivationInfo ActivationInfo, FOnGameplayAbilityEnded::FDelegate* OnGameplayAbilityEndedDelegate,
 		const FGameplayEventData* TriggerEventData = nullptr) override;
-	
+
 	UPROPERTY(BlueprintReadOnly)
 	TScriptInterface<ICombatInterface> AvatarCombatInterface;
 	UPROPERTY(BlueprintReadOnly)

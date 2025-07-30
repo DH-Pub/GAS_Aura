@@ -3,13 +3,15 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "AbilitySystemComponent.h"
+#include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AuraWidgetController.generated.h"
 
+class UAuraAbilitySystemComponent;
 class UAuraAttributeSet;
-class UAbilitySystemComponent;
 
+// Custom Delegate to handle Attribute
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerStatChangedSignature, int32, NewValue);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAttributeChangedSignature, float, NewValue);
 
 // Used to set Controller, State, ASC, AttributeSet
 USTRUCT(BlueprintType)
@@ -18,7 +20,7 @@ struct FWidgetControllerParams
 	GENERATED_BODY()
 
 	FWidgetControllerParams(){}
-	FWidgetControllerParams(APlayerController* PC, APlayerState* PS, UAbilitySystemComponent* ASC, UAuraAttributeSet* AS)
+	FWidgetControllerParams(APlayerController* PC, APlayerState* PS, UAuraAbilitySystemComponent* ASC, UAuraAttributeSet* AS)
 	: PlayerController(PC), PlayerState(PS), AbilitySystemComponent(ASC), AttributeSet(AS) {}
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -27,7 +29,7 @@ struct FWidgetControllerParams
 	TObjectPtr<APlayerState> PlayerState = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent = nullptr;
+	TObjectPtr<UAuraAbilitySystemComponent> AbilitySystemComponent = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TObjectPtr<UAuraAttributeSet> AttributeSet = nullptr;
 };
@@ -42,7 +44,7 @@ class AURA_API UAuraWidgetController : public UObject
 public:
 	UFUNCTION(BlueprintCallable)
 	void SetWidgetControllerParams(const FWidgetControllerParams& WCParams);
-
+	
 	// Override, bind callbacks 
 	virtual void BindCallbacksDependencies() {};
 	UFUNCTION(BlueprintCallable)
@@ -52,7 +54,7 @@ public:
 	// Create WidgetController if none and BindCallbacksDependencies()
 	template <typename ControllerT = UAuraWidgetController>
 	static ControllerT* CreateOrGetWidgetController(UObject* Outer, TObjectPtr<ControllerT>& WC,
-		TSubclassOf<UAuraWidgetController> WCClass, const FWidgetControllerParams& WCParams)
+		const TSubclassOf<UAuraWidgetController> WCClass, const FWidgetControllerParams& WCParams)
 	{
 		checkf(WCClass, TEXT("Widget Controller Class uninitialized, please fill out in BP_AuraHUD"));
 		if (WC == nullptr)
@@ -70,13 +72,13 @@ public:
 	TObjectPtr<APlayerState> PlayerState;
 	
 	UPROPERTY(BlueprintReadOnly, Category="WidgetController")
-	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
+	TObjectPtr<UAuraAbilitySystemComponent> AbilitySystemComponent;
 	UPROPERTY(BlueprintReadOnly, Category="WidgetController")
 	TObjectPtr<UAuraAttributeSet> AttributeSet;
 
 	// Bind AbilitySystemComponent's FOnGameplayAttributeValueChange to 
 	template<typename DelegateT = TBaseDynamicMulticastDelegate>
-	void BindGameplayAttributeToBroadcast(const struct FGameplayAttribute& Attribute, const DelegateT& AttributeChanged)
+	void BindGameplayAttributeToBroadcast(const FGameplayAttribute& Attribute, const DelegateT& AttributeChanged)
 	{
 		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(Attribute)
 		.AddLambda([&AttributeChanged](const FOnAttributeChangeData& Data)

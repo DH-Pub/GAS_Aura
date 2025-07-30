@@ -4,7 +4,6 @@
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
 
 #include "AuraGameplayEffectTypes.h"
-#include "AbilitySystem/Abilities/AuraGameplayAbility.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "Components/CanvasPanel.h"
 #include "Components/Overlay.h"
@@ -30,7 +29,7 @@ UOverlayWidgetController* UAuraAbilitySystemLibrary::GetOverlayWidgetController(
 		{
 			if (AAuraPlayerState* PS = PC->GetPlayerState<AAuraPlayerState>())
 			{
-				UAbilitySystemComponent* ASC = PS->GetAbilitySystemComponent();
+				UAuraAbilitySystemComponent* ASC = PS->GetAuraAbilitySystemComponent();
 				UAuraAttributeSet* AS = PS->GetAttributeSet();
 				return AuraHUD->CreateOrGetOverlayWC(FWidgetControllerParams(PC, PS, ASC, AS));
 			}
@@ -46,10 +45,12 @@ UAttributeMenuWidgetController* UAuraAbilitySystemLibrary::GetAttributeMenuWidge
 	{
 		if (AAuraHUD* AuraHUD = Cast<AAuraHUD>(PC->GetHUD()))
 		{
-			AAuraPlayerState* PS = PC->GetPlayerState<AAuraPlayerState>();
-			UAbilitySystemComponent* ASC = PS->GetAbilitySystemComponent();
-			UAuraAttributeSet* AS = PS->GetAttributeSet();
-			return AuraHUD->CreateOrGetAttributeMenuWC(FWidgetControllerParams(PC, PS, ASC, AS));
+			if (AAuraPlayerState* PS = PC->GetPlayerState<AAuraPlayerState>())
+			{
+				UAuraAbilitySystemComponent* ASC = PS->GetAuraAbilitySystemComponent();
+				UAuraAttributeSet* AS = PS->GetAttributeSet();
+				return AuraHUD->CreateOrGetAttributeMenuWC(FWidgetControllerParams(PC, PS, ASC, AS));
+			}
 		}
 	}
 	return nullptr;
@@ -107,40 +108,37 @@ int32 UAuraAbilitySystemLibrary::GetXPRewardForClassAndLevel(const UObject* Worl
 	return static_cast<int32>(XPReward);
 }
 
-void UAuraAbilitySystemLibrary::AddWidgetToRootCanvasPanel(const UObject* WorldContextObject, UUserWidget* InNewWidget, TEnumAsByte<EOutcome>& Outcome)
+bool UAuraAbilitySystemLibrary::AddWidgetToRootCanvasPanel(const UObject* WorldContextObject, UUserWidget* InNewWidget)
 {
-	Outcome = EOutcome::Failure;
-	if (InNewWidget == nullptr) return;
+	if (InNewWidget == nullptr) return false;
 	if (const APlayerController* PC = GEngine->GetFirstLocalPlayerController(WorldContextObject->GetWorld()))
 	{
 		AAuraHUD* AuraHUD = Cast<AAuraHUD>(PC->GetHUD());
-		if (AuraHUD == nullptr) return;
-		const UAuraUserWidget* RootOverlay = AuraHUD->GetOverlayWidget();
-		if (RootOverlay == nullptr) return;
-		if (const UCanvasPanel* CanvasPanel = Cast<UCanvasPanel>(RootOverlay->GetRootWidget()))
+		if (const UAuraUserWidget* RootOverlay = AuraHUD->GetOverlayWidget())
 		{
-			if (UOverlay* OverlayGame = Cast<UOverlay>(CanvasPanel->GetChildAt(0)))
+			if (const UCanvasPanel* CanvasPanel = Cast<UCanvasPanel>(RootOverlay->GetRootWidget()))
 			{
-				OverlayGame->AddChildToOverlay(InNewWidget);
+				//TODO: Find Alternative to GetChildAt(), Index needs to be Overlay_Screen
+				if (UOverlay* OverlayGame = Cast<UOverlay>(CanvasPanel->GetChildAt(0)))
+				{
+					OverlayGame->AddChildToOverlay(InNewWidget);
+					return true;
+				}
 			}
-			// CanvasPanel->AddChild(InNewWidget);
-			Outcome = EOutcome::Success;
 		}
 	}
+	return false;
 }
 
-void UAuraAbilitySystemLibrary::YawActorToLocation(TEnumAsByte<EOutcome>& Outcome, AActor* InActor, const FVector InLocation,
-	const float DeltaTime, const float InterpSpeed, const float DegreeTolerance)
+bool UAuraAbilitySystemLibrary::YawActorToLocation(AActor* InActor, FVector InLocation, float DeltaTime, float InterpSpeed, float DegreeTolerance)
 {
 	const FRotator CurrentRot = InActor->GetActorRotation();
 	const FRotator LookAtRot = UKismetMathLibrary::FindLookAtRotation(InActor->GetActorLocation(), InLocation);
-	if (UKismetMathLibrary::Abs(LookAtRot.Yaw - CurrentRot.Yaw) < DegreeTolerance)
-	{
-		Outcome = Success; return;
-	}
+	if (UKismetMathLibrary::Abs(LookAtRot.Yaw - CurrentRot.Yaw) < DegreeTolerance) return true; // if rotation is within Tolerance
+	
 	const FRotator InterpToRot = UKismetMathLibrary::RInterpTo_Constant(CurrentRot,LookAtRot, DeltaTime, InterpSpeed);
 	InActor->GetRootComponent()->SetWorldRotation(FRotator(CurrentRot.Pitch, InterpToRot.Yaw, CurrentRot.Roll));
-	Outcome = Failure;
+	return false;
 }
 
 void UAuraAbilitySystemLibrary::GetLivePlayersInRadius(const UObject* WorldContextObject, TArray<AActor*>& OutActors,
@@ -166,6 +164,7 @@ void UAuraAbilitySystemLibrary::GetLivePlayersInRadius(const UObject* WorldConte
 
 bool UAuraAbilitySystemLibrary::IsNotFriend(const AActor* FirstActor, const AActor* SecondActor)
 {
+	if (FirstActor == nullptr || SecondActor == nullptr) return false;
 	const bool bBothArePlayers = FirstActor->ActorHasTag(FName("Player")) && SecondActor->ActorHasTag(FName("Player"));
 	const bool bBothAreEnemies = FirstActor->ActorHasTag(FName("Enemy")) && SecondActor->ActorHasTag(FName("Enemy"));
 	return !(bBothArePlayers || bBothAreEnemies);

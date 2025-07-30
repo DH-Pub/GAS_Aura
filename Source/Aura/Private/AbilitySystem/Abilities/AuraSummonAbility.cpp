@@ -45,19 +45,19 @@ void UAuraSummonAbility::SetSpawnLocations()
 	InstigatorASC->ExecuteGameplayCue(AuraGameplayTags::GameplayCue_Summon, FGameplayCueParameters(EffectContextHandle));
 }
 
-void UAuraSummonAbility::InstancedStructToSummonInfo(TEnumAsByte<EOutcome>& Outcome,
-	const FInstancedStruct& InstancedStruct, TArray<FVector_NetQuantize>& Locations)
+bool UAuraSummonAbility::InstancedStructToSummonInfo(const FInstancedStruct& InstancedStruct,
+	TArray<FVector_NetQuantize>& Locations)
 {
-	Outcome = Failure;
 	if (const FSummonInfo* SummonInfo = InstancedStruct.GetPtr<FSummonInfo>())
 	{
 		Locations = SummonInfo->Locations;
-		Outcome = Success;
+		return true;
 	}
+	return false;
 }
 
 void UAuraSummonAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
-	const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
+                                    const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
 {
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 	SummonInfo.Locations.Empty();

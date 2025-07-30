@@ -12,7 +12,6 @@
 
 class UProgressBar;
 class UGameplayAbility;
-enum EOutcome : int;
 struct FAuraAbilityDataAsset;
 class UOverlayWidgetController;
 struct FGameplayTag;
@@ -58,8 +57,8 @@ protected:
 	UPROPERTY(BlueprintReadWrite, Category = "GlobeProperties", meta=(GameplayTagFilter=Cooldown))
 	FGameplayTag CooldownTag = AuraGameplayTags::Cooldown;
 	
-	UFUNCTION(BlueprintCallable, meta=(ExpandEnumAsExecs="Outcome"))
-	void AbilityDataUpdate(TEnumAsByte<EOutcome>& Outcome, const FAuraAbilityDataAsset& InAbilityData);
+	UFUNCTION(BlueprintCallable, meta=(ExpandBoolAsExecs = "ReturnValue"))
+	bool SuccessUpdateAbilityData(const FAuraAbilityDataAsset& InAbilityData);
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Properties")
 	float Frequency = 0.05f;
