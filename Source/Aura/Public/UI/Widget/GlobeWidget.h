@@ -20,7 +20,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Properties")
 	FSlateBrush DefaultBackground = FSlateBrush(); // For Empty Spell Globes
 	
-	UPROPERTY(EditDefaultsOnly, Category = "Properties")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Properties")
 	FMargin InPadding = FMargin(30.f); // Background, Glass, SpellIcon
 protected:
 	virtual void NativePreConstruct() override;

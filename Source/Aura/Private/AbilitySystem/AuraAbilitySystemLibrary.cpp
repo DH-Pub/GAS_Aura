@@ -113,17 +113,15 @@ bool UAuraAbilitySystemLibrary::AddWidgetToRootCanvasPanel(const UObject* WorldC
 	if (InNewWidget == nullptr) return false;
 	if (const APlayerController* PC = GEngine->GetFirstLocalPlayerController(WorldContextObject->GetWorld()))
 	{
-		AAuraHUD* AuraHUD = Cast<AAuraHUD>(PC->GetHUD());
-		if (const UAuraUserWidget* RootOverlay = AuraHUD->GetOverlayWidget())
+		AAuraHUD* AuraHUD = Cast<AAuraHUD>(PC->GetHUD()); if (AuraHUD == nullptr) return false;
+		const UAuraUserWidget* RootOverlay = AuraHUD->GetOverlayWidget(); if (RootOverlay == nullptr) return false;
+		if (const UCanvasPanel* CanvasPanel = Cast<UCanvasPanel>(RootOverlay->GetRootWidget()))
 		{
-			if (const UCanvasPanel* CanvasPanel = Cast<UCanvasPanel>(RootOverlay->GetRootWidget()))
+			//TODO: Find Alternative to GetChildAt(), Index needs to be Overlay_Screen
+			if (UOverlay* OverlayGame = Cast<UOverlay>(CanvasPanel->GetChildAt(0)))
 			{
-				//TODO: Find Alternative to GetChildAt(), Index needs to be Overlay_Screen
-				if (UOverlay* OverlayGame = Cast<UOverlay>(CanvasPanel->GetChildAt(0)))
-				{
-					OverlayGame->AddChildToOverlay(InNewWidget);
-					return true;
-				}
+				OverlayGame->AddChildToOverlay(InNewWidget);
+				return true;
 			}
 		}
 	}

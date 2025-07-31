@@ -19,7 +19,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	virtual void SetWidgetController(UAuraWidgetController* InWidgetController);
 
-	/** Widget will have a Controller that will send delegate to it
+	/**
+	 * Widget will have a Controller that will send delegate to it
 	 * This might not be used and opted for Event Parameter instead
 	 */
 	UPROPERTY(BlueprintReadOnly)
