@@ -25,6 +25,7 @@ public:
 	virtual int32 GetCharacterLevel_Implementation() override;
 	//~ End Interface =============================================================
 
+	UFUNCTION(BlueprintGetter)
 	UCapsuleComponent* GetCameraCapsule() {return CameraCapsule;}
 
 	UPROPERTY(VisibleAnywhere)
@@ -39,7 +40,7 @@ protected:
 	TObjectPtr<class USpringArmComponent> SpringArm;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<class UCameraComponent> Camera;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere, BlueprintGetter=GetCameraCapsule)
 	TObjectPtr<UCapsuleComponent> CameraCapsule;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)

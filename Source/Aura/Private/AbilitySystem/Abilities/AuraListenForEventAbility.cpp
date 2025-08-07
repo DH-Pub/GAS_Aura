@@ -25,6 +25,7 @@ void UAuraListenForEventAbility::ApplyEventEffectsToSelf(const FGameplayEventDat
 	if (Spec == nullptr) return;
 	for (const FGameplayTag& Tag : ModifiersDataTags)
 	{
+		// UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(EffectSpecHandle, Tag, Payload.EventMagnitude)
 		const float Magnitude = Tag.MatchesTagExact(Payload.EventTag) ? Payload.EventMagnitude : 0.f;
 		Spec->SetSetByCallerMagnitude(Tag, Magnitude);
 	}

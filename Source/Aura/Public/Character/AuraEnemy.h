@@ -33,8 +33,6 @@ public:
 	virtual int32 GetCharacterLevel_Implementation() override {return Level;}
 	virtual void Die() override;
 	virtual void MulticastHandleDeath_Implementation() override;
-	virtual void SetCombatTarget_Implementation(AActor* NewTarget) override {CombatTarget = NewTarget;}
-	virtual AActor* GetCombatTarget_Implementation() const override {return CombatTarget;}
 	//~ End Combat Interface
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Combat")

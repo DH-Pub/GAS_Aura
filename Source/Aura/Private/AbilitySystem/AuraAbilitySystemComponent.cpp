@@ -7,7 +7,6 @@
 #include "AbilitySystem/Abilities/AuraGameplayAbility.h"
 #include "Character/AuraCharacter.h"
 #include "Player/AuraPlayerState.h"
-#include "UI/WidgetController/AttributeMenuWidgetController.h"
 
 void UAuraAbilitySystemComponent::AbilityActorInfoSet()
 {

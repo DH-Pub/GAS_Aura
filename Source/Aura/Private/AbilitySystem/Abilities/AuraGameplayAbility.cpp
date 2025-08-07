@@ -3,8 +3,8 @@
 
 #include "AbilitySystem/Abilities/AuraGameplayAbility.h"
 
+#include "Character/AuraCharacterBase.h"
 #include "Interaction/CombatInterface.h"
-#include "Interaction/EnemyInterface.h" // DO NOT Remove this, Rider is tisming
 
 UAuraGameplayAbility::UAuraGameplayAbility()
 {
@@ -15,7 +15,7 @@ UAuraGameplayAbility::UAuraGameplayAbility()
 const FGameplayTagContainer* UAuraGameplayAbility::GetCooldownTags() const
 {
 	if (!CooldownTags.IsValid()) return Super::GetCooldownTags();
-	
+
 	FGameplayTagContainer* MutableTags = const_cast<FGameplayTagContainer*>(&TempCooldownTags);
 	MutableTags->Reset(); // MutableTags writes to the TempCooldownTags on the CDO so clear it in case the cooldown tags change (to a different slot)
 	if (const FGameplayTagContainer* ParentTags = Super::GetCooldownTags())
@@ -41,16 +41,14 @@ void UAuraGameplayAbility::ApplyCooldown(const FGameplayAbilitySpecHandle Handle
 	}
 }
 
-void UAuraGameplayAbility::PreActivate(const FGameplayAbilitySpecHandle Handle,
-                                       const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo,
-                                       FOnGameplayAbilityEnded::FDelegate* OnGameplayAbilityEndedDelegate, const FGameplayEventData* TriggerEventData)
+void UAuraGameplayAbility::PreActivate(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
+	const FGameplayAbilityActivationInfo ActivationInfo, FOnGameplayAbilityEnded::FDelegate* OnGameplayAbilityEndedDelegate,
+	const FGameplayEventData* TriggerEventData)
 {
 	Super::PreActivate(Handle, ActorInfo, ActivationInfo, OnGameplayAbilityEndedDelegate, TriggerEventData);
-	if (AvatarActor == nullptr)
+	if (AuraCharacterFromActorInfo == nullptr)
 	{
-		AvatarActor = GetAvatarActorFromActorInfo();
-		AvatarCombatInterface = AvatarActor;
-		AvatarEnemyInterface = AvatarActor;
-		if (AvatarCombatInterface == nullptr) EndAbility(Handle, ActorInfo, ActivationInfo, false, true);
+		AuraCharacterFromActorInfo = Cast<AAuraCharacterBase>(GetAvatarActorFromActorInfo());
+		if (AuraCharacterFromActorInfo == nullptr) EndAbility(Handle, ActorInfo, ActivationInfo, false, true);
 	}
 }

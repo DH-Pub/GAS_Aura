@@ -35,7 +35,7 @@ class AURA_API UAttributeDataAsset : public UDataAsset
 	GENERATED_BODY()
 public:
 	FAuraAttributeData FindAttributeInfoForTag(const FGameplayTag& AttributeTag, bool bLogNotFound = false) const
-	{return AttributeDataList.FindRef(AttributeTag);}
+	{return AttributeDataList.FindRef(AttributeTag);} //TODO: return ptr
 
 	/**
 	 * Future note: make this a TArray

@@ -25,11 +25,12 @@ void UAttributeMenuWidgetController::BindCallbacksDependencies()
 	PS->OnAttributePointsChangedDelegate.AddLambda([this](const int32 Points)
 	{
 		AttributePoints = Points;
-		AttributePointsToUIDelegate.Broadcast(AttributePoints - GetTotalPointsAllocating());
+		AttributePointsToUIDelegate.Broadcast(AttributePoints, GetTotalPointsAllocating());
 	});
 	PS->OnSpellPointsChangedDelegate.AddLambda([this](const int32 Points)
 	{
-		SpellPointsToUIDelegate.Broadcast(Points);
+		//TODO: Modify PointAllocating
+		SpellPointsToUIDelegate.Broadcast(Points, 0);
 	});
 	
 	PS->OnApplyingStatFinishedDelegate.AddLambda([this]()
@@ -55,9 +56,9 @@ void UAttributeMenuWidgetController::BroadcastInitialValues()
 
 	AttributePoints = PS->GetAttributePoints();
 	PointAllocationList.Empty();
-	AttributePointsToUIDelegate.Broadcast(AttributePoints - GetTotalPointsAllocating());
+	AttributePointsToUIDelegate.Broadcast(AttributePoints, 0);
 	
-	SpellPointsToUIDelegate.Broadcast(PS->GetSpellPoints());
+	SpellPointsToUIDelegate.Broadcast(PS->GetSpellPoints(), 0);
 }
 
 int32& UAttributeMenuWidgetController::FindPointAllocationByTag(const FGameplayTag& Tag, bool& bFound)
@@ -88,6 +89,7 @@ void UAttributeMenuWidgetController::ApplyUpgrades()
 {
 	bIsApplying = true;
 	CastChecked<UAuraAbilitySystemComponent>(AbilitySystemComponent)->UpgradeAttribute(PointAllocationList);
+	PointAllocationList.Empty();
 }
 
 void UAttributeMenuWidgetController::AllocatePointToAttribute(const FGameplayTag& AttributeTag, const int32 Points)
@@ -104,12 +106,12 @@ void UAttributeMenuWidgetController::AllocatePointToAttribute(const FGameplayTag
 		{
 			PointAllocationList.RemoveSingleSwap(FPointAllocation(AttributeTag, 0));
 		}
-		AttributePointsToUIDelegate.Broadcast(AttributePoints - PointsAboutToUse);
+		AttributePointsToUIDelegate.Broadcast(AttributePoints, PointsAboutToUse);
 	}
 	else
 	{
 		if (Points < 0 || Points > AttributePoints) return;
-		PointAllocationList.Add(FPointAllocation(AttributeTag, Points));
-		AttributePointsToUIDelegate.Broadcast(AttributePoints - GetTotalPointsAllocating());
+		PointAllocationList.AddUnique(FPointAllocation(AttributeTag, Points));
+		AttributePointsToUIDelegate.Broadcast(AttributePoints, GetTotalPointsAllocating());
 	}
 }

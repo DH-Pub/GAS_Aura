@@ -84,7 +84,7 @@ void UAsync_CooldownChange::OnActiveEffectAdded(UAbilitySystemComponent* TargetA
 			CooldownChanged.Broadcast(CooldownTime, CooldownDuration);
 		}
 		else if (UseServerCooldown && SpecApplied.GetContext().GetAbilityInstance_NotReplicated())
-		{	/*using Server's cooldown but is predicted cooldown, grey out ability until Server's cooldown comes in*/
+		{	/*using Server's cooldown but is predicted cooldown, grey out ability until Server's cooldown comes in to show timber*/
 			CooldownChanged.Broadcast(-1.f, -1.f);
 		}
 	}

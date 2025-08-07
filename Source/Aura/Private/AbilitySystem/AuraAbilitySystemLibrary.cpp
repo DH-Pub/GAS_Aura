@@ -11,6 +11,7 @@
 #include "Interaction/CombatInterface.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Player/AuraPlayerController.h"
 #include "Player/AuraPlayerState.h"
 #include "StructUtils/InstancedStruct.h"
 #include "UI/HUD/AuraHUD.h"
@@ -19,20 +20,15 @@
 
 UOverlayWidgetController* UAuraAbilitySystemLibrary::GetOverlayWidgetController(const UObject* WorldContextObject)
 {
-	// GEngine->GetFirstLocalPlayerController(WorldContextObject->GetWorld());
+	/*TArray<APlayerController*> PlayerList;
+	GEngine->GetAllLocalPlayerControllers(PlayerList);*/
 	// UGameplayStatics::GetPlayerController(WorldContextObject, 0);
-	// WorldContextObject->GetWorld()->GetFirstPlayerController(); // ??? not consistent
-	
-	if (APlayerController* PC = GEngine->GetFirstLocalPlayerController(WorldContextObject->GetWorld()))
+	// WorldContextObject->GetWorld()->GetFirstPlayerController(); // ??? not consistent if server has no player
+	if (AAuraPlayerController* PC = Cast<AAuraPlayerController>(GEngine->GetFirstLocalPlayerController(WorldContextObject->GetWorld())))
 	{
-		if (AAuraHUD* AuraHUD = Cast<AAuraHUD>(PC->GetHUD()))
+		if (AAuraHUD* AuraHUD = PC->GetHUD<AAuraHUD>())
 		{
-			if (AAuraPlayerState* PS = PC->GetPlayerState<AAuraPlayerState>())
-			{
-				UAuraAbilitySystemComponent* ASC = PS->GetAuraAbilitySystemComponent();
-				UAuraAttributeSet* AS = PS->GetAttributeSet();
-				return AuraHUD->CreateOrGetOverlayWC(FWidgetControllerParams(PC, PS, ASC, AS));
-			}
+			return AuraHUD->CreateOrGetOverlayWC(FWidgetControllerParams(PC));
 		}
 	}
 	return nullptr;
@@ -41,16 +37,11 @@ UOverlayWidgetController* UAuraAbilitySystemLibrary::GetOverlayWidgetController(
 UAttributeMenuWidgetController* UAuraAbilitySystemLibrary::GetAttributeMenuWidgetController(
 	const UObject* WorldContextObject)
 {
-	if (APlayerController* PC = GEngine->GetFirstLocalPlayerController(WorldContextObject->GetWorld()))
+	if (AAuraPlayerController* PC = Cast<AAuraPlayerController>(GEngine->GetFirstLocalPlayerController(WorldContextObject->GetWorld())))
 	{
-		if (AAuraHUD* AuraHUD = Cast<AAuraHUD>(PC->GetHUD()))
+		if (AAuraHUD* AuraHUD = PC->GetHUD<AAuraHUD>())
 		{
-			if (AAuraPlayerState* PS = PC->GetPlayerState<AAuraPlayerState>())
-			{
-				UAuraAbilitySystemComponent* ASC = PS->GetAuraAbilitySystemComponent();
-				UAuraAttributeSet* AS = PS->GetAttributeSet();
-				return AuraHUD->CreateOrGetAttributeMenuWC(FWidgetControllerParams(PC, PS, ASC, AS));
-			}
+			return AuraHUD->CreateOrGetAttributeMenuWC(FWidgetControllerParams(PC));
 		}
 	}
 	return nullptr;
@@ -86,11 +77,10 @@ void UAuraAbilitySystemLibrary::GiveStartupAbilities(const UObject* WorldContext
 		FGameplayAbilitySpec AbilitySpec(ClassAbility, 1); // These abilities do not change according to levels 
 		ASC->GiveAbility(AbilitySpec);
 	}
-	const FCharacterClassDefaultInfo ClassDefaultInfo = ClassData->GetClassDefaultInfo(CharacterClass);
 	
 	if (ASC->GetAvatarActor()->Implements<UCombatInterface>())
 	{
-		for (TSubclassOf Ability : ClassDefaultInfo.ClassAbilities)
+		for (TSubclassOf Ability : ClassData->GetClassDefaultInfo(CharacterClass).ClassAbilities)
 		{
 			FGameplayAbilitySpec AbilitySpec(Ability, ICombatInterface::Execute_GetCharacterLevel(ASC->GetAvatarActor()));
 			ASC->GiveAbility(AbilitySpec);
@@ -98,7 +88,7 @@ void UAuraAbilitySystemLibrary::GiveStartupAbilities(const UObject* WorldContext
 	}
 }
 int32 UAuraAbilitySystemLibrary::GetXPRewardForClassAndLevel(const UObject* WorldContextObject,
-	ECharacterClass CharacterClass, int32 CharacterLevel)
+	const ECharacterClass CharacterClass, const int32 CharacterLevel)
 {
 	UCharacterClassDataAsset* ClassData = GetCharacterClassDataAsset(WorldContextObject);
 	if (ClassData == nullptr) return 0;
@@ -113,7 +103,7 @@ bool UAuraAbilitySystemLibrary::AddWidgetToRootCanvasPanel(const UObject* WorldC
 	if (InNewWidget == nullptr) return false;
 	if (const APlayerController* PC = GEngine->GetFirstLocalPlayerController(WorldContextObject->GetWorld()))
 	{
-		AAuraHUD* AuraHUD = Cast<AAuraHUD>(PC->GetHUD()); if (AuraHUD == nullptr) return false;
+		AAuraHUD* AuraHUD = PC->GetHUD<AAuraHUD>(); if (AuraHUD == nullptr) return false;
 		const UAuraUserWidget* RootOverlay = AuraHUD->GetOverlayWidget(); if (RootOverlay == nullptr) return false;
 		if (const UCanvasPanel* CanvasPanel = Cast<UCanvasPanel>(RootOverlay->GetRootWidget()))
 		{
@@ -131,7 +121,8 @@ bool UAuraAbilitySystemLibrary::AddWidgetToRootCanvasPanel(const UObject* WorldC
 bool UAuraAbilitySystemLibrary::YawActorToLocation(AActor* InActor, FVector InLocation, float DeltaTime, float InterpSpeed, float DegreeTolerance)
 {
 	const FRotator CurrentRot = InActor->GetActorRotation();
-	const FRotator LookAtRot = UKismetMathLibrary::FindLookAtRotation(InActor->GetActorLocation(), InLocation);
+	FRotator LookAtRot = UKismetMathLibrary::FindLookAtRotation(InActor->GetActorLocation(), InLocation);
+	LookAtRot.Pitch = LookAtRot.Roll = 0.f;
 	if (UKismetMathLibrary::Abs(LookAtRot.Yaw - CurrentRot.Yaw) < DegreeTolerance) return true; // if rotation is within Tolerance
 	
 	const FRotator InterpToRot = UKismetMathLibrary::RInterpTo_Constant(CurrentRot,LookAtRot, DeltaTime, InterpSpeed);
@@ -142,11 +133,11 @@ bool UAuraAbilitySystemLibrary::YawActorToLocation(AActor* InActor, FVector InLo
 void UAuraAbilitySystemLibrary::GetLivePlayersInRadius(const UObject* WorldContextObject, TArray<AActor*>& OutActors,
 	const TArray<AActor*>& ActorsToIgnore, const float Radius, const FVector& Origin)
 {
-	FCollisionQueryParams SphereParams;
-	SphereParams.AddIgnoredActors(ActorsToIgnore);
 	if (const UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull))
 	{
 		TArray<FOverlapResult> Overlaps;
+		FCollisionQueryParams SphereParams;
+		SphereParams.AddIgnoredActors(ActorsToIgnore);
 		World->OverlapMultiByObjectType(Overlaps, Origin, FQuat::Identity,
 			FCollisionObjectQueryParams(FCollisionObjectQueryParams::InitType::AllDynamicObjects),
 			FCollisionShape::MakeSphere(Radius), SphereParams);
@@ -254,13 +245,14 @@ void UAuraAbilitySystemLibrary::SetIsShowDamageOnTarget(FGameplayEffectContextHa
  * ==================================================================================================================================
  */
 #pragma region InstancedStruct
-FInstancedStruct UAuraAbilitySystemLibrary::GetInstancedStruct(const FGameplayEffectContextHandle& EffectContextHandle)
+FInstancedStruct* UAuraAbilitySystemLibrary::GetInstancedStructPointer(
+	const FGameplayEffectContextHandle& EffectContextHandle)
 {
 	if (const FAuraGameplayEffectContext* AuraEffectContext =  static_cast<const FAuraGameplayEffectContext*>(EffectContextHandle.Get()))
 	{
-		return *AuraEffectContext->GetInstancedStruct();
+		return AuraEffectContext->GetInstancedStruct();
 	}
-	return FInstancedStruct();
+	return nullptr;
 }
 void UAuraAbilitySystemLibrary::SetInstancedStruct(FGameplayEffectContextHandle& EffectContextHandle,
 	const FInstancedStruct& InStruct)
@@ -270,5 +262,4 @@ void UAuraAbilitySystemLibrary::SetInstancedStruct(FGameplayEffectContextHandle&
 		AuraEffectContext->AddInstancedStruct(InStruct);
 	}
 }
-
 #pragma endregion

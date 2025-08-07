@@ -6,15 +6,17 @@
 #include "AbilitySystemComponent.h"
 #include "AuraGameplayEffectTypes.h"
 #include "AuraGameplayTags.h"
+#include "NiagaraFunctionLibrary.h"
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
+#include "Character/AuraCharacterBase.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "StructUtils/InstancedStruct.h"
 
 void UAuraSummonAbility::SetSpawnLocations()
 {
-	
 	if (NumMinions == 0) return;
-	const FVector Forward = AvatarActor->GetActorForwardVector();
-	const FVector Location = AvatarActor->GetActorLocation();
+	const FVector Forward = AuraCharacterFromActorInfo->GetActorForwardVector();
+	const FVector Location = AuraCharacterFromActorInfo->GetActorLocation();
 
 	const float DeltaSpread = SpawnSpread / NumMinions;
 
@@ -45,21 +47,76 @@ void UAuraSummonAbility::SetSpawnLocations()
 	InstigatorASC->ExecuteGameplayCue(AuraGameplayTags::GameplayCue_Summon, FGameplayCueParameters(EffectContextHandle));
 }
 
-bool UAuraSummonAbility::InstancedStructToSummonInfo(const FInstancedStruct& InstancedStruct,
-	TArray<FVector_NetQuantize>& Locations)
+void UAuraSummonAbility::PreActivate(const FGameplayAbilitySpecHandle Handle,
+	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo,
+	FOnGameplayAbilityEnded::FDelegate* OnGameplayAbilityEndedDelegate, const FGameplayEventData* TriggerEventData)
 {
-	if (const FSummonInfo* SummonInfo = InstancedStruct.GetPtr<FSummonInfo>())
+	Super::PreActivate(Handle, ActorInfo, ActivationInfo, OnGameplayAbilityEndedDelegate, TriggerEventData);
+	
+	SetSpawnLocations();
+	
+	// Shuffle Locations
+	const int32 LastIndex = SummonInfo.Locations.Num() - 1;
+	for (int32 i = 0; i <= LastIndex; ++i)
 	{
-		Locations = SummonInfo->Locations;
-		return true;
+		const int32 Index = FMath::RandRange(i, LastIndex);
+		SummonInfo.Locations.Swap(i, Index);
 	}
-	return false;
 }
 
 void UAuraSummonAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
                                     const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
 {
-	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 	SummonInfo.Locations.Empty();
 	SpawnLocationIndex = 0;
+	
+	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }
+
+bool UAuraSummonAbility::SpawnEnemiesByLocations()
+{
+	if (SpawnLocationIndex >= SummonInfo.Locations.Num()) return false;
+	
+	FVector SpawnLocation = SummonInfo.Locations[SpawnLocationIndex++];
+	SpawnLocation.Z += 70.f; // Above ground
+	FTransform SpawnTransform;
+	SpawnTransform.SetLocation(SpawnLocation);
+	FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(AuraCharacterFromActorInfo->GetActorLocation(), SpawnLocation);
+	LookAtRotation.Pitch = LookAtRotation.Roll = 0.f;
+	SpawnTransform.SetRotation(LookAtRotation.Quaternion());
+	
+	AAuraCharacterBase* SpawnedCharacter = GetWorld()->SpawnActorDeferred<AAuraCharacterBase>(GetRandomMinionsClass(), SpawnTransform,
+		AuraCharacterFromActorInfo, /*Cast<Pawn>*/AuraCharacterFromActorInfo, ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn);
+	AuraCharacterFromActorInfo->AddNewSummon(SpawnedCharacter);
+	SpawnedCharacter->FinishSpawning(SpawnTransform);
+	return true;
+}
+
+void UAuraSummonAbility::SummonCueFromEffectContext(const UObject* WorldContextObject,
+	const FGameplayEffectContextHandle& EffectContextHandle, UNiagaraSystem* Effect)
+{
+	if (const FInstancedStruct* InstancedStruct = UAuraAbilitySystemLibrary::GetInstancedStructPointer(EffectContextHandle))
+	{
+		if (const FSummonCueInfo* SummonInfo = InstancedStruct->GetPtr<FSummonCueInfo>())
+		{
+			for (auto& Loc : SummonInfo->Locations)
+			{
+				UNiagaraFunctionLibrary::SpawnSystemAtLocation(WorldContextObject, Effect, Loc);
+			}
+		}
+	}
+}
+
+/*bool UAuraSummonAbility::EffectContextHandleToSummonInfo(const FGameplayEffectContextHandle& EffectContextHandle,
+	TArray<FVector_NetQuantize>& Locations)
+{
+	if (const FInstancedStruct* InstancedStruct = UAuraAbilitySystemLibrary::GetInstancedStructPointer(EffectContextHandle))
+	{
+		if (const FSummonCueInfo* SummonInfo = InstancedStruct->GetPtr<FSummonCueInfo>())
+		{
+			Locations = SummonInfo->Locations;
+			return true;
+		}
+	}
+	return false;
+}*/

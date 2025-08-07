@@ -6,6 +6,7 @@
 #include "Abilities/GameplayAbility.h"
 #include "AuraGameplayAbility.generated.h"
 
+class AAuraCharacterBase;
 class IEnemyInterface;
 class ICombatInterface;
 
@@ -46,9 +47,5 @@ protected:
 		const FGameplayEventData* TriggerEventData = nullptr) override;
 
 	UPROPERTY(BlueprintReadOnly)
-	TScriptInterface<ICombatInterface> AvatarCombatInterface;
-	UPROPERTY(BlueprintReadOnly)
-	TScriptInterface<IEnemyInterface> AvatarEnemyInterface;
-	UPROPERTY(BlueprintReadOnly)
-	AActor* AvatarActor = nullptr;
+	TObjectPtr<AAuraCharacterBase> AuraCharacterFromActorInfo = nullptr;
 };

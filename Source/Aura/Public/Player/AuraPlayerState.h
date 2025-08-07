@@ -19,6 +19,9 @@ DECLARE_MULTICAST_DELEGATE(FOnApplyingStatFinished)
 // (Level, CurrentLevelXp, DeltaLevelReq)
 DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnXPChanged, int32 /*XP*/, int32 /*Level*/, ULevelUpDataAsset* /*Level Up Data Asset*/);
 
+/**
+ * AuraAbilitySystemComponent and AuraAttributeSet is created in here
+ */
 UCLASS()
 class AURA_API AAuraPlayerState : public APlayerState, public IAbilitySystemInterface
 {
@@ -27,7 +30,7 @@ public:
 	AAuraPlayerState();
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	UAuraAbilitySystemComponent* GetAuraAbilitySystemComponent() const {return AbilitySystemComponent;}
-	UAuraAttributeSet* GetAttributeSet() const { return AttributeSet; }
+	UAuraAttributeSet* GetAuraAttributeSet() const { return AttributeSet; }
 
 	// Interfaces ======================================================================================================
 #pragma region Interfaces

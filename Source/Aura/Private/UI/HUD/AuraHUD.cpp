@@ -11,13 +11,14 @@ UOverlayWidgetController* AAuraHUD::CreateOrGetOverlayWC(const FWidgetController
 	return UAuraWidgetController::CreateOrGetWidgetController<UOverlayWidgetController>(
 		this,OverlayWidgetController, OverlayWidgetControllerClass, WCParams);
 }
+
 UAttributeMenuWidgetController* AAuraHUD::CreateOrGetAttributeMenuWC(const FWidgetControllerParams& WCParams)
 {
 	return UAuraWidgetController::CreateOrGetWidgetController<UAttributeMenuWidgetController>(
 		this, AttributeMenuWidgetController, AttributeMenuWidgetControllerClass, WCParams);
 }
 
-void AAuraHUD::InitOverlay(APlayerController* PC, APlayerState* PS, UAuraAbilitySystemComponent* ASC, UAuraAttributeSet* AS)
+void AAuraHUD::InitOverlay(const FWidgetControllerParams& WCParams)
 {
 	checkf(OverlayWidgetClass, TEXT("Overlay Widget Class uninitialized, please fill out in BP_AuraHUD"));
 
@@ -29,6 +30,6 @@ void AAuraHUD::InitOverlay(APlayerController* PC, APlayerState* PS, UAuraAbility
 	  * Create/Get WidgetController, BindCallbacksDependencies()
 	  * Set WidgetController, Call WidgetControllerSet Event (Which will assign AbilityDataDelegate)
 	  */
-	OverlayWidget->SetWidgetController(CreateOrGetOverlayWC(FWidgetControllerParams(PC, PS, ASC, AS)));
+	OverlayWidget->SetWidgetController(CreateOrGetOverlayWC(WCParams));
 	OverlayWidgetController->BroadcastInitialValues();
 }

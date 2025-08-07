@@ -15,18 +15,21 @@ class AURA_API UAuraUserWidget : public UUserWidget
 {
 	GENERATED_BODY()
 public:
-	// Set WidgetController and call Event WidgetControllerSet()
-	UFUNCTION(BlueprintCallable)
+	/**
+	 * Set WidgetController and call Event WidgetControllerSet()
+	 * BlueprintCallable so that multiple widget can use the same node (WBP_Health_Mana_Spells)
+	 */
+	UFUNCTION(BlueprintSetter, BlueprintCallable)
 	virtual void SetWidgetController(UAuraWidgetController* InWidgetController);
 
 	/**
-	 * Widget will have a Controller that will send delegate to it
-	 * This might not be used and opted for Event Parameter instead
+	 * Widgets will have a Controller to receive delegate from, which might not be used and opted for Event Parameter instead
+	 * Has BlueprintGetter and BlueprintSetter
 	 */
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(Setter=SetWidgetController, BlueprintSetter=SetWidgetController)
 	TObjectPtr<UAuraWidgetController> WidgetController;
 protected:
 	/** Bind changed event to widget in BP */
-	UFUNCTION(BlueprintNativeEvent)
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void WidgetControllerSet(UAuraWidgetController* Controller);
 };

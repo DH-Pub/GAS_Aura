@@ -6,10 +6,15 @@
 #include "AbilitySystem/Abilities/AuraGameplayAbility.h"
 #include "AuraSummonAbility.generated.h"
 
+class UNiagaraSystem;
+class AAuraCharacterBase;
 struct FInstancedStruct;
 
+/*
+ * GameplayCue can only send max 2 per frame with default settings, that's why we use this and convert it to FInstancedStruct
+ */
 USTRUCT(BlueprintType)
-struct FSummonInfo
+struct FSummonCueInfo
 {
 	GENERATED_BODY()
 	UPROPERTY(BlueprintReadWrite)
@@ -29,13 +34,13 @@ public:
 	TSubclassOf<APawn> GetRandomMinionsClass() {return MinionClasses[FMath::RandRange(0, MinionClasses.Num() - 1)];}
 
 	UPROPERTY(EditDefaultsOnly, meta=(UIMin=0), Category="Summoning")
-	int32 NumMinions = 5;
+	int32 NumMinions = 5; // How many to summon when ActivateAbility
 
 	UPROPERTY(EditDefaultsOnly, Category="Summoning")
 	TArray<TSubclassOf<APawn>> MinionClasses;
 
 	UPROPERTY(BlueprintReadWrite, Category="Summoning")
-	FSummonInfo SummonInfo = FSummonInfo();
+	FSummonCueInfo SummonInfo = FSummonCueInfo();
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Summoning")
 	int32 SpawnLocationIndex;
 
@@ -45,11 +50,20 @@ public:
 	float MaxSpawnDistance = 350.f;
 	UPROPERTY(EditDefaultsOnly, meta=(ClampMin=0.f, UIMax= 360.f, Delta=1.f), Category="Summoning")
 	float SpawnSpread = 120.f;
-	
-	UFUNCTION(BlueprintCallable, meta=(ExpandBoolAsExecs = "ReturnValue"))
-	static bool InstancedStructToSummonInfo(const FInstancedStruct& InstancedStruct, TArray<FVector_NetQuantize>& Locations);
-
 protected:
+	virtual void PreActivate(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
+		const FGameplayAbilityActivationInfo ActivationInfo, FOnGameplayAbilityEnded::FDelegate* OnGameplayAbilityEndedDelegate,
+		const FGameplayEventData* TriggerEventData = nullptr) override;
 	virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
 		const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
+
+	UFUNCTION(BlueprintCallable, meta=(ExpandBoolAsExecs="ReturnValue"))
+	bool SpawnEnemiesByLocations();
+
+	// Call this in GC_Summon
+	UFUNCTION(BlueprintCallable, meta=(WorldContext="WorldContextObject"))
+	static void SummonCueFromEffectContext(const UObject* WorldContextObject, const FGameplayEffectContextHandle& EffectContextHandle,
+		UNiagaraSystem* Effect);
+	/*UFUNCTION(BlueprintCallable, meta=(ExpandBoolAsExecs = "ReturnValue"))
+	static bool EffectContextHandleToSummonInfo(const FGameplayEffectContextHandle& EffectContextHandle, TArray<FVector_NetQuantize>& Locations);*/
 };

@@ -14,5 +14,6 @@ namespace MessageTags
 
 FAuraMessageInfo UMessageInfo::FindMessageInfoForTag(const FGameplayTag& MessageTag) const
 {
+	//TODO: return ptr
 	return MessageInformation.FindRef(MessageTag);
 }

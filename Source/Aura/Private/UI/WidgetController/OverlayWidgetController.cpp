@@ -17,8 +17,7 @@ void UOverlayWidgetController::BindCallbacksDependencies()
 	BindGameplayAttributeToBroadcast(AttributeSet->GetManaAttribute(), OnManaChanged);
 	BindGameplayAttributeToBroadcast(AttributeSet->GetMaxManaAttribute(), OnMaxManaChanged);
 
-	AAuraPlayerState* AuraPS = Cast<AAuraPlayerState>(PlayerState);
-	AuraPS->OnXPChangedDelegate.AddUObject(this, &UOverlayWidgetController::BroadcastXPToUI);
+	PlayerState->OnXPChangedDelegate.AddUObject(this, &UOverlayWidgetController::BroadcastXPToUI);
 	
 	if (!AbilitySystemComponent->OnGiveAbilityDelegate.IsBound())
 	{
@@ -51,10 +50,7 @@ void UOverlayWidgetController::BroadcastInitialValues()
 	{
 		BroadcastGivenAbility(AbilitySpec);
 	}
-	if (AAuraPlayerState* AuraPS = Cast<AAuraPlayerState>(PlayerState))
-	{
-		BroadcastXPToUI(AuraPS->GetPlayerXP(), AuraPS->GetPlayerLevel(), AuraPS->LevelUpDataAsset);
-	}
+	BroadcastXPToUI(PlayerState->GetPlayerXP(), PlayerState->GetPlayerLevel(), PlayerState->LevelUpDataAsset);
 }
 
 void UOverlayWidgetController::BroadcastGivenAbility(const FGameplayAbilitySpec& AbilitySpec)

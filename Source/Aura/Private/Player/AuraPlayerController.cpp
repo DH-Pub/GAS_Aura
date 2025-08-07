@@ -11,12 +11,10 @@
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "Aura/Aura.h"
-#include "Camera/CameraComponent.h"
 #include "Character/AuraCharacter.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SplineComponent.h"
 #include "GameFramework/PawnMovementComponent.h"
-#include "GameFramework/SpringArmComponent.h"
 #include "Input/AuraInputComponent.h"
 #include "Interaction/EnemyInterface.h"
 #include "Kismet/KismetMaterialLibrary.h"
@@ -40,6 +38,15 @@ void AAuraPlayerController::SetPawn(APawn* InPawn)
 	Super::SetPawn(InPawn);
 	SetCameraCapsule();
 }
+UAuraAbilitySystemComponent* AAuraPlayerController::GetAuraASC()
+{
+	if (AbilitySystemComponent == nullptr)
+	{
+		AbilitySystemComponent = Cast<UAuraAbilitySystemComponent>(UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(GetPawn()));
+	}
+	return AbilitySystemComponent;
+}
+
 
 void AAuraPlayerController::CursorTrace()
 {
@@ -119,8 +126,8 @@ void AAuraPlayerController::SetCameraCapsule()
 	if (!IsLocalController()) return;
 	if (AAuraCharacter* AuraCharacter = Cast<AAuraCharacter>(GetPawn()))
 	{
-		ActiveSpringArm = Cast<USpringArmComponent>(AuraCharacter->GetComponentByClass(USpringArmComponent::StaticClass()));
-		ActiveCamera = Cast<UCameraComponent>(AuraCharacter->GetComponentByClass(UCameraComponent::StaticClass()));
+		/*ActiveSpringArm = Cast<USpringArmComponent>(AuraCharacter->GetComponentByClass(USpringArmComponent::StaticClass()));
+		ActiveCamera = Cast<UCameraComponent>(AuraCharacter->GetComponentByClass(UCameraComponent::StaticClass()));*/
 		CameraCapsule = Cast<UCapsuleComponent>(AuraCharacter->GetCameraCapsule());
 		if (CameraCapsule->OnComponentBeginOverlap.IsBound() || CameraCapsule->OnComponentEndOverlap.IsBound())
 		{
@@ -199,10 +206,11 @@ void AAuraPlayerController::AbilityInputTagPressed(FGameplayTag InputTag)
 }
 void AAuraPlayerController::AbilityInputTagReleased(FGameplayTag InputTag)
 {
-	if (GetASC()) AbilitySystemComponent->AbilityInputTagReleased(InputTag);
+	if (GetPawn() == nullptr) return;
+	if (GetAuraASC()) AbilitySystemComponent->AbilityInputTagReleased(InputTag);
 	if (!InputTag.MatchesTagExact(AuraGameplayTags::Controls_Move) || bTargeting)
 	{
-		if (GetASC()) AbilitySystemComponent->AbilityInputTagReleased(InputTag);
+		if (GetAuraASC()) AbilitySystemComponent->AbilityInputTagReleased(InputTag);
 	}
 	else if (!bTargeting && !bShiftKeyDown)
 	{
@@ -241,7 +249,7 @@ void AAuraPlayerController::AbilityInputTagHeld(const FGameplayTag InputTag)
 	if (!InputTag.MatchesTagExact(AuraGameplayTags::Controls_Move) || bTargeting || bShiftKeyDown)
 	{
 		// Call AbilitySystemComponent
-		if (GetASC())
+		if (GetAuraASC())
 		{
 			AbilitySystemComponent->AbilityInputTagHeld(InputTag);
 		}
@@ -261,14 +269,4 @@ void AAuraPlayerController::AbilityInputTagHeld(const FGameplayTag InputTag)
 			GetPawn()->AddMovementInput(WorldDirection);
 		}
 	}
-}
-
-
-UAuraAbilitySystemComponent* AAuraPlayerController::GetASC()
-{
-	if (AbilitySystemComponent == nullptr)
-	{
-		AbilitySystemComponent = Cast<UAuraAbilitySystemComponent>(UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(GetPawn()));
-	}
-	return AbilitySystemComponent;
 }

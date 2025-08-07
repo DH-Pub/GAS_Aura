@@ -18,7 +18,7 @@ public:
 	virtual void BroadcastInitialValues() override;
 	
 	UPROPERTY(BlueprintAssignable, Category = "GAS|Attributes")
-	FOnAttributeChangedSignature OnHealthChanged;
+	FOnVitalAttributeChanged OnHealthChanged;
 	UPROPERTY(BlueprintAssignable, Category = "GAS|Attributes")
-	FOnAttributeChangedSignature OnMaxHealthChanged;
+	FOnVitalAttributeChanged OnMaxHealthChanged;
 };

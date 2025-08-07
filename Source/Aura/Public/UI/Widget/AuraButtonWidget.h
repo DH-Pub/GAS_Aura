@@ -27,7 +27,6 @@ public:
 	FSlateBrush BorderBrush = FSlateBrush();
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Properties")
 	FButtonStyle InnerStyle = FButtonStyle();
-	
 protected:
 	virtual void NativePreConstruct() override;
 	UPROPERTY(BlueprintReadWrite, meta=(BindWidget))

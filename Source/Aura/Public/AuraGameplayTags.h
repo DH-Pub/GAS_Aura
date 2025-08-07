@@ -90,11 +90,6 @@ namespace AuraGameplayTags
 		{Damage_Physical, Attributes_Resistance_Physical},
 	};
 	
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(CombatSocket_Weapon)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(CombatSocket_RightHand)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(CombatSocket_LeftHand)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(CombatSocket_Tail)
-	
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Montage_Attack_1)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Montage_Attack_2)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Montage_Attack_3)

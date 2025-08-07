@@ -62,6 +62,7 @@ public:
 	
 	FORCEINLINE FCharacterClassDefaultInfo GetClassDefaultInfo(const ECharacterClass CharacterClass)
 	{
+		//TODO: return ptr
 		return CharacterClassInformation.FindChecked(CharacterClass);
 	}
 };

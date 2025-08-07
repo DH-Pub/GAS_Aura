@@ -3,17 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "AuraGameplayTags.h"
-#include "GameplayAbilitySpec.h"
-#include "GameplayTagContainer.h"
 #include "GlobeWidget.h"
 #include "AbilitySystem/Data/AbilityDataAsset.h"
 #include "SpellGlobeWidget.generated.h"
 
 class UProgressBar;
-class UGameplayAbility;
 struct FAuraAbilityDataAsset;
-class UOverlayWidgetController;
 struct FGameplayTag;
 class UTextBlock;
 class UImage;
@@ -31,14 +26,14 @@ public:
 	FSlateBrush WheelBrush; // Cooldown Wheel
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GlobeProperties", meta=(GameplayTagFilter=Controls))
-	FGameplayTag InputTag = AuraGameplayTags::Controls; // Player input for spells, set in overlay first
+	FGameplayTag InputTag; // Player input for spells, set in overlay first
 protected:
 	virtual void NativePreConstruct() override;
 	virtual void NativeDestruct() override;
 	
 	virtual void WidgetControllerSet_Implementation(UAuraWidgetController* Controller) override;
 	UPROPERTY(BlueprintReadOnly)
-	TObjectPtr<UOverlayWidgetController> OverlayWC;
+	TObjectPtr<class UOverlayWidgetController> OverlayWC;
 
 	UPROPERTY(BlueprintReadWrite, meta=(BindWidget))
 	TObjectPtr<UProgressBar> Progress_Cooldown;
@@ -55,7 +50,7 @@ protected:
 	TObjectPtr<UTextBlock> Text_Cooldown; // Cooldown Remaining
 	
 	UPROPERTY(BlueprintReadWrite, Category = "GlobeProperties", meta=(GameplayTagFilter=Cooldown))
-	FGameplayTag CooldownTag = AuraGameplayTags::Cooldown;
+	FGameplayTag CooldownTag;
 	
 	UFUNCTION(BlueprintCallable, meta=(ExpandBoolAsExecs = "ReturnValue"))
 	bool SuccessUpdateAbilityData(const FAuraAbilityDataAsset& InAbilityData);

@@ -23,9 +23,7 @@ protected:
 	TSubclassOf<UGameplayEffect> EventBasedEffectClass;
 	UPROPERTY()
 	FGameplayTagContainer ModifiersDataTags; // DataTags from EventBasedEffectClass
-	
-	/*UFUNCTION(BlueprintPure)
-	void GetModifiersSetByCallerDataTag(const TSubclassOf<UGameplayEffect>& EffectClass);*/
+
 	UFUNCTION(BlueprintCallable)
 	void ApplyEventEffectsToSelf(const FGameplayEventData& Payload);
 };

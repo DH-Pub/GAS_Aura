@@ -7,8 +7,18 @@
 #include "UObject/Interface.h"
 #include "CombatInterface.generated.h"
 
+class AAuraCharacterBase;
 enum class ECharacterClass : uint8;
 class UNiagaraSystem;
+
+UENUM(BlueprintType)
+enum class ECombatSocket : uint8
+{
+	Weapon,
+	LeftHand,
+	RightHand,
+	Tail
+};
 
 USTRUCT(BlueprintType)
 struct FTaggedMontage
@@ -20,14 +30,11 @@ struct FTaggedMontage
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<UAnimMontage> Montage = nullptr;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(GameplayTagFilter="CombatSocket"))
-	FGameplayTag SocketTag;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	ECombatSocket SocketEnum = ECombatSocket::Weapon;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<USoundBase> ImpactSound = nullptr;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	TObjectPtr<UNiagaraSystem> Effects = nullptr;
 };
 
 
@@ -38,10 +45,9 @@ class UCombatInterface : public UInterface
 	GENERATED_BODY()
 };
 
-// TODO: Remember this
-/** if BlueprintNativeEvent, Interface::Execute_ is required
- * 
- * Use UObject->Implements<Interface>() to detect interface because if interface is implement directly on a Blueprint
+/** TODO: Remember this
+ * if BlueprintNativeEvent, [I]Interface::Execute_ is required
+ * Use UObject->Implements<[U]Interface>() to detect interface because if interface is implement directly on a Blueprint
  * C++ Cast<Interface> will always return nullptr
  */
 class AURA_API ICombatInterface
@@ -52,28 +58,9 @@ public:
 	int32 GetCharacterLevel();
 	
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
-	ECharacterClass GetCharacterClass(); // BlueprintNativeEvent requires Execute_
-	
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
-	FVector GetCombatSocketLocation(const FGameplayTag& MontageTag);
-
-	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
-	void UpdateFacingTarget(const FVector& TargetLocation);
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
-	UAnimMontage* GetHitReactMontage();
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
-	FTaggedMontage GetRandomAttackMontage();
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	UNiagaraSystem* GetBloodEffect();
 
 	virtual void Die() = 0;
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	bool IsDead() const;
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
-	FTaggedMontage GetTaggedMontageByTag(const FGameplayTag& MontageTag);
-	
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
-	int32 IncrementMinionCount(int32 Amount = 1);
 };

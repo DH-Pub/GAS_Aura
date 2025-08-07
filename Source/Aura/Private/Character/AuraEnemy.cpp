@@ -8,8 +8,6 @@
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "Aura/Aura.h"
-// #include "BehaviorTree/BehaviorTree.h"
-// #include "BehaviorTree/BlackboardComponent.h"
 #include "BrainComponent.h"
 #include "AI/AuraAIController.h"
 #include "Components/CapsuleComponent.h"

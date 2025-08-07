@@ -28,6 +28,7 @@ public:
 	// meta=(WorldContext="WorldContextObject") 
 	UFUNCTION(BlueprintPure, meta=(DefaultToSelf="WorldContextObject"), Category = "AuraAbilitySystemLibrary|WidgetController")
 	static UOverlayWidgetController* GetOverlayWidgetController(const UObject* WorldContextObject);
+	// Get or Create if nullptr: AttributeMenuWidgetController from AuraHUD
 	UFUNCTION(BlueprintPure, meta=(DefaultToSelf="WorldContextObject"), Category = "AuraAbilitySystemLibrary|WidgetController")
 	static UAttributeMenuWidgetController* GetAttributeMenuWidgetController(const UObject* WorldContextObject);
 
@@ -89,8 +90,11 @@ public:
 #pragma endregion
 
 #pragma region InstancedStruct
-	UFUNCTION(BlueprintPure, Category="AuraAbilitySystemLibrary|Cue")
-	static FInstancedStruct GetInstancedStruct(const FGameplayEffectContextHandle& EffectContextHandle);
+	/*UFUNCTION(BlueprintPure, Category="AuraAbilitySystemLibrary|Cue")
+	static FInstancedStruct GetInstancedStruct(const FGameplayEffectContextHandle& EffectContextHandle);*/
+	// Return pointer to EffectContextHandle's InstancedStruct, CANNOT send pointer with UFUNCTION()
+	static FInstancedStruct* GetInstancedStructPointer(const FGameplayEffectContextHandle& EffectContextHandle);
+	
 	UFUNCTION(BlueprintCallable, Category="AuraAbilitySystemLibrary|Cue")
 	static void SetInstancedStruct(UPARAM(ref) FGameplayEffectContextHandle& EffectContextHandle, const FInstancedStruct& InStruct);
 #pragma endregion

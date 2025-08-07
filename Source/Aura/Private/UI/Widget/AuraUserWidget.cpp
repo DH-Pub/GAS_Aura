@@ -11,4 +11,5 @@ void UAuraUserWidget::SetWidgetController(UAuraWidgetController* InWidgetControl
 
 void UAuraUserWidget::WidgetControllerSet_Implementation(UAuraWidgetController* Controller)
 {
+	
 }

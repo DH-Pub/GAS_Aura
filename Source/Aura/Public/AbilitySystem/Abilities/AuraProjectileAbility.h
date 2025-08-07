@@ -15,12 +15,13 @@ class AURA_API UAuraProjectileAbility : public UAuraDamageGameplayAbility
 {
 	GENERATED_BODY()
 protected:
-	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
-		const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
+	virtual void PreActivate(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
+		const FGameplayAbilityActivationInfo ActivationInfo, FOnGameplayAbilityEnded::FDelegate* OnGameplayAbilityEndedDelegate,
+		const FGameplayEventData* TriggerEventData = nullptr) override;
 
 	UFUNCTION(BlueprintCallable, Category="ProjectileAbility")
-	void SpawnProjectile(const FVector& ProjectileTargetLocation, UPARAM(meta=(GameplayTagFilter="CombatSocket")) FGameplayTag SocketTag,
-		bool bStartFromCharacter = true, float SpawnDistance = 60.f, float SpawnHeightAdd = 50.f);
+	void SpawnProjectile(const FVector& TargetLocation, const FVector& InSpawnLocation, bool bStartFromCharacter = true,
+		const float SpawnDistance = 60.f, float SpawnHeightAdd = 50.f);
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TSubclassOf<AAuraProjectile> ProjectileClass;

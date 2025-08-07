@@ -43,7 +43,7 @@ AAuraCharacterBase::AAuraCharacterBase()
 	bUseControllerRotationPitch = bUseControllerRotationRoll = bUseControllerRotationYaw = false;
 }
 
-void AAuraCharacterBase::Tick(float DeltaSeconds)
+void AAuraCharacterBase::Tick(const float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 	if (CombatTarget) TargetLocation = CombatTarget->GetActorLocation();
@@ -54,8 +54,45 @@ void AAuraCharacterBase::Tick(float DeltaSeconds)
 	}
 }
 
-UAbilitySystemComponent* AAuraCharacterBase::GetAbilitySystemComponent() const { return AbilitySystemComponent; }
 
+void AAuraCharacterBase::GetRandomAttackMontage(FTaggedMontage& TaggedMontage)
+{
+	TaggedMontage = AttackMontages[FMath::RandRange(0, AttackMontages.Num() - 1)];
+}
+void AAuraCharacterBase::GetTaggedMontageByTag(const FGameplayTag& MontageTag, FTaggedMontage& TaggedMontage)
+{
+	for (const FTaggedMontage& Montage : AttackMontages)
+	{
+		if (Montage.MontageTag == MontageTag) TaggedMontage = Montage; return;
+	}
+}
+
+FVector AAuraCharacterBase::GetCombatSocketLocation(const ECombatSocket SocketEnum) const
+{
+	switch (SocketEnum)
+	{
+	case ECombatSocket::Weapon: return Weapon->GetSocketLocation("Attack_Socket");
+	case ECombatSocket::LeftHand: return GetMesh()->GetSocketLocation("Hand_L_Socket");
+	case ECombatSocket::RightHand: return GetMesh()->GetSocketLocation("Hand_R_Socket");
+	case ECombatSocket::Tail: return GetMesh()->GetSocketLocation("Tail_Socket");
+	default: return GetActorLocation();
+	}
+}
+
+UAbilitySystemComponent* AAuraCharacterBase::GetAbilitySystemComponent() const
+{
+	// Define in .cpp or we need to #include "AbilitySystem/AuraAbilitySystemComponent.h" in header
+	return AbilitySystemComponent;
+}
+
+void AAuraCharacterBase::Die()
+{
+	if (AAuraCharacterBase* AuraInstigator = Cast<AAuraCharacterBase>(GetInstigator()))
+	{
+		AuraInstigator->Summons.RemoveSingleSwap(this);
+	}
+	MulticastHandleDeath();
+}
 void AAuraCharacterBase::MulticastHandleDeath_Implementation()
 {
 	if (Weapon->GetSkeletalMeshAsset())
@@ -102,33 +139,7 @@ void AAuraCharacterBase::BeginPlay()
 	Super::BeginPlay();
 }
 
-FTaggedMontage AAuraCharacterBase::GetRandomAttackMontage_Implementation()
-{
-	if (AttackMontages.IsEmpty()) return FTaggedMontage();
-	return AttackMontages[FMath::RandRange(0, AttackMontages.Num() - 1)];
-}
-FVector AAuraCharacterBase::GetCombatSocketLocation_Implementation(const FGameplayTag& MontageTag)
-{
-	if (IsValid(Weapon->GetSkeletalMeshAsset()) && MontageTag.MatchesTagExact(AuraGameplayTags::CombatSocket_Weapon))
-	{return Weapon->GetSocketLocation("Attack_Socket");}
-	if (MontageTag.MatchesTagExact(AuraGameplayTags::CombatSocket_LeftHand))
-	{return GetMesh()->GetSocketLocation("Hand_L_Socket");}
-	if (MontageTag.MatchesTagExact(AuraGameplayTags::CombatSocket_RightHand))
-	{return GetMesh()->GetSocketLocation("Hand_R_Socket");}
-	if (MontageTag.MatchesTagExact(AuraGameplayTags::CombatSocket_Tail))
-	{return GetMesh()->GetSocketLocation("Tail_Socket");}
-	return GetActorLocation();
-}
-
-FTaggedMontage AAuraCharacterBase::GetTaggedMontageByTag_Implementation(const FGameplayTag& MontageTag)
-{
-	for (FTaggedMontage TaggedMontage : AttackMontages)
-	{
-		if (TaggedMontage.MontageTag == MontageTag) return TaggedMontage;
-	}
-	return FTaggedMontage();
-}
-
+// Called in PossessedBy, which is called only on server or standalone
 void AAuraCharacterBase::AddCharacterStartupAbilities() const
 {
 	if (!HasAuthority()) return;

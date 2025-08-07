@@ -90,7 +90,9 @@ void AAuraCharacter::BeginPlay()
 	if (UAuraUserWidget* LevelUpWidget = Cast<UAuraUserWidget>(LevelUpWidgetComponent->GetUserWidgetObject()))
 	{
 		UAuraWidgetController::CreateOrGetWidgetController(this, CharacterWidgetController, CharacterWidgetClass,
-			FWidgetControllerParams(nullptr, GetPlayerState(), AbilitySystemComponent, AttributeSet));
+			FWidgetControllerParams(
+				Cast<AAuraPlayerController>(GetController()), GetPlayerState<AAuraPlayerState>(),
+				AbilitySystemComponent, AttributeSet));
 		LevelUpWidget->SetWidgetController(CharacterWidgetController);
 	}
 }
@@ -102,13 +104,13 @@ void AAuraCharacter::InitAbilityActorInfo()
 	AbilitySystemComponent = AuraPlayerState->GetAuraAbilitySystemComponent();
 	AbilitySystemComponent->InitAbilityActorInfo(AuraPlayerState,this); // Set Owner and Avatar
 	AbilitySystemComponent->AbilityActorInfoSet();
-	AttributeSet = AuraPlayerState->GetAttributeSet();
+	AttributeSet = AuraPlayerState->GetAuraAttributeSet();
 
-	if (AAuraPlayerController* AuraPlayerController = Cast<AAuraPlayerController>(GetController()))
+	if (AAuraPlayerController* AuraPC = Cast<AAuraPlayerController>(GetController()))
 	{
-		if (AAuraHUD* AuraHUD = Cast<AAuraHUD>(AuraPlayerController->GetHUD()))
+		if (AAuraHUD* AuraHUD = AuraPC->GetHUD<AAuraHUD>())
 		{
-			AuraHUD->InitOverlay(AuraPlayerController, AuraPlayerState, AbilitySystemComponent, AttributeSet);
+			AuraHUD->InitOverlay(FWidgetControllerParams(AuraPC, AuraPlayerState, AbilitySystemComponent, AttributeSet));
 		}
 	}
 

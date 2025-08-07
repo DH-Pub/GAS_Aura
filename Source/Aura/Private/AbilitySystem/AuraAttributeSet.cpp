@@ -11,7 +11,6 @@
 #include "Character/AuraCharacterBase.h"
 #include "Game/AuraGameModeBase.h"
 #include "Interaction/CombatInterface.h"
-#include "Interaction/PlayerInterface.h"
 #include "Player/AuraPlayerController.h"
 #include "Player/AuraPlayerState.h"
 
@@ -54,22 +53,6 @@ void UAuraAttributeSet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	// Meta
 	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, IncomingDamage, COND_None, REPNOTIFY_Always)
 	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, IncomingXP, COND_None, REPNOTIFY_Always)
-}
-
-void UAuraAttributeSet::PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue)
-{
-	Super::PreAttributeChange(Attribute, NewValue);
-	
-	if (Attribute == GetMaxHealthAttribute())
-	{
-		const float CurrentHealthPercent = GetHealth()/GetMaxHealth();
-		SetHealth(CurrentHealthPercent * NewValue);
-	}
-	else if (Attribute == GetMaxManaAttribute())
-	{
-		const float CurrentManaPercent = GetMana()/GetMaxMana();
-		SetMana(CurrentManaPercent * NewValue);
-	}
 }
 
 // Each Attribute has BaseValue and CurrentValue
@@ -151,11 +134,11 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 				
 				// Send XP To Source on death =====================================================================================
 				const int32 TargetLevel = ICombatInterface::Execute_GetCharacterLevel(Props.TargetCharacter);
-				const ECharacterClass TargetClass = ICombatInterface::Execute_GetCharacterClass(Props.TargetCharacter);
 				
 				FGameplayEventData Payload;
 				Payload.EventTag = AuraGameplayTags::Attributes_Meta_IncomingXP;
-				Payload.EventMagnitude = UAuraAbilitySystemLibrary::GetXPRewardForClassAndLevel(Props.TargetCharacter, TargetClass, TargetLevel);
+				Payload.EventMagnitude = UAuraAbilitySystemLibrary::GetXPRewardForClassAndLevel(
+					Props.TargetCharacter, Props.TargetCharacter->CharacterClass, TargetLevel);
 				// GA_ListenForEvent waits to receive
 				UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(Props.SourceCharacter, Payload.EventTag, Payload); // For last hit player
 
@@ -213,15 +196,31 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 void UAuraAttributeSet::PostAttributeChange(const FGameplayAttribute& Attribute, float OldValue, float NewValue)
 {
 	Super::PostAttributeChange(Attribute, OldValue, NewValue);
-	if (Attribute == GetMaxHealthAttribute() && bTopOfHealth)
+	if (Attribute == GetMaxHealthAttribute())
 	{
-		SetHealth(GetMaxHealth());
-		bTopOfHealth = false;
+		if (bTopOfHealth)
+		{
+			SetHealth(GetMaxHealth());
+			bTopOfHealth = false;
+		}
+		else
+		{
+			const float CurrentHealthPercent = GetHealth()/OldValue;
+			SetHealth(CurrentHealthPercent * GetMaxHealth());
+		}
 	}
-	else if (Attribute == GetMaxManaAttribute() && bTopOfMana)
+	else if (Attribute == GetMaxManaAttribute())
 	{
-		SetMana(GetMaxMana());
-		bTopOfMana = false;
+		if (bTopOfMana)
+		{
+			SetMana(GetMaxMana());
+			bTopOfMana = false;
+		}
+		else
+		{
+			const float CurrentManaPercent = GetMana()/OldValue;
+			SetMana(CurrentManaPercent * GetMaxMana());
+		}
 	}
 }
 

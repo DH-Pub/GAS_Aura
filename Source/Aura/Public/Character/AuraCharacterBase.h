@@ -19,7 +19,6 @@ class UGameplayAbility;
 class UGameplayEffect;
 class UAbilitySystemComponent;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDeathSignature);
 
 /**
  * UAbilitySystemGlobals::GetAbilitySystemComponentFromActor checks for IAbilitySystemInterface
@@ -34,15 +33,27 @@ public:
 	AAuraCharacterBase();
 	virtual void Tick(float DeltaSeconds) override;
 
+	UFUNCTION(BlueprintPure)
 	UAuraAbilitySystemComponent* GetAuraAbilitySystemComponent() const {return AbilitySystemComponent;}
 	UAuraAttributeSet* GetAttributeSet() const { return AttributeSet; }
 	
-	// Call MulticastHandleDeath(), which should be overriden
-	virtual void Die() override {OnDeathDelegate.Broadcast(); MulticastHandleDeath();}
-	// Handle Ragdoll, physics called in Die
-	UFUNCTION(NetMulticast, Reliable)
-	virtual void MulticastHandleDeath();
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
+	void UpdateFacingTarget(const FVector& InTargetLocation);
+	
+	UPROPERTY(EditDefaultsOnly, meta=(ForceInlineRow, TitleProperty="{MontageTag} - {SocketEnum}"), Category="Combat")
+	TArray<FTaggedMontage> AttackMontages;
+	UFUNCTION(BlueprintCallable)
+	void GetRandomAttackMontage(FTaggedMontage& TaggedMontage);
+	UFUNCTION(BlueprintPure)
+	void GetTaggedMontageByTag(const FGameplayTag& MontageTag, FTaggedMontage& TaggedMontage);
 
+	UFUNCTION(BlueprintPure)
+	FVector GetCombatSocketLocation(const ECombatSocket SocketEnum) const;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat")
+	bool bHitReacting = false;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Combat")
+	TObjectPtr<UAnimMontage> HitReactMontage;
 	
 	/*
 	 * Interface start ====================================================================================
@@ -51,24 +62,17 @@ public:
 	// IAbilitySystemInterface
 	// Define in .cpp or we need to #include "AbilitySystem/AuraAbilitySystemComponent.h" in this file
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
-	
-	virtual ECharacterClass GetCharacterClass_Implementation() override {return CharacterClass;}
-	
-	virtual FVector GetCombatSocketLocation_Implementation(const FGameplayTag& MontageTag) override;
-	
-	virtual UAnimMontage* GetHitReactMontage_Implementation() override {return HitReactMontage;}
-	virtual FTaggedMontage GetRandomAttackMontage_Implementation() override;
-	
+
+	// Call MulticastHandleDeath(), which should be overriden
+	virtual void Die() override;
+	// Handle Ragdoll, physics. Called in Die
+	UFUNCTION(NetMulticast, Reliable)
+	virtual void MulticastHandleDeath();
 	virtual bool IsDead_Implementation() const override {return bIsDead;}
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="Combat")
 	bool bIsDead = false;
-	UPROPERTY(BlueprintAssignable, Category = "Combat")
-	FOnDeathSignature OnDeathDelegate;
 	
 	virtual UNiagaraSystem* GetBloodEffect_Implementation() override {return BloodEffect;}
-	virtual FTaggedMontage GetTaggedMontageByTag_Implementation(const FGameplayTag& MontageTag) override;
-	
-	virtual int32 IncrementMinionCount_Implementation(const int32 Amount = 1) override {return MinionCount += Amount;}
 #pragma endregion
 	/*
 	 * Interface end ========================================================================================
@@ -78,7 +82,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Character Class Defaults")
 	ECharacterClass CharacterClass;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat")
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Combat")
 	TObjectPtr<AActor> CombatTarget;
 
 	UPROPERTY(BlueprintReadWrite, Category="Combat")
@@ -87,10 +91,9 @@ public:
 	bool bTracking = false; // true if Facing Target
 	
 	UPROPERTY()
-	int32 MinionCount = 0;
-	
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat")
-	bool bHitReacting = false;
+	TArray<TObjectPtr<AAuraCharacterBase>> Summons;
+	void AddNewSummon(AAuraCharacterBase* NewSummon) {Summons.AddUnique(NewSummon);}
+	void SummonDied(AAuraCharacterBase* DeadSummon) {Summons.RemoveSingleSwap(DeadSummon);}
 	
 	UFUNCTION(NetMulticast, Unreliable)
 	void ShowDamageNumber(const AController* SourceController, const FVector& HitLocation, const float Damage, const bool bBlocked, const bool bCrit);
@@ -117,10 +120,10 @@ protected:
 	void Dissolve();
 	UFUNCTION(BlueprintImplementableEvent)
 	void StartDissolveTimeline(UMaterialInstanceDynamic* MIDynamic);
-	UFUNCTION(BlueprintImplementableEvent)
-	void StartWeaponDissolveTimeline(UMaterialInstanceDynamic* MIDynamic);
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Character Class Defaults")
 	TObjectPtr<UMaterialInstance> MeshDissolveMI;
+	UFUNCTION(BlueprintImplementableEvent)
+	void StartWeaponDissolveTimeline(UMaterialInstanceDynamic* MIDynamic);
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Character Class Defaults")
 	TObjectPtr<UMaterialInstance> WeaponDissolveMI;
 
@@ -135,10 +138,8 @@ private:
 	UPROPERTY(EditAnywhere, Category="GameplayAbility|Abilities")
 	TArray<TSubclassOf<UGameplayAbility>> StartupPassives;
 
-	UPROPERTY(EditDefaultsOnly, Category="Combat")
-	TObjectPtr<UAnimMontage> HitReactMontage;
-	UPROPERTY(EditDefaultsOnly, meta=(ForceInlineRow, TitleProperty="{MontageTag} - {SocketTag}"), Category="Combat")
-	TArray<FTaggedMontage> AttackMontages;
+	UPROPERTY(EditDefaultsOnly)
+	TObjectPtr<UNiagaraSystem> SummonedEffect;
 
 	
 	/*UPROPERTY(EditDefaultsOnly)

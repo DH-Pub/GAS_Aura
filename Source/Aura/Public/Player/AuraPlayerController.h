@@ -7,7 +7,6 @@
 #include "GameFramework/PlayerController.h"
 #include "AuraPlayerController.generated.h"
 
-class UAuraAttributeSet;
 class UAuraAbilitySystemComponent;
 class UAuraInputConfig;
 class UInputAction;
@@ -39,18 +38,17 @@ public:
 	AAuraPlayerController();
 	virtual void PlayerTick(float DeltaTime) override; // Processes player input
 	virtual void SetPawn(APawn* InPawn) override;
-	// return CursorHitResult
-	FORCEINLINE FHitResult GetCursorHitResult() { return CursorHitResult; }
+
+	UAuraAbilitySystemComponent* GetAuraASC();
+	
+	UFUNCTION(BlueprintGetter)
+	FORCEINLINE FHitResult& GetCursorHitResult() { return CursorHitResult; }
 protected:
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
 
 // =========================================================================================================================================
 #pragma region Occlusion
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	TObjectPtr<class USpringArmComponent> ActiveSpringArm;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	TObjectPtr<class UCameraComponent> ActiveCamera;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<class UCapsuleComponent> CameraCapsule;
 
@@ -85,7 +83,7 @@ private:
 	void ShiftReleased() { bShiftKeyDown = false; }
 	bool bShiftKeyDown = false;
 
-	UPROPERTY(BlueprintReadOnly, meta=(AllowPrivateAccess))
+	UPROPERTY(BlueprintGetter=GetCursorHitResult, meta=(AllowPrivateAccess))
 	FHitResult CursorHitResult;
 	void CursorTrace();
 	UPROPERTY(BlueprintReadWrite, meta=(AllowPrivateAccess))
@@ -103,7 +101,6 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<UAuraAbilitySystemComponent> AbilitySystemComponent;
-	UAuraAbilitySystemComponent* GetASC();
 #pragma endregion
 
 

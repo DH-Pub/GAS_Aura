@@ -23,10 +23,10 @@ EStateTreeRunStatus FStateTree_Attack::EnterState(FStateTreeExecutionContext& Co
 EStateTreeRunStatus FStateTree_Attack_Elementalist::EnterState(FStateTreeExecutionContext& Context,
 	const FStateTreeTransitionResult& Transition) const
 {
-	auto [AIController, Actor, AttackTag, SummonTag, MinionSpawnThreshold] = Context.GetInstanceData(*this);
+	auto& [AIController, Actor, AttackTag, SummonTag, MinionSpawnThreshold] = Context.GetInstanceData(*this);
 	AIController->StopMovement();
 	UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Actor);
-	ASC->TryActivateAbilitiesByTag(FGameplayTagContainer(Actor->MinionCount < MinionSpawnThreshold ? SummonTag : AttackTag));
+	ASC->TryActivateAbilitiesByTag(FGameplayTagContainer(Actor->Summons.Num() < MinionSpawnThreshold ? SummonTag : AttackTag));
 	return EStateTreeRunStatus::Succeeded;
 }
 #pragma endregion
