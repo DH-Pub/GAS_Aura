@@ -5,17 +5,22 @@
 #include "UI/Widget/AuraUserWidget.h"
 #include "UI/WidgetController/AttributeMenuWidgetController.h"
 #include "UI/WidgetController/OverlayWidgetController.h"
+#include "UI/WidgetController/SpellMenuWidgetController.h"
 
 UOverlayWidgetController* AAuraHUD::CreateOrGetOverlayWC(const FWidgetControllerParams& WCParams)
 {
 	return UAuraWidgetController::CreateOrGetWidgetController<UOverlayWidgetController>(
 		this,OverlayWidgetController, OverlayWidgetControllerClass, WCParams);
 }
-
 UAttributeMenuWidgetController* AAuraHUD::CreateOrGetAttributeMenuWC(const FWidgetControllerParams& WCParams)
 {
 	return UAuraWidgetController::CreateOrGetWidgetController<UAttributeMenuWidgetController>(
 		this, AttributeMenuWidgetController, AttributeMenuWidgetControllerClass, WCParams);
+}
+USpellMenuWidgetController* AAuraHUD::CreateOrGetSpellMenuWC(const FWidgetControllerParams& WCParams)
+{
+	return UAuraWidgetController::CreateOrGetWidgetController<USpellMenuWidgetController>(
+		this, SpellMenuWidgetController, SpellMenuWidgetControllerClass, WCParams);
 }
 
 void AAuraHUD::InitOverlay(const FWidgetControllerParams& WCParams)

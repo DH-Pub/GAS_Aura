@@ -6,6 +6,7 @@
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AuraWidgetController.generated.h"
 
+class AAuraHUD;
 class AAuraPlayerController;
 class UAuraAbilitySystemComponent;
 class UAuraAttributeSet;
@@ -13,7 +14,6 @@ class UAuraAttributeSet;
 // Custom Delegate to handle Attribute
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnPlayerPointsChangedSignature, int32, NewValue, int32, PointsAllocating);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnVitalAttributeChanged, float, NewValue);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAbilityDataSignature, const FAuraAbilityDataAsset&, Info);
 
 // Used to set Controller, State, ASC, AttributeSet
 USTRUCT(BlueprintType)
@@ -25,9 +25,7 @@ struct FWidgetControllerParams
 	// Use this when ASC and AS has not properly initialized
 	FWidgetControllerParams(AAuraPlayerController* PC, AAuraPlayerState* PS, UAuraAbilitySystemComponent* ASC, UAuraAttributeSet* AS)
 	: PlayerController(PC), PlayerState(PS), AbilitySystemComponent(ASC), AttributeSet(AS) {}
-	explicit FWidgetControllerParams(AAuraPlayerController* PC);
-
-	// explicit  FWidgetControllerParams(AAuraPlayerController* PC);
+	explicit FWidgetControllerParams(AAuraPlayerController* PC); // When ASC and AS are initialized
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TObjectPtr<AAuraPlayerController> PlayerController = nullptr;
@@ -48,17 +46,21 @@ class AURA_API UAuraWidgetController : public UObject
 {
 	GENERATED_BODY()
 public:
-	void SetWidgetControllerParams(const FWidgetControllerParams& WCParams);
+	void SetWidgetControllerParams(const FWidgetControllerParams& WCParams)
+	{
+		PlayerController = WCParams.PlayerController;
+		PlayerState = WCParams.PlayerState;
+		AbilitySystemComponent = WCParams.AbilitySystemComponent;
+		AttributeSet = WCParams.AttributeSet;
+	}
 
-	// Override, bind callbacks 
+	// bind callbacks, called when first created in CreateOrGetWidgetController
 	virtual void BindCallbacksDependencies() {};
 	UFUNCTION(BlueprintCallable)
 	virtual void BroadcastInitialValues() {};
 
-	UPROPERTY(BlueprintAssignable, Category = "GAS|AbilityData")
-	FAbilityDataSignature AbilityDataDelegate;// Send Ability's Tags, Icons, Assets, ...
-
 	// Create WidgetController if none and BindCallbacksDependencies()
+	// Example: UserWidget.h WidgetT* CreateWidget
 	template <typename ControllerT = UAuraWidgetController>
 	static ControllerT* CreateOrGetWidgetController(UObject* Outer, TObjectPtr<ControllerT>& WC,
 		const TSubclassOf<UAuraWidgetController> WCClass, const FWidgetControllerParams& WCParams)
@@ -73,14 +75,13 @@ public:
 		return WC;
 	}
 
-	UPROPERTY(BlueprintReadOnly, Category="WidgetController")
+	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<AAuraPlayerController> PlayerController;
-	UPROPERTY(BlueprintReadOnly, Category="WidgetController")
+	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<AAuraPlayerState> PlayerState;
-	
-	UPROPERTY(BlueprintReadOnly, Category="WidgetController")
+	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<UAuraAbilitySystemComponent> AbilitySystemComponent;
-	UPROPERTY(BlueprintReadOnly, Category="WidgetController")
+	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<UAuraAttributeSet> AttributeSet;
 
 	// Bind AbilitySystemComponent's FOnGameplayAttributeValueChange to 

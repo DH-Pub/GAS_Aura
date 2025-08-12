@@ -60,6 +60,7 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	UNiagaraSystem* GetBloodEffect();
 
+	//TODO: make death a GameplayAbility
 	virtual void Die() = 0;
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	bool IsDead() const;

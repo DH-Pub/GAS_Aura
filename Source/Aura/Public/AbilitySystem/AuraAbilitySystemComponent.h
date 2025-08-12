@@ -6,6 +6,7 @@
 #include "AbilitySystemComponent.h"
 #include "AuraAbilitySystemComponent.generated.h"
 
+class UAuraGameplayAbility;
 struct FUpgradeAllocation;
 class AAuraPlayerState;
 class UAuraAbilitySystemComponent;
@@ -50,13 +51,13 @@ public:
 	
 	FEffectAssetTags EffectAssetTags; // Convert OnGameplayEffectAppliedDelegateToSelf to Client RPC
 	
-	void AddCharacterAbilities(const TArray<TSubclassOf<UGameplayAbility>>& StartupAbilities); // Add Startup Abilities in PossessedBy
-	void AddCharacterPassives(const TArray<TSubclassOf<UGameplayAbility>>& StartupPassives); // Add Startup Passives
+	void AddCharacterAbilities(const TArray<TSubclassOf<UAuraGameplayAbility>>& StartupAbilities); // Add Startup Abilities in PossessedBy
+	void AddCharacterPassives(const TArray<TSubclassOf<UAuraGameplayAbility>>& StartupPassives); // Add Startup Passives
 	
 	FOnGiveAbilitySignature OnGiveAbilityDelegate;
 	
+	void AbilityInputTagPressed(const FGameplayTag& InputTag);
 	void AbilityInputTagReleased(const FGameplayTag& InputTag);
-	void AbilityInputTagHeld(const FGameplayTag& InputTag);
 
 	UFUNCTION(BlueprintCallable)
 	void ReduceCooldownByTag(const FGameplayTagContainer& TagContainer, const float Amount = 0.f, const float Percent = 0.f);
@@ -68,6 +69,8 @@ public:
 	void ServerUpgradeAttribute(const TArray<FPointAllocation>& PointsAllocated, AAuraPlayerState* AuraPS); // apply upgrade from server
 	UFUNCTION(Client, Reliable)
 	void ClientFinishUpgrade(const AAuraPlayerState* AuraPS); // Called in Server RPC to broadcast back to client
+
+	static const FGameplayTag* GetStatusFromSpec(const FGameplayAbilitySpec& AbilitySpec);
 protected:
 	virtual void OnRep_ActivateAbilities() override;
 	virtual void OnGiveAbility(FGameplayAbilitySpec& AbilitySpec) override;

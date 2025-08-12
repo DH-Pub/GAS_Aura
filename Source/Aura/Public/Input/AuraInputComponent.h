@@ -16,9 +16,9 @@ class AURA_API UAuraInputComponent : public UEnhancedInputComponent
 	GENERATED_BODY()
 public:
 	// Bind UAuraInputConfig's InputAction with Pressed, Released, Held Func
-	template<class UserClassT, typename PressedFuncT, typename ReleasedFuncT, typename HeldFuncT>
+	template<class UserClassT, typename PressedFuncT, typename ReleasedFuncT>
 	void BindAbilityActions(const UAuraInputConfig* InputConfig, UserClassT* Object,
-		PressedFuncT PressedFunc, ReleasedFuncT ReleasedFunc, HeldFuncT HeldFunc)
+		PressedFuncT PressedFunc, ReleasedFuncT ReleasedFunc)
 	{
 		check(InputConfig);
 		for (const auto& [InputAction, InputTag] : InputConfig->AbilityInputActions)
@@ -29,7 +29,6 @@ public:
 				UserClass* Object, typename HANDLER_SIG::template TMethodPtr< UserClass, VarTypes... > Func, VarTypes... Vars) */
 				if (PressedFunc) BindAction(InputAction, ETriggerEvent::Started, Object, PressedFunc, InputTag);
 				if (ReleasedFunc) BindAction(InputAction, ETriggerEvent::Completed, Object, ReleasedFunc, InputTag);
-				if (HeldFunc) BindAction(InputAction, ETriggerEvent::Triggered, Object, HeldFunc, InputTag);
 			}
 		}
 	}

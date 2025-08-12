@@ -53,13 +53,26 @@ private:
 
 
 /**
- * Cost =======================================================================================================
+ * Cost Mana =======================================================================================================
  */
 UCLASS()
-class UMMC_AbilityCost : public UGameplayModMagnitudeCalculation
+class UMMC_AbilityManaCost : public UGameplayModMagnitudeCalculation
 {
 	GENERATED_BODY()
 public:
-	UMMC_AbilityCost();
+	UMMC_AbilityManaCost();
+	virtual float CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const override;
+};
+
+
+/**
+ * Cost Health =======================================================================================================
+ */
+UCLASS()
+class UMMC_AbilityHealthCost : public UGameplayModMagnitudeCalculation
+{
+	GENERATED_BODY()
+public:
+	UMMC_AbilityHealthCost();
 	virtual float CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const override;
 };

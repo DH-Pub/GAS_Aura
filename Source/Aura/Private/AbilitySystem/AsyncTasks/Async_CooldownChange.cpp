@@ -102,12 +102,9 @@ void UAsync_CooldownChange::OnGameplayEffectRemoved(const FActiveGameplayEffect&
 
 void UAsync_CooldownChange::CooldownTagChanged(const FGameplayTag InCooldownTag, const int32 NewCount)
 {
-	if (InCooldownTag.MatchesTagExact(CooldownTag))
+	if (InCooldownTag.MatchesTagExact(CooldownTag) && NewCount == 0)
 	{
-		if (NewCount == 0)
-		{
-			CooldownTime = 0.f;
-			CooldownEnd.Broadcast();
-		}
+		CooldownTime = 0.f;
+		CooldownEnd.Broadcast();
 	}
 }

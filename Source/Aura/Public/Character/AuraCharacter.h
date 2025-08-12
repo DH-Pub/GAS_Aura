@@ -28,7 +28,7 @@ public:
 	UFUNCTION(BlueprintGetter)
 	UCapsuleComponent* GetCameraCapsule() {return CameraCapsule;}
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, Category=Default)
 	TObjectPtr<class UNiagaraComponent> LevelUpNiagaraComponent;
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastLevelUpEffects(int32 Level);
@@ -43,10 +43,10 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintGetter=GetCameraCapsule)
 	TObjectPtr<UCapsuleComponent> CameraCapsule;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Default|Character")
 	TObjectPtr<UWidgetComponent> LevelUpWidgetComponent;
 	UPROPERTY()
 	TObjectPtr<UCharacterWidgetController> CharacterWidgetController;
-	UPROPERTY(EditAnywhere, Category = "UserInterface|CharacterWidgetClass")
+	UPROPERTY(EditAnywhere, Category = "Default|CharacterWidgetClass")
 	TSubclassOf<UCharacterWidgetController> CharacterWidgetClass;
 };

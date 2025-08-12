@@ -105,10 +105,10 @@ void AAuraCharacter::InitAbilityActorInfo()
 	AbilitySystemComponent->InitAbilityActorInfo(AuraPlayerState,this); // Set Owner and Avatar
 	AbilitySystemComponent->AbilityActorInfoSet();
 	AttributeSet = AuraPlayerState->GetAuraAttributeSet();
-
+	
 	if (AAuraPlayerController* AuraPC = Cast<AAuraPlayerController>(GetController()))
 	{
-		if (AAuraHUD* AuraHUD = AuraPC->GetHUD<AAuraHUD>())
+		if (AAuraHUD* AuraHUD = AuraPC->GetHUD<AAuraHUD>()) // Only Local Client can get HUD
 		{
 			AuraHUD->InitOverlay(FWidgetControllerParams(AuraPC, AuraPlayerState, AbilitySystemComponent, AttributeSet));
 		}

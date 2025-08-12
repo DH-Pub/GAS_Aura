@@ -6,6 +6,7 @@
 #include "Abilities/GameplayAbility.h"
 #include "AuraGameplayAbility.generated.h"
 
+class AAuraPlayerController;
 class AAuraCharacterBase;
 class IEnemyInterface;
 class ICombatInterface;
@@ -24,17 +25,19 @@ public:
 		const FGameplayAbilityActivationInfo ActivationInfo) const override;
 	
 	// This is Added to GetDynamicSpecSourceTags() during AddCharacterAbilities()
-	UPROPERTY(EditDefaultsOnly, Category="Inputs", meta=(GameplayTagFilter="Inputs"))
+	UPROPERTY(EditDefaultsOnly, Category="Default", meta=(GameplayTagFilter="Input"))
 	FGameplayTag StartupInputTag;
 
 	
 	// TODO: Make Separate GameplayAbility Class with Cooldown + Cost
 	UPROPERTY(EditDefaultsOnly, Category="Costs|Aura")
-	FScalableFloat Cost; // FGameplayEffectModifiedAttribute
+	FScalableFloat ManaCost; // FGameplayEffectModifiedAttribute
+	UPROPERTY(EditDefaultsOnly, Category="Costs|Aura")
+	FScalableFloat HealthCost; // FGameplayEffectModifiedAttribute
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Cooldowns|Aura")
 	FScalableFloat CooldownDuration;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Cooldowns|Aura", meta=(GameplayTagFilter="Cooldown"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Cooldowns|Aura", meta=(GameplayTagFilter="Ability"))
 	FGameplayTagContainer CooldownTags; // If not set, GetCooldownTags() and ApplyCooldown() will use Super::
 	
 	UPROPERTY(Transient)
@@ -42,10 +45,12 @@ public:
 protected:
 	/*virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
 		const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;*/
-	virtual void PreActivate(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
-		const FGameplayAbilityActivationInfo ActivationInfo, FOnGameplayAbilityEnded::FDelegate* OnGameplayAbilityEndedDelegate,
-		const FGameplayEventData* TriggerEventData = nullptr) override;
 
+	// Projects may want to initiate passives or do other "BeginPlay" type of logic here.
+	virtual void OnAvatarSet(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec) override;
+	
 	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<AAuraCharacterBase> AuraCharacterFromActorInfo = nullptr;
+	UPROPERTY(BlueprintReadOnly)
+	TObjectPtr<AAuraPlayerController> AuraPlayerController = nullptr;
 };

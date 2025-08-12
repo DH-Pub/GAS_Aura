@@ -6,6 +6,7 @@
 #include "GameFramework/GameModeBase.h"
 #include "AuraGameModeBase.generated.h"
 
+class UAbilityDataAsset;
 class AAuraPlayerController;
 class UCharacterClassDataAsset;
 /**
@@ -16,7 +17,7 @@ class AURA_API AAuraGameModeBase : public AGameModeBase
 {
 	GENERATED_BODY()
 public:
-	UPROPERTY(EditDefaultsOnly, Category="CharacterClassDefaults")
+	UPROPERTY(EditDefaultsOnly, Category=Default)
 	TObjectPtr<UCharacterClassDataAsset> CharacterClassData;
 	
 	virtual void PostLogin(APlayerController* NewPlayer) override;

@@ -11,22 +11,22 @@ struct FGameplayAbilitySpecHandle;
 class UGameplayAbility;
 
 USTRUCT(BlueprintType)
-struct FAuraAbilityDataAsset
+struct FAuraAbilityData
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(GameplayTagFilter="Abilities"))
+	UPROPERTY(EditDefaultsOnly, meta=(GameplayTagFilter="Abilities"))
 	FGameplayTag AbilityTag = FGameplayTag();
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(GameplayTagFilter="Cooldown"))
-	FGameplayTag CooldownTag = FGameplayTag();
 	
+	UPROPERTY(BlueprintReadOnly)
+	FGameplayTag InputTag = FGameplayTag();
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(GameplayTagFilter="Ability"))
+	FGameplayTag CooldownTag = FGameplayTag();
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<UTexture2D> Icon = nullptr;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<UMaterialInterface> BackgroundMaterial = nullptr;
-	
-	UPROPERTY(BlueprintReadOnly, meta=(GameplayTagFilter="Input"))
-	FGameplayTag InputTag = FGameplayTag();
 };
 
 /**
@@ -39,8 +39,7 @@ class AURA_API UAbilityDataAsset : public UDataAsset
 public:
 	/** Data Asset list of all abilities with icons, ... */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(TitleProperty="{AbilityTag} - {Icon}"), Category="AbilityInformation")
-	TArray<FAuraAbilityDataAsset> AbilityData;
+	TArray<FAuraAbilityData> AbilityDataList;
 
-	UFUNCTION(BlueprintCallable)
-	FAuraAbilityDataAsset FindAbilityDataByTag(const FGameplayTagContainer& AbilityTags, bool bLogNotFound = false);
+	FAuraAbilityData* FindAbilityDataByTag(const FGameplayTagContainer& AbilityTags);
 };

@@ -7,7 +7,8 @@
 #include "ExecCalc_Damage.generated.h"
 
 /**
- * Used in GE_Damage
+ * Used in GE_Damage.
+ * Unlike MMCs, UGameplayEffectExecutionCalculation can change more than one Attribute and essentially do anything the else 
  */
 UCLASS()
 class AURA_API UExecCalc_Damage : public UGameplayEffectExecutionCalculation

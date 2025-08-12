@@ -13,6 +13,7 @@
 	GAMEPLAYATTRIBUTE_VALUE_SETTER(PropertyName) \
 	GAMEPLAYATTRIBUTE_VALUE_INITTER(PropertyName)
 
+class UAuraAbilitySystemComponent;
 class AAuraCharacterBase;
 
 /*USTRUCT()
@@ -40,6 +41,7 @@ struct FEffectProperties
 		// Source = MakeShared<FEffectActor>();
 		// Target = MakeShared<FEffectActor>();
 	}
+	explicit FEffectProperties(const FGameplayEffectModCallbackData& Data);
 
 	FGameplayEffectContextHandle EffectContextHandle;
 
@@ -53,10 +55,10 @@ struct FEffectProperties
 	UPROPERTY()
 	AController* SourceController = nullptr;
 	UPROPERTY()
-	AAuraCharacterBase* SourceCharacter = nullptr; // AvatarActor cast into AuraCharacterBase
+	AAuraCharacterBase* SourceCharacter = nullptr;
 
 	UPROPERTY()
-	UAbilitySystemComponent* TargetASC = nullptr;
+	UAuraAbilitySystemComponent* TargetASC = nullptr;
 	UPROPERTY()
 	AActor* TargetAvatarActor = nullptr;
 	UPROPERTY()
@@ -238,8 +240,6 @@ public:
 
 
 private:
-	static void SetEffectProperties(const FGameplayEffectModCallbackData& Data, FEffectProperties& Props);
-
 	bool bTopOfHealth = false;
 	bool bTopOfMana = false;
 };

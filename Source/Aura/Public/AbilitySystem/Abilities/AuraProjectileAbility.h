@@ -14,12 +14,15 @@ UCLASS()
 class AURA_API UAuraProjectileAbility : public UAuraDamageGameplayAbility
 {
 	GENERATED_BODY()
+public:
+	UAuraProjectileAbility();
+	
 protected:
 	virtual void PreActivate(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
 		const FGameplayAbilityActivationInfo ActivationInfo, FOnGameplayAbilityEnded::FDelegate* OnGameplayAbilityEndedDelegate,
 		const FGameplayEventData* TriggerEventData = nullptr) override;
 
-	UFUNCTION(BlueprintCallable, Category="ProjectileAbility")
+	UFUNCTION(BlueprintCallable)
 	void SpawnProjectile(const FVector& TargetLocation, const FVector& InSpawnLocation, bool bStartFromCharacter = true,
 		const float SpawnDistance = 60.f, float SpawnHeightAdd = 50.f);
 	

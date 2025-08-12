@@ -15,7 +15,7 @@
 
 UAuraDamageGameplayAbility::UAuraDamageGameplayAbility()
 {
-	SetAssetTags(FGameplayTagContainer(AuraGameplayTags::Abilities_Attack));
+	SetAssetTags(FGameplayTagContainer(AuraGameplayTags::Ability_Attack));
 }
 
 void UAuraDamageGameplayAbility::CauseDamageToActors(FGameplayTag GameplayCueTag, const TArray<AActor*>& Actors,
@@ -38,17 +38,11 @@ void UAuraDamageGameplayAbility::CauseDamageToActors(FGameplayTag GameplayCueTag
 			UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(GESpecHandle, Pair.Key, ScaledDamage);
 		}
 		SourceASC->ApplyGameplayEffectSpecToTarget(*GESpecHandle.Data, UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Actor));
-		FDamageCue DamageCue;
-		DamageCue.Location = Actor->GetActorLocation();
-		DamageCue.EffectSound = ImpactSound;
-		if (Actor->Implements<UCombatInterface>())
-		{
-			/* GameplayAbility only replicated on "Owning Client" and/or "Server"
-			 * NiagaraEffect Spawned here WON'T show up on others so we use GameplayCue
-			 */
-			DamageCue.NiagaraSystem = ICombatInterface::Execute_GetBloodEffect(Actor);
-		}
-		DamageCueList.DamageCues.Add(DamageCue);
+		
+		// GameplayAbility only replicated on "Owning Client" and/or "Server", Effect Spawned here WON'T show on others => use GameplayCue
+		DamageCueList.DamageCues.Add(
+			FDamageCue(Actor->GetActorLocation(), ImpactSound,
+			Actor->Implements<UCombatInterface>() ? ICombatInterface::Execute_GetBloodEffect(Actor) : nullptr));
 	}
 	
 	const FInstancedStruct InstancedStruct = FInstancedStruct::Make(DamageCueList);
@@ -63,7 +57,7 @@ void UAuraDamageGameplayAbility::MeleeImpactCueFromEffectContext(const UObject* 
 	{
 		if (const FDamageCueList* DamageCueList = InstancedStruct->GetPtr<FDamageCueList>())
 		{
-			for(const auto& [EffectSound, NiagaraSystem, Location]
+			for(const auto& [Location, EffectSound, NiagaraSystem]
 				: DamageCueList->DamageCues)
 			{
 				UGameplayStatics::PlaySoundAtLocation(WorldContextObject, EffectSound, Location);

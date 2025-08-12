@@ -51,6 +51,7 @@ bool FAuraGameplayEffectContext::NetSerialize(FArchive& Ar, class UPackageMap* M
 		if (bStagger)RepBits |= 1 << 9;
 		if (bShowDamageOnTarget) RepBits |= 1 << 10;
 		if (InstancedStruct.IsValid()) RepBits |= 1 << 11;
+		// if (CueLocations.Num() > 0) RepBits |= 1 << 12; // DEPRECATED
 		// End -----------------------------------------------------------------------------------------------------
 	}
 
@@ -110,6 +111,13 @@ bool FAuraGameplayEffectContext::NetSerialize(FArchive& Ar, class UPackageMap* M
 		}
 		InstancedStruct->NetSerialize(Ar, Map, bOutSuccess);
 	}
+	/*if (RepBits & (1 << 12))
+	{
+		SafeNetSerializeTArray_WithNetSerialize<31>(Ar, CueLocations, Map);
+		// Or modify bOutSuccess
+		/#1#/ Must add NetCore in Build.cs
+		bOutSuccess &= SafeNetSerializeTArray_WithNetSerialize<31>(Ar, CueLocations, Map);#1#
+	}*/
 	// End ====================================================================================================
 
 	if (Ar.IsLoading())
@@ -118,7 +126,5 @@ bool FAuraGameplayEffectContext::NetSerialize(FArchive& Ar, class UPackageMap* M
 	}
 	
 	bOutSuccess = true;
-	/*// Must add NetCore in Build.cs
-	bOutSuccess &= SafeNetSerializeTArray_WithNetSerialize<31>(Ar, CueLocations, Map);*/
 	return true;
 }

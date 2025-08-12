@@ -6,6 +6,7 @@
 #include "UI/WidgetController/AuraWidgetController.h"
 #include "SpellMenuWidgetController.generated.h"
 
+class UOverlayWidgetController;
 /**
  * 
  */
@@ -16,4 +17,9 @@ class AURA_API USpellMenuWidgetController : public UAuraWidgetController
 public:
 	virtual void BindCallbacksDependencies() override;
 	virtual void BroadcastInitialValues() override;
+protected:
+	UPROPERTY(BlueprintReadOnly, BlueprintGetter=GetOverlayWidgetController)
+	TObjectPtr<UOverlayWidgetController> OverlayWC;
+	UFUNCTION(BlueprintGetter)
+	UOverlayWidgetController* GetOverlayWidgetController();
 };

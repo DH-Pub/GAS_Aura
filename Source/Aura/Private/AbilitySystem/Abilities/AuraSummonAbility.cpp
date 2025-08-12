@@ -12,6 +12,11 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "StructUtils/InstancedStruct.h"
 
+UAuraSummonAbility::UAuraSummonAbility()
+{
+	SetAssetTags(FGameplayTagContainer(AuraGameplayTags::Ability_Summon));
+}
+
 void UAuraSummonAbility::SetSpawnLocations()
 {
 	if (NumMinions == 0) return;
@@ -24,7 +29,6 @@ void UAuraSummonAbility::SetSpawnLocations()
 
 	UAbilitySystemComponent* InstigatorASC = GetCurrentActorInfo()->AbilitySystemComponent.Get();
 	FGameplayEffectContextHandle EffectContextHandle = InstigatorASC->MakeEffectContext();
-	
 	for (int32 i = 0; i < NumMinions; i++)
 	{
 		const FVector Direction = LeftOfSpread.RotateAngleAxis(DeltaSpread * (i + 0.5) , FVector::UpVector);
@@ -41,7 +45,7 @@ void UAuraSummonAbility::SetSpawnLocations()
 		// GameplayCue by defaults only send 2 RPCs each frame, needs to add array to send through EffectContextHandle 
 		SummonInfo.Locations.Add(ChosenSpawnLocation);
 	}
-
+	
 	const FInstancedStruct InstancedStruct = FInstancedStruct::Make(SummonInfo);
 	UAuraAbilitySystemLibrary::SetInstancedStruct(EffectContextHandle, InstancedStruct);
 	InstigatorASC->ExecuteGameplayCue(AuraGameplayTags::GameplayCue_Summon, FGameplayCueParameters(EffectContextHandle));

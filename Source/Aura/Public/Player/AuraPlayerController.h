@@ -18,13 +18,18 @@ USTRUCT(BlueprintType)
 struct FCameraOccludedStaticMesh
 {
 	GENERATED_BODY()
-	
+
 	UPROPERTY(BlueprintReadWrite)
-	TMap<TObjectPtr<UMaterialInterface>, TObjectPtr<UMaterialInstanceDynamic>> Materials;
-	UPROPERTY(BlueprintReadWrite)
-	bool IsOccluded = true;
+	TArray<TObjectPtr<UMaterialInterface>> DefaultMaterials;
 	
+	/*UPROPERTY(BlueprintReadWrite)
+	TMap<TObjectPtr<UMaterialInterface>, TObjectPtr<UMaterialInstanceDynamic>> Materials; // <Default Material, Fade Material>*/
 	FCameraOccludedStaticMesh(){}
+};
+
+enum EMouseMovementState : uint8
+{
+	Stop, AutoMove, HoldMove
 };
 /**
  * 
@@ -43,6 +48,11 @@ public:
 	
 	UFUNCTION(BlueprintGetter)
 	FORCEINLINE FHitResult& GetCursorHitResult() { return CursorHitResult; }
+
+	EMouseMovementState MouseMovementState = Stop;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess))
+	TObjectPtr<class USplineComponent> Spline;
+	FVector AutoMoveDestination = FVector::ZeroVector;
 protected:
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
@@ -52,12 +62,12 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<class UCapsuleComponent> CameraCapsule;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="CameraOcclusion")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Default")
 	TObjectPtr<UMaterialInterface> FadeMaterial;
-	UPROPERTY(EditDefaultsOnly, Category="CameraOcclusion")
+	UPROPERTY(EditDefaultsOnly, Category="Default")
 	float FadeIntensity = .25f;
-	UPROPERTY(BlueprintReadWrite, Category="CameraOcclusion")
-	TMap<const UStaticMeshComponent*, FCameraOccludedStaticMesh> OccludedMeshes;
+	UPROPERTY()
+	TMap<TObjectPtr<UStaticMeshComponent>, FCameraOccludedStaticMesh> OccludedMeshes; // <Mesh, >
 
 	void SetCameraCapsule();
 	UFUNCTION()
@@ -68,16 +78,16 @@ protected:
 #pragma endregion
 // ==========================================================================================================================================
 
-	
+
 private:
-	UPROPERTY(EditDefaultsOnly, Category = "Inputs")
+	UPROPERTY(EditDefaultsOnly, Category = "Default|Input")
 	TObjectPtr<UInputMappingContext> AuraContext;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Inputs|Actions")
+	UPROPERTY(EditDefaultsOnly, Category = "Default|Input")
 	TObjectPtr<UInputAction> MoveAction;
 	void Move(const FInputActionValue& InputActionValue);
 
-	UPROPERTY(EditDefaultsOnly, Category = "Inputs|Actions")
+	UPROPERTY(EditDefaultsOnly, Category = "Default|Input")
 	TObjectPtr<UInputAction> ShiftAction;
 	void ShiftPress() { bShiftKeyDown = true; }
 	void ShiftReleased() { bShiftKeyDown = false; }
@@ -87,16 +97,13 @@ private:
 	FHitResult CursorHitResult;
 	void CursorTrace();
 	UPROPERTY(BlueprintReadWrite, meta=(AllowPrivateAccess))
-	TScriptInterface<IEnemyInterface> LastActor;
-	UPROPERTY(BlueprintReadWrite, meta=(AllowPrivateAccess))
 	TScriptInterface<IEnemyInterface> CurrentActor;
 
 
 #pragma region AbilitySystem
-	void AbilityInputTagPressed(FGameplayTag InputTag);
-	void AbilityInputTagReleased(FGameplayTag InputTag);
-	void AbilityInputTagHeld(FGameplayTag InputTag);
-	UPROPERTY(EditDefaultsOnly, Category="Inputs")
+	void ControllerInputPressed(FGameplayTag InputTag);
+	void ControllerInputReleased(FGameplayTag InputTag);
+	UPROPERTY(EditDefaultsOnly, Category="Default|Input")
 	TObjectPtr<UAuraInputConfig> InputConfig;
 
 	UPROPERTY()
@@ -106,25 +113,7 @@ private:
 
 	/*** For multiplayer: Project Settings -> Engine/Navigation System -> Allow Client Side Navigation */
 #pragma region ClickMove
-	UPROPERTY(EditDefaultsOnly, Category="SplineController")
-	bool bDrawNavBox = false;
-	UPROPERTY(EditDefaultsOnly, Category="SplineController")
-	FVector NavExtent = FVector(300.f, 300.f, 600.f);
-	UPROPERTY()
-	TObjectPtr<class UNavigationSystemV1> NavSystem;
-
-	FVector CachedDestination = FVector::ZeroVector;
-	float FollowTime = 0.f;
-	UPROPERTY(EditDefaultsOnly, Category = "Inputs")
-	float ShortPressThreshold = 0.3f;
-	bool bAutoRunning = false;
-	bool bTargeting = false;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(AllowPrivateAccess), Category = "Inputs")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(AllowPrivateAccess), Category = "Default|Input")
 	float AutoRunAcceptanceRadius = 25.f;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess))
-	TObjectPtr<class USplineComponent> Spline;
-
-	void AutoRun();
 #pragma endregion
 };

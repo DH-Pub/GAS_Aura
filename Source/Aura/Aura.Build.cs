@@ -21,7 +21,7 @@ public class Aura : ModuleRules
 			"StateTreeModule", // StateTreeTaskBase.h
 			"GameplayStateTreeModule", // Tasks/StateTreeAITask.h
 			"PropertyBindingUtils", // FStateTreePropertyRef -> ... -> StateTreePropertyBindings.h 
-			// "NetCore", // for sending SafeNetSerializeTArray_WithNetSerialize
+			"NetCore", // for sending SafeNetSerializeTArray_WithNetSerialize
 		});
 
 		// Uncomment if you are using Slate UI

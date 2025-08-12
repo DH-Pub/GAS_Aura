@@ -16,7 +16,7 @@ struct FAuraInputAction
 	UPROPERTY(EditDefaultsOnly)
 	class UInputAction* InputAction = nullptr;
 	
-	UPROPERTY(EditDefaultsOnly, meta=(GameplayTagFilter="Controls"))
+	UPROPERTY(EditDefaultsOnly, meta=(GameplayTagFilter="Input"))
 	FGameplayTag InputTag = FGameplayTag();
 };
 
@@ -29,7 +29,7 @@ class AURA_API UAuraInputConfig : public UDataAsset
 {
 	GENERATED_BODY()
 public:
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(GameplayTagFilter="Controls", TitleProperty="{InputTag} - {InputAction}"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(GameplayTagFilter="Input", TitleProperty="{InputTag} - {InputAction}"))
 	TArray<FAuraInputAction> AbilityInputActions;
 
 

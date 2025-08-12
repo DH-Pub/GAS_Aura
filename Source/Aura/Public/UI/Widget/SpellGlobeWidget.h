@@ -8,7 +8,7 @@
 #include "SpellGlobeWidget.generated.h"
 
 class UProgressBar;
-struct FAuraAbilityDataAsset;
+struct FAuraAbilityData;
 struct FGameplayTag;
 class UTextBlock;
 class UImage;
@@ -25,7 +25,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GlobeProperties")
 	FSlateBrush WheelBrush; // Cooldown Wheel
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GlobeProperties", meta=(GameplayTagFilter=Controls))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GlobeProperties", meta=(GameplayTagFilter=Input))
 	FGameplayTag InputTag; // Player input for spells, set in overlay first
 protected:
 	virtual void NativePreConstruct() override;
@@ -53,7 +53,7 @@ protected:
 	FGameplayTag CooldownTag;
 	
 	UFUNCTION(BlueprintCallable, meta=(ExpandBoolAsExecs = "ReturnValue"))
-	bool SuccessUpdateAbilityData(const FAuraAbilityDataAsset& InAbilityData);
+	bool SuccessUpdateAbilityData(const FAuraAbilityData& InAbilityData);
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Properties")
 	float Frequency = 0.05f;

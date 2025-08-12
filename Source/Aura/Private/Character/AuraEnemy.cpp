@@ -81,7 +81,7 @@ void AAuraEnemy::BeginPlay()
 		HealthBarController->BroadcastInitialValues();
 	}
 
-	AbilitySystemComponent->RegisterGameplayTagEvent(AuraGameplayTags::Effects_HitReact, EGameplayTagEventType::NewOrRemoved)
+	AbilitySystemComponent->RegisterGameplayTagEvent(AuraGameplayTags::Ability_HitReact, EGameplayTagEventType::NewOrRemoved)
 	.AddLambda([this](const FGameplayTag CallbackTag, const int NewCount)
 	{
 		GetCharacterMovement()->MaxWalkSpeed = NewCount > 0 ? 0.f : BaseWalkSpeed;

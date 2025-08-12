@@ -7,12 +7,42 @@
 #include "AuraGameplayTags.h"
 #include "Net/UnrealNetwork.h" // DOREPLIFETIME_CONDITION_NOTIFY
 #include "GameplayEffectExtension.h" // FGameplayEffectModCallbackData.EvaluatedData
+#include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
 #include "Character/AuraCharacterBase.h"
 #include "Game/AuraGameModeBase.h"
 #include "Interaction/CombatInterface.h"
 #include "Player/AuraPlayerController.h"
 #include "Player/AuraPlayerState.h"
+
+FEffectProperties::FEffectProperties(const FGameplayEffectModCallbackData& Data)
+{
+	EffectContextHandle = Data.EffectSpec.GetContext();
+	SourceASC = EffectContextHandle.GetOriginalInstigatorAbilitySystemComponent();
+	if (IsValid(SourceASC) && SourceASC->AbilityActorInfo.IsValid() && SourceASC->AbilityActorInfo->AvatarActor.IsValid())
+	{
+		SourceAvatarActor = SourceASC->AbilityActorInfo->AvatarActor.Get();
+		SourceController = SourceASC->AbilityActorInfo->PlayerController.Get();
+		if (SourceController == nullptr && SourceAvatarActor != nullptr)
+		{
+			if (const APawn* Pawn = Cast<APawn>(SourceAvatarActor))
+			{
+				SourceController = Pawn->GetController();
+			}
+		}
+		SourceCharacter = Cast<AAuraCharacterBase>(SourceController ? SourceController->GetPawn() : SourceAvatarActor);
+	}
+
+	// Target should be the owner of this AttributeSet
+	if (const TSharedPtr<FGameplayAbilityActorInfo> TargetAbilityActorInfo = Data.Target.AbilityActorInfo;
+		TargetAbilityActorInfo.IsValid() && TargetAbilityActorInfo->AvatarActor.IsValid())
+	{
+		TargetAvatarActor = TargetAbilityActorInfo->AvatarActor.Get();
+		TargetController = TargetAbilityActorInfo->PlayerController.Get();
+		TargetCharacter = Cast<AAuraCharacterBase>(TargetAvatarActor);
+		TargetASC = TargetCharacter->GetAuraAbilitySystemComponent();
+	}
+}
 
 UAuraAttributeSet::UAuraAttributeSet()
 {
@@ -71,44 +101,12 @@ void UAuraAttributeSet::PreAttributeBaseChange(const FGameplayAttribute& Attribu
 	}
 }
 
-void UAuraAttributeSet::SetEffectProperties(const FGameplayEffectModCallbackData& Data, FEffectProperties& Props)
-{
-	// Source: Causer / Target: Owner of this AS
-	Props.EffectContextHandle = Data.EffectSpec.GetContext();
-	Props.SourceASC = Props.EffectContextHandle.GetOriginalInstigatorAbilitySystemComponent();
-	if (const UAbilitySystemComponent* SourceASC = Props.SourceASC;
-		IsValid(SourceASC) && SourceASC->AbilityActorInfo.IsValid() && SourceASC->AbilityActorInfo->AvatarActor.IsValid())
-	{
-		Props.SourceAvatarActor = SourceASC->AbilityActorInfo->AvatarActor.Get();
-		Props.SourceController = SourceASC->AbilityActorInfo->PlayerController.Get();
-		if (Props.SourceController == nullptr && Props.SourceAvatarActor != nullptr)
-		{
-			if (const APawn* Pawn = Cast<APawn>(Props.SourceAvatarActor))
-			{
-				Props.SourceController = Pawn->GetController();
-			}
-		}
-		if (Props.SourceController) Props.SourceCharacter = Cast<AAuraCharacterBase>(Props.SourceController->GetPawn());
-	}
-
-	if (const TSharedPtr<FGameplayAbilityActorInfo> TargetAbilityActorInfo = Data.Target.AbilityActorInfo;
-		TargetAbilityActorInfo.IsValid() && TargetAbilityActorInfo->AvatarActor.IsValid())
-	{
-		Props.TargetAvatarActor = TargetAbilityActorInfo->AvatarActor.Get();
-		Props.TargetController = TargetAbilityActorInfo->PlayerController.Get();
-		Props.TargetCharacter = Cast<AAuraCharacterBase>(Props.TargetAvatarActor);
-		Props.TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Props.TargetAvatarActor);
-	}
-}
-
-
 // Called just before BaseValue is changed, can also be used to clamp
 void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data)
 {
 	Super::PostGameplayEffectExecute(Data);
 
-	FEffectProperties Props;
-	SetEffectProperties(Data, Props);
+	FEffectProperties Props(Data);
 	
 	#pragma region IncomingDamage =======================================================================================
 	if (Data.EvaluatedData.Attribute == GetIncomingDamageAttribute())
@@ -123,7 +121,7 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 			{
 				if (UAuraAbilitySystemLibrary::IsStaggerDamage(Props.EffectContextHandle)) // HitReact
 				{
-					const FGameplayTagContainer TagContainer(AuraGameplayTags::Effects_HitReact); // Container with 1 default
+					const FGameplayTagContainer TagContainer(AuraGameplayTags::Ability_HitReact); // Container with 1 default
 					// Activate GA_HitReact which has AssetTag(Effects.HitReact) given in GiveStartupAbilities(CommonAbilities)
 					Props.TargetASC->TryActivateAbilitiesByTag(TagContainer);
 				}
@@ -168,14 +166,10 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 	#pragma region IncomingXP ==========================================================================================
 	if (Data.EvaluatedData.Attribute == GetIncomingXPAttribute())
 	{
-		const float LocalIncomingXP = GetIncomingXP();
-		// SetIncomingXP(0.f); // Clear IncomingXP after storing value if GE_EventIncomingXP is not "Override"
+		const float LocalIncomingXP = GetIncomingXP(); // SetIncomingXP(0.f); // if GE_EventIncomingXP is not "Override"
 
-		//TODO: see if we should level up
-
-		
-		// Source Character is the owner, since GA_ListenForEvents applies GE_EventIncomingXP
-		if (AAuraPlayerState* AuraAS = Props.SourceController->GetPlayerState<AAuraPlayerState>())
+		// Source/Target is the owner, since GA_ListenForEvents applies GE_EventIncomingXP to self
+		if (AAuraPlayerState* AuraAS = Props.TargetController->GetPlayerState<AAuraPlayerState>())
 		{
 			const int32 OldLevel = AuraAS->GetPlayerLevel();
 			AuraAS->AddToXP(LocalIncomingXP);
@@ -185,10 +179,6 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 				bTopOfMana = true;
 			}
 		}
-		/*if (Props.SourceCharacter->Implements<UPlayerInterface>()) // Source == Target
-		{
-			IPlayerInterface::Execute_AddToXP(Props.SourceCharacter, LocalIncomingXP);
-		}*/
 	}
 	#pragma endregion 
 }

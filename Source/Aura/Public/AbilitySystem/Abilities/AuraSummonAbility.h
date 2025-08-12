@@ -28,6 +28,8 @@ class AURA_API UAuraSummonAbility : public UAuraGameplayAbility
 {
 	GENERATED_BODY()
 public:
+	UAuraSummonAbility();
+	
 	UFUNCTION(BlueprintCallable)
 	void SetSpawnLocations();
 	UFUNCTION(BlueprintPure)

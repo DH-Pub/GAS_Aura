@@ -3,8 +3,9 @@
 
 #include "AbilitySystem/Abilities/AuraGameplayAbility.h"
 
+#include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "Character/AuraCharacterBase.h"
-#include "Interaction/CombatInterface.h"
+#include "Player/AuraPlayerController.h"
 
 UAuraGameplayAbility::UAuraGameplayAbility()
 {
@@ -33,7 +34,7 @@ void UAuraGameplayAbility::ApplyCooldown(const FGameplayAbilitySpecHandle Handle
 	
 	if (UGameplayEffect* CooldownGE = GetCooldownGameplayEffect())
 	{
-		FGameplayEffectSpecHandle SpecHandle = MakeOutgoingGameplayEffectSpec(CooldownGE->GetClass(), GetAbilityLevel());
+		const FGameplayEffectSpecHandle SpecHandle = MakeOutgoingGameplayEffectSpec(CooldownGE->GetClass(), GetAbilityLevel());
 		SpecHandle.Data->DynamicGrantedTags.AppendTags(CooldownTags);
 		SpecHandle.Data->SetSetByCallerMagnitude(CooldownTags.GetByIndex(0), CooldownDuration.GetValueAtLevel(GetAbilityLevel()));
 		// Use MMC
@@ -41,14 +42,11 @@ void UAuraGameplayAbility::ApplyCooldown(const FGameplayAbilitySpecHandle Handle
 	}
 }
 
-void UAuraGameplayAbility::PreActivate(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
-	const FGameplayAbilityActivationInfo ActivationInfo, FOnGameplayAbilityEnded::FDelegate* OnGameplayAbilityEndedDelegate,
-	const FGameplayEventData* TriggerEventData)
+void UAuraGameplayAbility::OnAvatarSet(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec)
 {
-	Super::PreActivate(Handle, ActorInfo, ActivationInfo, OnGameplayAbilityEndedDelegate, TriggerEventData);
-	if (AuraCharacterFromActorInfo == nullptr)
-	{
-		AuraCharacterFromActorInfo = Cast<AAuraCharacterBase>(GetAvatarActorFromActorInfo());
-		if (AuraCharacterFromActorInfo == nullptr) EndAbility(Handle, ActorInfo, ActivationInfo, false, true);
-	}
+	Super::OnAvatarSet(ActorInfo, Spec);
+
+	// "BeginPlay" logic
+	AuraCharacterFromActorInfo = Cast<AAuraCharacterBase>(ActorInfo->AvatarActor);
+	AuraPlayerController = Cast<AAuraPlayerController>(AuraCharacterFromActorInfo->GetController());
 }

@@ -26,7 +26,7 @@ public:
 	TObjectPtr<UProjectileMovementComponent> ProjectileMovement;
 
 	// Pitch when projectile is spawned
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Default")
 	float StartPitch = 0.f;
 	
 	UPROPERTY(BlueprintReadOnly, meta=(ExposeOnSpawn)) // Expose pin on spawn
@@ -44,15 +44,15 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<USphereComponent> Sphere;
 private:
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, Category="Default")
 	float LifeSpan = 2.f;
 	
 	// Flying sound
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UAudioComponent> LoopingAudio;
-	UPROPERTY(EditAnywhere, Category="Effects")
+	UPROPERTY(EditAnywhere, Category="Default")
 	TObjectPtr<USoundBase> ImpactSound;
 	
-	UPROPERTY(EditAnywhere, Category="Effects")
+	UPROPERTY(EditAnywhere, Category="Default")
 	TObjectPtr<UNiagaraSystem> ImpactEffect;
 };

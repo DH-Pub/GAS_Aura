@@ -4,7 +4,6 @@
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
 
 #include "AuraGameplayEffectTypes.h"
-#include "AbilitySystem/AuraAttributeSet.h"
 #include "Components/CanvasPanel.h"
 #include "Components/Overlay.h"
 #include "Game/AuraGameModeBase.h"
@@ -12,7 +11,6 @@
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Player/AuraPlayerController.h"
-#include "Player/AuraPlayerState.h"
 #include "StructUtils/InstancedStruct.h"
 #include "UI/HUD/AuraHUD.h"
 #include "UI/Widget/AuraUserWidget.h"
@@ -33,9 +31,7 @@ UOverlayWidgetController* UAuraAbilitySystemLibrary::GetOverlayWidgetController(
 	}
 	return nullptr;
 }
-
-UAttributeMenuWidgetController* UAuraAbilitySystemLibrary::GetAttributeMenuWidgetController(
-	const UObject* WorldContextObject)
+UAttributeMenuWidgetController* UAuraAbilitySystemLibrary::GetAttributeMenuWidgetController(const UObject* WorldContextObject)
 {
 	if (AAuraPlayerController* PC = Cast<AAuraPlayerController>(GEngine->GetFirstLocalPlayerController(WorldContextObject->GetWorld())))
 	{
@@ -46,10 +42,21 @@ UAttributeMenuWidgetController* UAuraAbilitySystemLibrary::GetAttributeMenuWidge
 	}
 	return nullptr;
 }
+USpellMenuWidgetController* UAuraAbilitySystemLibrary::GetSpellMenuWidgetController(const UObject* WorldContextObject)
+{
+	if (AAuraPlayerController* PC = Cast<AAuraPlayerController>(GEngine->GetFirstLocalPlayerController(WorldContextObject->GetWorld())))
+	{
+		if (AAuraHUD* AuraHUD = PC->GetHUD<AAuraHUD>())
+		{
+			return AuraHUD->CreateOrGetSpellMenuWC(FWidgetControllerParams(PC));
+		}
+	}
+	return nullptr;
+}
 
 /* Make sure to check HasAuthority before calling this */
 void UAuraAbilitySystemLibrary::InitializeDefaultAttributes(const UObject* WorldContextObject, UObject* SourceObject,
-	ECharacterClass CharacterClass, float Level, UAbilitySystemComponent* ASC)
+	const ECharacterClass CharacterClass, const float Level, UAbilitySystemComponent* ASC)
 {
 	UCharacterClassDataAsset* ClassData = GetCharacterClassDataAsset(WorldContextObject);
 	const FCharacterClassDefaultInfo ClassDefaultInfo = ClassData->GetClassDefaultInfo(CharacterClass);
@@ -74,16 +81,15 @@ void UAuraAbilitySystemLibrary::GiveStartupAbilities(const UObject* WorldContext
 	
 	for (const TSubclassOf ClassAbility : ClassData->CommonAbilities)
 	{
-		FGameplayAbilitySpec AbilitySpec(ClassAbility, 1); // These abilities do not change according to levels 
-		ASC->GiveAbility(AbilitySpec);
+		// These abilities do not change according to levels (Eg: HitReact, ...)
+		ASC->GiveAbility(FGameplayAbilitySpec(ClassAbility, 1));
 	}
 	
 	if (ASC->GetAvatarActor()->Implements<UCombatInterface>())
 	{
 		for (TSubclassOf Ability : ClassData->GetClassDefaultInfo(CharacterClass).ClassAbilities)
 		{
-			FGameplayAbilitySpec AbilitySpec(Ability, ICombatInterface::Execute_GetCharacterLevel(ASC->GetAvatarActor()));
-			ASC->GiveAbility(AbilitySpec);
+			ASC->GiveAbility(FGameplayAbilitySpec(Ability, ICombatInterface::Execute_GetCharacterLevel(ASC->GetAvatarActor())));
 		}
 	}
 }
@@ -103,9 +109,9 @@ bool UAuraAbilitySystemLibrary::AddWidgetToRootCanvasPanel(const UObject* WorldC
 	if (InNewWidget == nullptr) return false;
 	if (const APlayerController* PC = GEngine->GetFirstLocalPlayerController(WorldContextObject->GetWorld()))
 	{
-		AAuraHUD* AuraHUD = PC->GetHUD<AAuraHUD>(); if (AuraHUD == nullptr) return false;
-		const UAuraUserWidget* RootOverlay = AuraHUD->GetOverlayWidget(); if (RootOverlay == nullptr) return false;
-		if (const UCanvasPanel* CanvasPanel = Cast<UCanvasPanel>(RootOverlay->GetRootWidget()))
+		const AAuraHUD* AuraHUD = PC->GetHUD<AAuraHUD>(); if (AuraHUD == nullptr) return false;
+		if (AuraHUD->OverlayWidget == nullptr) return false;
+		if (const UCanvasPanel* CanvasPanel = Cast<UCanvasPanel>(AuraHUD->OverlayWidget->GetRootWidget()))
 		{
 			//TODO: Find Alternative to GetChildAt(), Index needs to be Overlay_Screen
 			if (UOverlay* OverlayGame = Cast<UOverlay>(CanvasPanel->GetChildAt(0)))
@@ -131,7 +137,7 @@ bool UAuraAbilitySystemLibrary::YawActorToLocation(AActor* InActor, FVector InLo
 }
 
 void UAuraAbilitySystemLibrary::GetLivePlayersInRadius(const UObject* WorldContextObject, TArray<AActor*>& OutActors,
-	const TArray<AActor*>& ActorsToIgnore, const float Radius, const FVector& Origin)
+	const TArray<AActor*>& ActorsToIgnore, float Radius, const FVector& Origin, bool bShowDebug)
 {
 	if (const UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull))
 	{
@@ -148,6 +154,11 @@ void UAuraAbilitySystemLibrary::GetLivePlayersInRadius(const UObject* WorldConte
 				OutActors.AddUnique(Overlap.GetActor());
 			}
 		}
+
+		if (bShowDebug)
+		{
+			UKismetSystemLibrary::DrawDebugSphere(WorldContextObject, Origin, Radius, 12, FColor::Red, 1.f);
+		}
 	}
 }
 
@@ -159,6 +170,7 @@ bool UAuraAbilitySystemLibrary::IsNotFriend(const AActor* FirstActor, const AAct
 	return !(bBothArePlayers || bBothAreEnemies);
 }
 
+
 UCharacterClassDataAsset* UAuraAbilitySystemLibrary::GetCharacterClassDataAsset(const UObject* WorldContextObject)
 {
 	if (const AAuraGameModeBase* AuraGameMode = Cast<AAuraGameModeBase>(UGameplayStatics::GetGameMode(WorldContextObject)))
@@ -168,6 +180,10 @@ UCharacterClassDataAsset* UAuraAbilitySystemLibrary::GetCharacterClassDataAsset(
 	return nullptr;
 }
 
+AAuraHUD* UAuraAbilitySystemLibrary::GetAuraHUD(const UObject* WorldContextObject)
+{
+	return GEngine->GetFirstLocalPlayerController(WorldContextObject->GetWorld())->GetHUD<AAuraHUD>();
+}
 
 /*
  * =============== FAuraGameplayEffectContext ========================================================================================================================

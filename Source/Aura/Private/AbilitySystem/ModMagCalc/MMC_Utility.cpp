@@ -10,10 +10,11 @@
 
 UMMC_MaxHealth::UMMC_MaxHealth()
 {
-	// VigorDef = FGameplayEffectAttributeCaptureDefinition(UAuraAttributeSet::GetVigorAttribute(), EGameplayEffectAttributeCaptureSource::Target, false);
-	VigorDef.AttributeToCapture = UAuraAttributeSet::GetVigorAttribute();
+	/*VigorDef.AttributeToCapture = UAuraAttributeSet::GetVigorAttribute();
 	VigorDef.AttributeSource = EGameplayEffectAttributeCaptureSource::Target;
-	VigorDef.bSnapshot = false;
+	VigorDef.bSnapshot = false;*/
+	VigorDef = FGameplayEffectAttributeCaptureDefinition(
+		UAuraAttributeSet::GetVigorAttribute(), EGameplayEffectAttributeCaptureSource::Target, false);
 	RelevantAttributesToCapture.Add(VigorDef);
 }
 float UMMC_MaxHealth::CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const
@@ -40,9 +41,8 @@ float UMMC_MaxHealth::CalculateBaseMagnitude_Implementation(const FGameplayEffec
 /*====================================================================================================================*/
 UMMC_MaxMana::UMMC_MaxMana()
 {
-	IntelligenceDef.AttributeToCapture = UAuraAttributeSet::GetIntelligenceAttribute();
-	IntelligenceDef.AttributeSource = EGameplayEffectAttributeCaptureSource::Target;
-	IntelligenceDef.bSnapshot = false;
+	IntelligenceDef = FGameplayEffectAttributeCaptureDefinition(
+		UAuraAttributeSet::GetIntelligenceAttribute(), EGameplayEffectAttributeCaptureSource::Target, false);
 	RelevantAttributesToCapture.Add(IntelligenceDef);
 }
 float UMMC_MaxMana::CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const
@@ -79,11 +79,9 @@ float UMMC_CooldownDuration::CalculateBaseMagnitude_Implementation(const FGamepl
 	if (!Ability) return 0.f;
 	
 	// Gather tags from source and target
-	const FGameplayTagContainer* SourceTags = Spec.CapturedSourceTags.GetAggregatedTags();
-	const FGameplayTagContainer* TargetTags = Spec.CapturedTargetTags.GetAggregatedTags();
 	FAggregatorEvaluateParameters EvaluateParameters;
-	EvaluateParameters.SourceTags = SourceTags;
-	EvaluateParameters.TargetTags = TargetTags;
+	EvaluateParameters.SourceTags = Spec.CapturedSourceTags.GetAggregatedTags();
+	EvaluateParameters.TargetTags = Spec.CapturedTargetTags.GetAggregatedTags();
 
 	float INT = 0.f;
 	GetCapturedAttributeMagnitude(IntelligenceDef, Spec, EvaluateParameters, INT);
@@ -95,14 +93,34 @@ float UMMC_CooldownDuration::CalculateBaseMagnitude_Implementation(const FGamepl
 
 
 /*====================================================================================================================*/
-UMMC_AbilityCost::UMMC_AbilityCost()
+UMMC_AbilityManaCost::UMMC_AbilityManaCost()
 {
 }
-float UMMC_AbilityCost::CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const
+float UMMC_AbilityManaCost::CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const
 {
 	if (const UAuraGameplayAbility* Ability = Cast<UAuraGameplayAbility>(Spec.GetContext().GetAbilityInstance_NotReplicated()))
 	{
-		return Ability->Cost.GetValueAtLevel(Ability->GetAbilityLevel());
+		if (Ability->ManaCost != 0.f)
+		{
+			return Ability->ManaCost.GetValueAtLevel(Ability->GetAbilityLevel());
+		}
+	}
+	return 0.f;
+}
+
+
+/*====================================================================================================================*/
+UMMC_AbilityHealthCost::UMMC_AbilityHealthCost()
+{
+}
+float UMMC_AbilityHealthCost::CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const
+{
+	if (const UAuraGameplayAbility* Ability = Cast<UAuraGameplayAbility>(Spec.GetContext().GetAbilityInstance_NotReplicated()))
+	{
+		if (Ability->HealthCost != 0.f)
+		{
+			return Ability->HealthCost.GetValueAtLevel(Ability->GetAbilityLevel());
+		}
 	}
 	return 0.f;
 }

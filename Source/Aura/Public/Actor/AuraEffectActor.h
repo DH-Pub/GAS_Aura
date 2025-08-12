@@ -54,16 +54,16 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void OnEndOverlap(AActor* TargetActor);
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AppliedEffects")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Default")
 	bool bDestroyOnEffectApplication = false;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AppliedEffects")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Default")
 	bool bApplyEffectsToEnemies = false;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AppliedEffects")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Default")
 	TArray<FEffectType> Effects;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AppliedEffects")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Default")
 	float ActorLevel = 1.f;
 private:
 	// Check if Actor is NOT Enemy and effect does not apply to enemy

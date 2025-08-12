@@ -27,8 +27,6 @@ struct FCharacterClassDefaultInfo
 
 	UPROPERTY(EditDefaultsOnly, Category = "ClassDefaults")
 	TSubclassOf<UGameplayEffect> PrimaryAttributes;
-	UPROPERTY(EditDefaultsOnly, Category = "ClassDefaults")
-	TSubclassOf<UGameplayEffect> SecondaryAttributes;
 
 	UPROPERTY(EditDefaultsOnly, Category = "ClassDefaults")
 	TArray<TSubclassOf<UGameplayAbility>> ClassAbilities;
@@ -45,7 +43,7 @@ class AURA_API UCharacterClassDataAsset : public UDataAsset
 {
 	GENERATED_BODY()
 public:
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(TitleProperty="{PrimaryAttributes}"))
 	TMap<ECharacterClass, FCharacterClassDefaultInfo> CharacterClassInformation;
 
 	// Attributes shared for all classes (all will have the same because they are based on PrimaryAttributes)

@@ -63,19 +63,26 @@ UExecCalc_Damage::UExecCalc_Damage()
 	RelevantAttributesToCapture.Add(DamageStatics().ArcaneResistanceDef);
 	RelevantAttributesToCapture.Add(DamageStatics().PhysicalResistanceDef);
 	
-	// Testing
+	/*// Testing
 	IncomingDamageDef = FGameplayEffectAttributeCaptureDefinition(UAuraAttributeSet::GetIncomingDamageAttribute(),
 		EGameplayEffectAttributeCaptureSource::Target, false); // Testing
-	RelevantAttributesToCapture.Add(IncomingDamageDef); // Testing
+	RelevantAttributesToCapture.Add(IncomingDamageDef); // Testing*/
 }
 
 void UExecCalc_Damage::Execute_Implementation(const FGameplayEffectCustomExecutionParameters& ExecutionParams,
                                               FGameplayEffectCustomExecutionOutput& OutExecutionOutput) const
 {
+	/* Boilerplate */
 	const UAbilitySystemComponent* SourceASC = ExecutionParams.GetSourceAbilitySystemComponent();
 	const UAbilitySystemComponent* TargetASC = ExecutionParams.GetTargetAbilitySystemComponent();
 	AActor* SourceAvatar = SourceASC ? SourceASC->GetAvatarActor() : nullptr;
 	AActor* TargetAvatar = TargetASC ? TargetASC->GetAvatarActor() : nullptr;
+	
+	const FGameplayEffectSpec& Spec = ExecutionParams.GetOwningSpec();
+	FAggregatorEvaluateParameters EvaluateParameters;
+	EvaluateParameters.SourceTags = Spec.CapturedSourceTags.GetAggregatedTags();
+	EvaluateParameters.TargetTags = Spec.CapturedTargetTags.GetAggregatedTags();
+	/* End Boilerplate */
 
 	int32 SourcePlayerLevel = 1;
 	if (SourceAvatar->Implements<UCombatInterface>())
@@ -88,10 +95,6 @@ void UExecCalc_Damage::Execute_Implementation(const FGameplayEffectCustomExecuti
 		TargetPlayerLevel = ICombatInterface::Execute_GetCharacterLevel(TargetAvatar);
 	}
 
-	const FGameplayEffectSpec& Spec = ExecutionParams.GetOwningSpec();
-	FAggregatorEvaluateParameters EvaluateParameters;
-	EvaluateParameters.SourceTags = Spec.CapturedSourceTags.GetAggregatedTags();
-	EvaluateParameters.TargetTags = Spec.CapturedTargetTags.GetAggregatedTags();
 
 	// Get Damage Set by caller Magnitude
 	float Damage = 0.f;
@@ -155,9 +158,12 @@ void UExecCalc_Damage::Execute_Implementation(const FGameplayEffectCustomExecuti
 		Damage *= (1 + SourceCritDamage);
 	}
 
-	const float PrevIncomingDmg = GetAttributeMagnitudeClamped(IncomingDamageDef); // Testing
+	// const float PrevIncomingDmg = GetAttributeMagnitudeClamped(IncomingDamageDef); // Testing
+	
 	// DamageStatics().ArmorProperty FProperty* used to briefly hold the attribute
 	// This will override previous IncomingDamage
-	const FGameplayModifierEvaluatedData EvaluatedData(UAuraAttributeSet::GetIncomingDamageAttribute(), EGameplayModOp::Override, Damage);
-	OutExecutionOutput.AddOutputModifier(EvaluatedData);
+	OutExecutionOutput.AddOutputModifier(FGameplayModifierEvaluatedData(UAuraAttributeSet::GetIncomingDamageAttribute(), EGameplayModOp::Override, Damage));
+
+	// Educational Purpose
+	OutExecutionOutput.AddOutputModifier(FGameplayModifierEvaluatedData(UAuraAttributeSet::GetManaAttribute(), EGameplayModOp::Additive, -5.f));
 }

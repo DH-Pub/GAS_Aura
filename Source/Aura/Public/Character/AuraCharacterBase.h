@@ -8,6 +8,7 @@
 #include "Interaction/CombatInterface.h"
 #include "AuraCharacterBase.generated.h"
 
+class UAuraGameplayAbility;
 enum class ECharacterClass : uint8;
 class UAuraAbilitySystemComponent;
 class UNiagaraSystem;
@@ -40,7 +41,7 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
 	void UpdateFacingTarget(const FVector& InTargetLocation);
 	
-	UPROPERTY(EditDefaultsOnly, meta=(ForceInlineRow, TitleProperty="{MontageTag} - {SocketEnum}"), Category="Combat")
+	UPROPERTY(EditDefaultsOnly, meta=(ForceInlineRow, TitleProperty="{MontageTag} - {SocketEnum}"), Category="Default|Combat")
 	TArray<FTaggedMontage> AttackMontages;
 	UFUNCTION(BlueprintCallable)
 	void GetRandomAttackMontage(FTaggedMontage& TaggedMontage);
@@ -50,9 +51,9 @@ public:
 	UFUNCTION(BlueprintPure)
 	FVector GetCombatSocketLocation(const ECombatSocket SocketEnum) const;
 	
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Default|Combat")
 	bool bHitReacting = false;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Combat")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Default|Combat")
 	TObjectPtr<UAnimMontage> HitReactMontage;
 	
 	/*
@@ -69,7 +70,7 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	virtual void MulticastHandleDeath();
 	virtual bool IsDead_Implementation() const override {return bIsDead;}
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="Combat")
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="Default|Combat")
 	bool bIsDead = false;
 	
 	virtual UNiagaraSystem* GetBloodEffect_Implementation() override {return BloodEffect;}
@@ -79,15 +80,15 @@ public:
 	 */
 
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Character Class Defaults")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Default")
 	ECharacterClass CharacterClass;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Combat")
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Default|Combat")
 	TObjectPtr<AActor> CombatTarget;
 
-	UPROPERTY(BlueprintReadWrite, Category="Combat")
+	UPROPERTY(BlueprintReadWrite)
 	FVector TargetLocation = FVector();
-	UPROPERTY(BlueprintReadWrite, Category="Combat")
+	UPROPERTY(BlueprintReadWrite)
 	bool bTracking = false; // true if Facing Target
 	
 	UPROPERTY()
@@ -97,13 +98,13 @@ public:
 	
 	UFUNCTION(NetMulticast, Unreliable)
 	void ShowDamageNumber(const AController* SourceController, const FVector& HitLocation, const float Damage, const bool bBlocked, const bool bCrit);
-	UFUNCTION(BlueprintImplementableEvent, Category="Combat")
+	UFUNCTION(BlueprintImplementableEvent)
 	void BP_ShowDamageNumber(FVector Loc, float Damage, bool bBlocked, bool bCrit);
 
 protected:
 	virtual void BeginPlay() override;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Combat|Weapon")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Default|Combat")
 	TObjectPtr<USkeletalMeshComponent> Weapon;
 
 	UPROPERTY()
@@ -116,29 +117,29 @@ protected:
 	// Add startup abilities (from server)
 	void AddCharacterStartupAbilities() const;
 
-	// Dissolve Effects
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Default|Combat")
+	TObjectPtr<UNiagaraSystem> BloodEffect;
+	
+	// Death Effects ==========================================================================================
 	void Dissolve();
 	UFUNCTION(BlueprintImplementableEvent)
 	void StartDissolveTimeline(UMaterialInstanceDynamic* MIDynamic);
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Character Class Defaults")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Default|Combat")
 	TObjectPtr<UMaterialInstance> MeshDissolveMI;
 	UFUNCTION(BlueprintImplementableEvent)
 	void StartWeaponDissolveTimeline(UMaterialInstanceDynamic* MIDynamic);
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Character Class Defaults")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Default|Combat")
 	TObjectPtr<UMaterialInstance> WeaponDissolveMI;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Combat")
-	TObjectPtr<UNiagaraSystem> BloodEffect;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Combat")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Default|Combat")
 	TObjectPtr<USoundBase> DeathSound;
 private:
-	UPROPERTY(EditAnywhere, Category="GameplayAbility|Abilities")
-	TArray<TSubclassOf<UGameplayAbility>> StartupAbilities;
-	UPROPERTY(EditAnywhere, Category="GameplayAbility|Abilities")
-	TArray<TSubclassOf<UGameplayAbility>> StartupPassives;
+	UPROPERTY(EditAnywhere, Category="Default|Abilities")
+	TArray<TSubclassOf<UAuraGameplayAbility>> StartupAbilities;
+	UPROPERTY(EditAnywhere, Category="Default|Abilities")
+	TArray<TSubclassOf<UAuraGameplayAbility>> StartupPassives;
 
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, Category="Default|Combat")
 	TObjectPtr<UNiagaraSystem> SummonedEffect;
 
 	

@@ -6,8 +6,8 @@
 #include "AbilitySystemComponent.h"
 
 void UAuraListenForEventAbility::PreActivate(const FGameplayAbilitySpecHandle Handle,
-	const FGameplayAbilityActorInfo* ActorInfo,const FGameplayAbilityActivationInfo ActivationInfo,
-	FOnGameplayAbilityEnded::FDelegate* OnGameplayAbilityEndedDelegate, const FGameplayEventData* TriggerEventData)
+                                             const FGameplayAbilityActorInfo* ActorInfo,const FGameplayAbilityActivationInfo ActivationInfo,
+                                             FOnGameplayAbilityEnded::FDelegate* OnGameplayAbilityEndedDelegate, const FGameplayEventData* TriggerEventData)
 {
 	Super::PreActivate(Handle, ActorInfo, ActivationInfo, OnGameplayAbilityEndedDelegate, TriggerEventData);
 
@@ -19,6 +19,7 @@ void UAuraListenForEventAbility::PreActivate(const FGameplayAbilitySpecHandle Ha
 
 void UAuraListenForEventAbility::ApplyEventEffectsToSelf(const FGameplayEventData& Payload)
 {
+	// UAuraAbilitySystemComponent* ASC = AuraCharacterFromActorInfo->GetAuraAbilitySystemComponent();
 	UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
 	FGameplayEffectSpecHandle EffectSpecHandle = ASC->MakeOutgoingSpec(EventBasedEffectClass, 1.f, FGameplayEffectContextHandle());
 	FGameplayEffectSpec* Spec = EffectSpecHandle.Data.Get();

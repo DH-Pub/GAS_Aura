@@ -4,6 +4,7 @@
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 
 #include "AbilitySystemBlueprintLibrary.h"
+#include "AuraGameplayTags.h"
 #include "AbilitySystem/Abilities/AuraGameplayAbility.h"
 #include "Character/AuraCharacter.h"
 #include "Player/AuraPlayerState.h"
@@ -23,19 +24,17 @@ void UAuraAbilitySystemComponent::ClientEffectApplied_Implementation(UAbilitySys
 
 
 #pragma region Add Startup Abilities
-void UAuraAbilitySystemComponent::AddCharacterAbilities(const TArray<TSubclassOf<UGameplayAbility>>& StartupAbilities)
+void UAuraAbilitySystemComponent::AddCharacterAbilities(const TArray<TSubclassOf<UAuraGameplayAbility>>& StartupAbilities)
 {
 	for (const TSubclassOf AbilityClass : StartupAbilities)
 	{
 		FGameplayAbilitySpec AbilitySpec(AbilityClass, 1);
-		if (const UAuraGameplayAbility* AuraAbility = Cast<UAuraGameplayAbility>(AbilitySpec.Ability))
-		{
-			AbilitySpec.GetDynamicSpecSourceTags().AddTag(AuraAbility->StartupInputTag); // Add Tag to Spec
-			GiveAbility(AbilitySpec);
-		}
+		AbilitySpec.GetDynamicSpecSourceTags().AddTag(AbilityClass.GetDefaultObject()->StartupInputTag); // Add Tag to Spec
+		AbilitySpec.GetDynamicSpecSourceTags().AddTag(AuraGameplayTags::Ability_Status_Equipped);
+		GiveAbility(AbilitySpec);
 	}
 }
-void UAuraAbilitySystemComponent::AddCharacterPassives(const TArray<TSubclassOf<UGameplayAbility>>& StartupPassives)
+void UAuraAbilitySystemComponent::AddCharacterPassives(const TArray<TSubclassOf<UAuraGameplayAbility>>& StartupPassives)
 {
 	for (const TSubclassOf AbilityClass : StartupPassives)
 	{
@@ -46,7 +45,20 @@ void UAuraAbilitySystemComponent::AddCharacterPassives(const TArray<TSubclassOf<
 #pragma endregion
 
 
-#pragma region AbilityReleased/Held
+#pragma region Ability Pressed/Released
+void UAuraAbilitySystemComponent::AbilityInputTagPressed(const FGameplayTag& InputTag)
+{
+	if (!InputTag.IsValid()) return;
+	for (FGameplayAbilitySpec& AbilitySpec : GetActivatableAbilities())
+	{
+		if (AbilitySpec.GetDynamicSpecSourceTags().HasTagExact(InputTag))
+		{
+			AbilitySpecInputPressed(AbilitySpec);
+			// if (!AbilitySpec.IsActive())
+			TryActivateAbility(AbilitySpec.Handle);
+		}
+	}
+}
 void UAuraAbilitySystemComponent::AbilityInputTagReleased(const FGameplayTag& InputTag)
 {
 	if (!InputTag.IsValid()) return;
@@ -55,18 +67,6 @@ void UAuraAbilitySystemComponent::AbilityInputTagReleased(const FGameplayTag& In
 		if (AbilitySpec.GetDynamicSpecSourceTags().HasTagExact(InputTag))
 		{
 			AbilitySpecInputReleased(AbilitySpec);
-		}
-	}
-}
-void UAuraAbilitySystemComponent::AbilityInputTagHeld(const FGameplayTag& InputTag)
-{
-	if (!InputTag.IsValid()) return;
-	for (FGameplayAbilitySpec& AbilitySpec : GetActivatableAbilities())
-	{
-		if (AbilitySpec.GetDynamicSpecSourceTags().HasTagExact(InputTag))
-		{
-			AbilitySpecInputPressed(AbilitySpec);
-			if (!AbilitySpec.IsActive()) TryActivateAbility(AbilitySpec.Handle);
 		}
 	}
 }
@@ -131,16 +131,25 @@ void UAuraAbilitySystemComponent::ClientFinishUpgrade_Implementation(const AAura
 }
 
 
+const FGameplayTag* UAuraAbilitySystemComponent::GetStatusFromSpec(const FGameplayAbilitySpec& AbilitySpec)
+{
+	for (const FGameplayTag& Tag : AbilitySpec.GetDynamicSpecSourceTags())
+	{
+		if (Tag.MatchesTag(AuraGameplayTags::Ability_Status))
+		{
+			return &Tag;
+		}
+	}
+	return nullptr;
+}
+
 
 /*void UAuraAbilitySystemComponent::ForEachAbility(const FForEachAbility& Delegate)
 {
 	FScopedAbilityListLock AbilityListLock(*this);
 	for (const FGameplayAbilitySpec& AbilitySpec : GetActivatableAbilities())
 	{
-		if (!Delegate.ExecuteIfBound(AbilitySpec))
-		{
-			UE_LOG(LogAura, Error, TEXT("Failed to execute delegate in %hs"), __FUNCTION__);
-		}
+		if (!Delegate.ExecuteIfBound(AbilitySpec)) UE_LOG(LogAura, Error, TEXT("Failed to execute delegate in %hs"), __FUNCTION__);
 	}
 }*/
 

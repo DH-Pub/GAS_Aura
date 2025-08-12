@@ -41,9 +41,6 @@ public:
 	
 	UPROPERTY(BlueprintAssignable, Category="GAS|Attributes")
 	FOnPlayerPointsChangedSignature SpellPointsToUIDelegate;
-protected:
-	UPROPERTY(EditDefaultsOnly, Category="GAS|WidgetData")
-	TObjectPtr<UAttributeDataAsset> AttributeInfo;
 private:
-	int32 ZeroInteger; // Default Value if GetPointAllocationByTag() not found, DO NOT modify this if used
+	int32 ZeroInteger = 0; // Default Value if GetPointAllocationByTag() not found, DO NOT modify this if used
 };

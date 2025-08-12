@@ -29,7 +29,7 @@ struct FAuraGameplayEffectContext : public FGameplayEffectContext
 	UPROPERTY()
 	bool bShowDamageOnTarget = false;
 	/*UPROPERTY()
-	TArray<FVector_NetQuantize> CueLocations = TArray<FVector_NetQuantize>();*/
+	TArray<FVector_NetQuantize> CueLocations = TArray<FVector_NetQuantize>(); // DEPRECATED, using InstancedStruct instead*/
 	
 	/** Returns the actual struct used for serialization, subclasses must override this! */
 	virtual UScriptStruct* GetScriptStruct() const override
@@ -59,17 +59,9 @@ protected:
 	bool bIsCrit = false;
 	UPROPERTY()
 	bool bStagger = false;
-
 	
-	/*USTRUCT(BlueprintType)
-	struct FMyStruct
-	{
-		GENERATED_BODY()
-		UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		int MyInt = 0;
-	}
 	// This will show a drop-down in the editor, containing only MyStruct and its children structs
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BaseStruct = "/Script/MyModule.MyStruct"))
+	/*UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BaseStruct = "/Script/MyModule.MyStruct"))
 	FInstancedStruct MyInstancedStruct;*/
 	TSharedPtr<FInstancedStruct> InstancedStruct; // TSharedPtr cannot be UPROPERTY
 };

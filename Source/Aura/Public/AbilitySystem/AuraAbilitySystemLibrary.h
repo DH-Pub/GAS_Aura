@@ -8,6 +8,8 @@
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "AuraAbilitySystemLibrary.generated.h"
 
+class AAuraHUD;
+class USpellMenuWidgetController;
 struct FAuraGameplayEffectContext;
 struct FInstancedStruct;
 struct FGameplayEffectContextHandle;
@@ -31,11 +33,13 @@ public:
 	// Get or Create if nullptr: AttributeMenuWidgetController from AuraHUD
 	UFUNCTION(BlueprintPure, meta=(DefaultToSelf="WorldContextObject"), Category = "AuraAbilitySystemLibrary|WidgetController")
 	static UAttributeMenuWidgetController* GetAttributeMenuWidgetController(const UObject* WorldContextObject);
+	UFUNCTION(BlueprintPure, meta=(DefaultToSelf="WorldContextObject"), Category = "AuraAbilitySystemLibrary|WidgetController")
+	static USpellMenuWidgetController* GetSpellMenuWidgetController(const UObject* WorldContextObject);
 
 	
 	UFUNCTION(BlueprintCallable, meta=(DefaultToSelf="WorldContextObject"), Category = "AuraAbilitySystemLibrary|CharacterClassDefaults")
 	static void InitializeDefaultAttributes(const UObject* WorldContextObject, UObject* SourceObject,
-		ECharacterClass CharacterClass, float Level, UAbilitySystemComponent* ASC);
+		const ECharacterClass CharacterClass, const float Level, UAbilitySystemComponent* ASC);
 	UFUNCTION(BlueprintCallable, meta=(DefaultToSelf="WorldContextObject"), Category = "AuraAbilitySystemLibrary|CharacterClassDefaults")
 	static void GiveStartupAbilities(const UObject* WorldContextObject, UAbilitySystemComponent* ASC, ECharacterClass CharacterClass = ECharacterClass::DefaultClass);
 
@@ -52,8 +56,8 @@ public:
 		float DeltaTime, float InterpSpeed, float DegreeTolerance = 0.1); // return true if finished
 	
 	UFUNCTION(BlueprintCallable, meta=(DefaultToSelf="WorldContextObject"), Category="AuraAbilitySystemLibrary|GameplayMechanics")
-	static void GetLivePlayersInRadius(const UObject* WorldContextObject,
-		TArray<AActor*>& OutActors, const TArray<AActor*>& ActorsToIgnore, float Radius, const FVector& Origin);
+	static void GetLivePlayersInRadius(const UObject* WorldContextObject, TArray<AActor*>& OutActors,
+		const TArray<AActor*>& ActorsToIgnore, float Radius, const FVector& Origin, bool bShowDebug = false);
 	UFUNCTION(BlueprintPure, meta=(DefaultToSelf="WorldContextObject"), Category="AuraAbilitySystemLibrary|GameplayMechanics")
 	static bool IsNotFriend(const AActor* FirstActor, const AActor* SecondActor);
 #pragma endregion
@@ -63,8 +67,8 @@ public:
 	 * Get DA_CharacterClass.
 	 * Client can't get GameMode so this will always return nullptr
 	 */
-	UFUNCTION(BlueprintCallable, meta=(DefaultToSelf="WorldContextObject"), Category="AuraAbilitySystemLibrary|UI")
 	static UCharacterClassDataAsset* GetCharacterClassDataAsset(const UObject* WorldContextObject);
+	static AAuraHUD* GetAuraHUD(const UObject* WorldContextObject);
 
 
 // FAuraGameplayEffectContext ========================================================================================================

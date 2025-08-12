@@ -35,27 +35,26 @@ public:
 	virtual void MulticastHandleDeath_Implementation() override;
 	//~ End Combat Interface
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Combat")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Default)
 	float BaseWalkSpeed = 250.f;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Combat")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category=Default)
 	float LifeSpan = 5.f;
 protected:
 	virtual void BeginPlay() override;
 	virtual void InitAbilityActorInfo() override;
 
 	// No need to replicate because we only check AI-Controlled on the server
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Character Class Defaults")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Default)
 	int32 Level = 1;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UWidgetComponent> HealthBar;
+	
 	UPROPERTY()
 	TObjectPtr<UEnemyWidgetController> HealthBarController;
-	UPROPERTY(EditAnywhere, Category = "UserInterface|HealthBarController")
+	UPROPERTY(EditAnywhere, Category=Default)
 	TSubclassOf<UEnemyWidgetController> HealthBarControllerClass;
 
-	// UPROPERTY(EditAnywhere, Category="AI")
-	// TObjectPtr<UBehaviorTree> BehaviorTree;
 	UPROPERTY()
 	TObjectPtr<AAuraAIController> AuraAIController;
 };

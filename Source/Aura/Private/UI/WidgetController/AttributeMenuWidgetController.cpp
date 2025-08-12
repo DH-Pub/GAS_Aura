@@ -4,36 +4,37 @@
 #include "UI/WidgetController/AttributeMenuWidgetController.h"
 
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
+#include "AbilitySystem/AuraAbilitySystemLibrary.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "AbilitySystem/Data/AttributeDataAsset.h"
+#include "Player/AuraPlayerController.h"
 #include "Player/AuraPlayerState.h"
+#include "UI/HUD/AuraHUD.h"
 
 void UAttributeMenuWidgetController::BindCallbacksDependencies()
 {
-	UAuraAttributeSet* AS = CastChecked<UAuraAttributeSet>(AttributeSet);
-	for (TTuple<FGameplayTag, FAuraAttributeData>& Pair : AttributeInfo.Get()->AttributeDataList)
+	for (TTuple<FGameplayTag, FAuraAttributeData>& Pair : PlayerController->GetHUD<AAuraHUD>()->AttributeData->AttributeDataList)
 	{
 		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(Pair.Value.GameplayAttribute).AddLambda(
-			[this, &Pair, AS](const FOnAttributeChangeData& Data)
+			[this, &Pair](const FOnAttributeChangeData& Data)
 			{
-				Pair.Value.AttributeValue = Pair.Value.GameplayAttribute.GetNumericValue(AS);
+				Pair.Value.AttributeValue = Pair.Value.GameplayAttribute.GetNumericValue(AttributeSet);
 				AttributeInfoDelegate.Broadcast(Pair.Key, Pair.Value);
 			}
 		);
 	}
-	AAuraPlayerState* PS = CastChecked<AAuraPlayerState>(PlayerState);
-	PS->OnAttributePointsChangedDelegate.AddLambda([this](const int32 Points)
+	PlayerState->OnAttributePointsChangedDelegate.AddLambda([this](const int32 Points)
 	{
 		AttributePoints = Points;
 		AttributePointsToUIDelegate.Broadcast(AttributePoints, GetTotalPointsAllocating());
 	});
-	PS->OnSpellPointsChangedDelegate.AddLambda([this](const int32 Points)
+	PlayerState->OnSpellPointsChangedDelegate.AddLambda([this](const int32 Points)
 	{
 		//TODO: Modify PointAllocating
 		SpellPointsToUIDelegate.Broadcast(Points, 0);
 	});
 	
-	PS->OnApplyingStatFinishedDelegate.AddLambda([this]()
+	PlayerState->OnApplyingStatFinishedDelegate.AddLambda([this]()
 	{
 		bIsApplying = false;
 		BroadcastInitialValues();
@@ -42,23 +43,17 @@ void UAttributeMenuWidgetController::BindCallbacksDependencies()
 
 void UAttributeMenuWidgetController::BroadcastInitialValues()
 {
-	const UAuraAttributeSet* AS = CastChecked<UAuraAttributeSet>(AttributeSet);
-	
-	check(AttributeInfo)
-
-	for (TTuple<FGameplayTag, FAuraAttributeData>& Pair : AttributeInfo.Get()->AttributeDataList)
+	for (TTuple<FGameplayTag, FAuraAttributeData>& Pair : PlayerController->GetHUD<AAuraHUD>()->AttributeData->AttributeDataList)
 	{
-		Pair.Value.AttributeValue = Pair.Value.GameplayAttribute.GetNumericValue(AS);
+		Pair.Value.AttributeValue = Pair.Value.GameplayAttribute.GetNumericValue(AttributeSet);
 		AttributeInfoDelegate.Broadcast(Pair.Key, Pair.Value);
 	}
 	
-	AAuraPlayerState* PS = CastChecked<AAuraPlayerState>(PlayerState);
-
-	AttributePoints = PS->GetAttributePoints();
+	AttributePoints = PlayerState->GetAttributePoints();
 	PointAllocationList.Empty();
 	AttributePointsToUIDelegate.Broadcast(AttributePoints, 0);
 	
-	SpellPointsToUIDelegate.Broadcast(PS->GetSpellPoints(), 0);
+	SpellPointsToUIDelegate.Broadcast(PlayerState->GetSpellPoints(), 0);
 }
 
 int32& UAttributeMenuWidgetController::FindPointAllocationByTag(const FGameplayTag& Tag, bool& bFound)

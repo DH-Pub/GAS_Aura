@@ -23,7 +23,7 @@ struct FStateTree_Attack_InstanceData
 	TObjectPtr<AAuraEnemy> Actor;
 
 	UPROPERTY(EditAnywhere, Category=Parameter, meta=(GameplayTagFilter="Abilities"))
-	FGameplayTag AttackTag = AuraGameplayTags::Abilities_Attack;
+	FGameplayTag AttackTag = AuraGameplayTags::Ability_Attack;
 };
 USTRUCT(DisplayName="Attack", Category="Combat")
 struct FStateTree_Attack : public FStateTreeTaskCommonBase
@@ -52,9 +52,9 @@ struct FStateTree_Attack_Elementalist_InstanceData
 	TObjectPtr<AAuraEnemy> Actor;
 
 	UPROPERTY(EditAnywhere, Category=Parameter, meta=(GameplayTagFilter="Abilities"))
-	FGameplayTag AttackTag = AuraGameplayTags::Abilities_Attack;
+	FGameplayTag AttackTag = AuraGameplayTags::Ability_Attack;
 	UPROPERTY(EditAnywhere, Category=Parameter, meta=(GameplayTagFilter="Abilities"))
-	FGameplayTag SummonTag = AuraGameplayTags::Abilities_Summon;
+	FGameplayTag SummonTag = AuraGameplayTags::Ability_Summon;
 	UPROPERTY(EditAnywhere, Category=Parameter, meta=(ClampMin=0, ClampMax=30, UIMin=0, UIMax=30))
 	int32 MinionSpawnThreshold = 2;
 };

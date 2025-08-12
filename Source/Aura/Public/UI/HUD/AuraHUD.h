@@ -6,6 +6,9 @@
 #include "GameFramework/HUD.h"
 #include "AuraHUD.generated.h"
 
+class UAttributeDataAsset;
+class UAbilityDataAsset;
+class USpellMenuWidgetController;
 class AAuraPlayerController;
 class UAttributeMenuWidgetController;
 class UAuraUserWidget;
@@ -24,28 +27,33 @@ public:
 	/** Bind callbacks if not yet and return controller */
 	UOverlayWidgetController* CreateOrGetOverlayWC(const FWidgetControllerParams& WCParams);
 	UAttributeMenuWidgetController* CreateOrGetAttributeMenuWC(const FWidgetControllerParams& WCParams);
+	USpellMenuWidgetController* CreateOrGetSpellMenuWC(const FWidgetControllerParams& WCParams);
 
 	// Create and Set Overlay's WidgetController, then broadcast initial values
 	void InitOverlay(const FWidgetControllerParams& WCParams);
-protected:
-
-private:
 	UPROPERTY()
 	TObjectPtr<UAuraUserWidget> OverlayWidget;
-	UPROPERTY(EditAnywhere, Category = "AuraWidget|Overlay")
-	TSubclassOf<UAuraUserWidget> OverlayWidgetClass;
+
+	UPROPERTY(EditDefaultsOnly, Category="Default")
+	TObjectPtr<UAttributeDataAsset> AttributeData;
+	UPROPERTY(EditDefaultsOnly, Category="Default")
+	TObjectPtr<UAbilityDataAsset> AbilityData;
+private:
+	UPROPERTY(EditAnywhere, Category="Default")
+	TSubclassOf<UAuraUserWidget> OverlayWidgetClass; // For OverlayWidget
 	UPROPERTY()
 	TObjectPtr<UOverlayWidgetController> OverlayWidgetController;
-	UPROPERTY(EditAnywhere, Category = "AuraWidget|Overlay")
+	UPROPERTY(EditAnywhere, Category="Default")
 	TSubclassOf<UOverlayWidgetController> OverlayWidgetControllerClass;
-
 
 	// Widget created in OverlayWidget BP
 	UPROPERTY()
 	TObjectPtr<UAttributeMenuWidgetController> AttributeMenuWidgetController;
-	UPROPERTY(EditAnywhere, Category = "AuraWidget|AttributeMenu")
+	UPROPERTY(EditAnywhere, Category="Default")
 	TSubclassOf<UAttributeMenuWidgetController> AttributeMenuWidgetControllerClass;
-public:
-	UFUNCTION(Category = "AuraWidget|Overlay")
-	UAuraUserWidget* GetOverlayWidget() {return OverlayWidget;}
+
+	UPROPERTY()
+	TObjectPtr<USpellMenuWidgetController> SpellMenuWidgetController;
+	UPROPERTY(EditAnywhere, Category="Default")
+	TSubclassOf<USpellMenuWidgetController> SpellMenuWidgetControllerClass;
 };

@@ -44,7 +44,7 @@ void USpellGlobeWidget::WidgetControllerSet_Implementation(UAuraWidgetController
 	Image_WheelProgress->SetRenderOpacity(0.f);
 }
 
-bool USpellGlobeWidget::SuccessUpdateAbilityData(const FAuraAbilityDataAsset& InAbilityData)
+bool USpellGlobeWidget::SuccessUpdateAbilityData(const FAuraAbilityData& InAbilityData)
 {
 	if(!InputTag.MatchesTagExact(InAbilityData.InputTag)) return false;
 	
@@ -52,9 +52,9 @@ bool USpellGlobeWidget::SuccessUpdateAbilityData(const FAuraAbilityDataAsset& In
 	FSlateBrush ResourceImage;
 	ResourceImage.SetResourceObject(InAbilityData.Icon);
 	Image_SpellIcon->SetBrush(ResourceImage);
-	FSlateBrush BackgroundMaterial;
-	BackgroundMaterial.SetResourceObject(InAbilityData.BackgroundMaterial);
-	Image_Background->SetBrush(BackgroundMaterial);
+	ResourceImage.SetResourceObject(InAbilityData.BackgroundMaterial);
+	Image_Background->SetBrush(ResourceImage);
+	// Image_Background->SetBrushFromMaterial(InAbilityData.BackgroundMaterial);
 	return true;
 }
 
@@ -83,7 +83,7 @@ void USpellGlobeWidget::UpdateCooldown(const float InTime, const float InDuratio
 	1, 2, 1, 1));
 	if (const UWorld* World = GetWorld())
 	{
-		/*FTimerDelegate Delegate; Delegate.BindUFunction(this, "UpdateByTimerHandle", InTime);*/
+		/*FTimerDelegate Delegate; Delegate.BindUFunction(this, "UpdateByTimerHandle", DelegateParameter);*/
 		World->GetTimerManager().SetTimer(CooldownTimerHandle, this, &USpellGlobeWidget::UpdateByTimerHandle, Frequency, true);
 	}
 }

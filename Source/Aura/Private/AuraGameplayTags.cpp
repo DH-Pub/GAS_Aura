@@ -36,43 +36,47 @@ namespace AuraGameplayTags
 
 
 #pragma region Input
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input, "Input", "Inputs' Parent") // ==PARENT==
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_LMB, "Input.MnK.LMB", "Left")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_RMB, "Input.MnK.RMB", "")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_1, "Input.MnK.1", "")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_2, "Input.MnK.2", "")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_3, "Input.MnK.3", "")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_4, "Input.MnK.4", "")
-#pragma endregion
-
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input, "Input", "") // ==PARENT==
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_UI_AttributeMenu, "Input.UI.AttributeMenu", "")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_Move_XY, "Input.Move.XY", "Controls")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_Move_Mouse, "Input.Move.Mouse", "Controls")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_Combat_Ability_1, "Input.Combat.Ability.1", "")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_Combat_Ability_2, "Input.Combat.Ability.2", "")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_Combat_Ability_3, "Input.Combat.Ability.3", "")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_Combat_Ability_4, "Input.Combat.Ability.4", "")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_Combat_Ability_5, "Input.Combat.Ability.5", "")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_Combat_Ability_6, "Input.Combat.Ability.6", "")
 	
-#pragma region Controls
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Controls, "Controls", "Controls") // ==PARENT==
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Controls_UI_AttributeMenu, "Controls.UI.AttributeMenu", "Controls")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Controls_Move, "Controls.Move", "Controls")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Controls_Point_Move, "Controls.Point.Move", "Controls")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Controls_Combat_Ability_1, "Controls.Combat.Ability.1", "Controls")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Controls_Combat_Ability_2, "Controls.Combat.Ability.2", "Controls")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Controls_Combat_Ability_3, "Controls.Combat.Ability.3", "Controls")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Controls_Combat_Ability_4, "Controls.Combat.Ability.4", "Controls")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Controls_Combat_Ability_5, "Controls.Combat.Ability.5", "Controls")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Controls_Combat_Ability_6, "Controls.Combat.Ability.6", "Controls")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_Combat_Passive_1, "Input.Combat.Passive.1", "")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_Combat_Passive_2, "Input.Combat.Passive.2", "")
 #pragma endregion
-
 	
-#pragma region Abilities
+#pragma region Ability
 	// Abilities
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Abilities, "Abilities", "Abilities' Parent") // ==PARENT==
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Abilities_Attack, "Abilities.Attack", "Attack Gameplay Ability")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Abilities_Summon, "Abilities.Summon", "Summon Gameplay Ability")
-
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Abilities_Cooldown_Reduce, "Abilities.Cooldown.Reduce", "")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability, "Ability", "Parent Tag") // ==PARENT==
+	
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Move_Mouse, "Ability.Move.Mouse", "CharacterMovement Ability")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_HitReact, "Ability.HitReact", "")
+	
+	
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Attack, "Ability.Attack", "Attack Gameplay Ability")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Summon, "Ability.Summon", "Summon Gameplay Ability")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Cooldown_Reduce, "Ability.Cooldown.Reduce", "")
 	
 	// Abilities with Cooldown ============================================================================================
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Abilities_Fire_FireBolt, "Abilities.Fire.FireBolt", "FireBolt Gameplay Ability")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Cooldown, "Cooldown", "Cooldowns' Parent") // ==PARENT==
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Cooldown_Fire_FireBolt, "Cooldown.Fire.FireBolt", "FireBolt Cooldown")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Fire_FireBolt, "Ability.Fire.FireBolt", "FireBolt Gameplay Ability")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Fire_FireBolt_Cooldown, "Ability.Fire.FireBolt.Cooldown", "FireBolt Cooldown")
 	// =======================================================================================================================
+	
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Status, "Ability.Status", "")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Status_Locked, "Ability.Status.Locked", "")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Status_Eligible, "Ability.Status.Eligible", "")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Status_Unlocked, "Ability.Status.Unlocked", "")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Status_Equipped, "Ability.Status.Equipped", "")
+	
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Type_Offensive, "Ability.Type.Offensive", "")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Type_Passive, "Ability.Type.Passive", "")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Type_None, "Ability.Type.None", "")
 #pragma endregion
 
 	
@@ -87,8 +91,6 @@ namespace AuraGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Montage_Attack_2, "Montage.Attack.2", "Attack 2")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Montage_Attack_3, "Montage.Attack.3", "Attack 3")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Montage_Attack_4, "Montage.Attack.4", "Attack 4")
-	
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Effects_HitReact, "Effects.HitReact", "RegisterGameplayTagEvent to change movement speed")
 #pragma endregion
 
 	

@@ -5,10 +5,13 @@
 
 #include "AuraGameplayTags.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
+#include "AbilitySystem/AuraAbilitySystemLibrary.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "AbilitySystem/Data/AbilityDataAsset.h"
 #include "AbilitySystem/Data/LevelUpDataAsset.h"
+#include "Player/AuraPlayerController.h"
 #include "Player/AuraPlayerState.h"
+#include "UI/HUD/AuraHUD.h"
 
 void UOverlayWidgetController::BindCallbacksDependencies()
 {
@@ -19,20 +22,18 @@ void UOverlayWidgetController::BindCallbacksDependencies()
 
 	PlayerState->OnXPChangedDelegate.AddUObject(this, &UOverlayWidgetController::BroadcastXPToUI);
 	
-	if (!AbilitySystemComponent->OnGiveAbilityDelegate.IsBound())
-	{
-		AbilitySystemComponent->OnGiveAbilityDelegate.AddUObject(this, &UOverlayWidgetController::BroadcastGivenAbility);
-	}
+	// if (!AbilitySystemComponent->OnGiveAbilityDelegate.IsBound())
+	AbilitySystemComponent->OnGiveAbilityDelegate.AddUObject(this, &UOverlayWidgetController::BroadcastGivenAbility);
 	// Receive broadcast from AuraAbilitySystemComponent
 	AbilitySystemComponent->EffectAssetTags.AddLambda([this](const FGameplayTagContainer& AssetTags)
 	{
-		for (const FGameplayTag Tag : AssetTags)
+		for (const FGameplayTag& Tag : AssetTags)
 		{
-			// "A.1".MatchesTag("A") will return True, "A".MatchesTag("A.1") will return False
+			// "A.1".MatchesTag("A") return True, "A".MatchesTag("A.1") return False
 			// if (Tag.MatchesTag(FGameplayTag::RequestGameplayTag(FName("Message"))))
 			if (Tag.MatchesTag(MessageTags::Message))
 			{
-				MessageWidgetInfoDelegate.Broadcast(MessageInfo->FindMessageInfoForTag(Tag)); // Broadcast to BP
+				MessageWidgetInfoDelegate.Broadcast(MessageInfo->FindMessageInfoForTag(Tag)); return;
 			}
 		}
 	});
@@ -55,12 +56,31 @@ void UOverlayWidgetController::BroadcastInitialValues()
 
 void UOverlayWidgetController::BroadcastGivenAbility(const FGameplayAbilitySpec& AbilitySpec)
 {
-	FAuraAbilityDataAsset Data = AbilityData->FindAbilityDataByTag(AbilitySpec.Ability->GetAssetTags());
-	for (const FGameplayTag Tag : AbilitySpec.GetDynamicSpecSourceTags())
+	if (const UAuraGameplayAbility* Ability = Cast<UAuraGameplayAbility>(AbilitySpec.Ability))
 	{
-		if (Tag.MatchesTag(AuraGameplayTags::Controls)) Data.InputTag = Tag; break;
+		if (Ability->StartupInputTag.IsValid())
+		{
+			const AAuraHUD* HUD = PlayerController->GetHUD<AAuraHUD>();
+			if (FAuraAbilityData* Data = HUD->AbilityData->FindAbilityDataByTag(AbilitySpec.Ability->GetAssetTags()))
+			{
+				Data->InputTag = Ability->StartupInputTag;
+				AbilityDataDelegate.Broadcast(*Data);
+			}
+		}
 	}
-	AbilityDataDelegate.Broadcast(Data);
+	/*for (const FGameplayTag& Tag : AbilitySpec.GetDynamicSpecSourceTags())
+	{
+		if (Tag.MatchesTag(AuraGameplayTags::Input))
+		{
+			const AAuraHUD* HUD = PlayerController->GetHUD<AAuraHUD>();
+			if (FAuraAbilityData* Data = HUD->AbilityData->FindAbilityDataByTag(AbilitySpec.Ability->GetAssetTags()))
+			{
+				Data->InputTag = Tag;
+				AbilityDataDelegate.Broadcast(*Data);
+			}
+			return;
+		}
+	}*/
 }
 
 void UOverlayWidgetController::BroadcastXPToUI(const int32 XP, const int32 Level, ULevelUpDataAsset* LevelUpDA) const

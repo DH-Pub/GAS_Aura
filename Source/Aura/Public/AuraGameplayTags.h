@@ -38,42 +38,47 @@ namespace AuraGameplayTags
 #pragma endregion 
 
 
-	// TODO: next proj, use proper naming for Input instead of using Controls
 #pragma region Input
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_LMB)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_RMB)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_1)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_2)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_3)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_4)
-
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Controls)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Controls_UI_AttributeMenu)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Controls_Move)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Controls_Point_Move)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Controls_Combat_Ability_1)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Controls_Combat_Ability_2)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Controls_Combat_Ability_3)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Controls_Combat_Ability_4)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Controls_Combat_Ability_5)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Controls_Combat_Ability_6)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input) // ==PARENT==
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_UI_AttributeMenu)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Move_XY) //Todo: This is not used
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Move_Mouse)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Combat_Ability_1)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Combat_Ability_2)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Combat_Ability_3)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Combat_Ability_4)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Combat_Ability_5)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Combat_Ability_6)
+	
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Combat_Passive_1)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Combat_Passive_2)
 #pragma endregion 
 
 	
-#pragma region Abilities
-	//TODO next proj: Change to singular
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Abilities)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Abilities_Attack)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Abilities_Summon)
+#pragma region Ability
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability)
 	
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Abilities_Cooldown_Reduce)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Move_Mouse)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_HitReact)
+	
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Attack)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Summon)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Cooldown_Reduce)
 	
 	// Abilities with CD =============================================================================================
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Abilities_Fire_FireBolt)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cooldown)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cooldown_Fire_FireBolt)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Fire_FireBolt)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Fire_FireBolt_Cooldown)
 	//================================================================================================================
+	
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Status)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Status_Locked)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Status_Eligible)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Status_Unlocked)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Status_Equipped)
+	
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Type_Offensive)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Type_Passive)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Type_None)
 #pragma endregion
 
 	
@@ -94,8 +99,6 @@ namespace AuraGameplayTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Montage_Attack_2)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Montage_Attack_3)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Montage_Attack_4)
-	
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Effects_HitReact)
 #pragma endregion
 	
 	
