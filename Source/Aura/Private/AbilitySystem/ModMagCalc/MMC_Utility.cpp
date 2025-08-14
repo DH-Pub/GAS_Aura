@@ -4,7 +4,7 @@
 #include "AbilitySystem/ModMagCalc/MMC_Utility.h"
 
 #include "AbilitySystem/AuraAttributeSet.h"
-#include "AbilitySystem/Abilities/AuraGameplayAbility.h"
+#include "AbilitySystem/Abilities/CostCooldownAbility.h"
 #include "Interaction/CombatInterface.h"
 
 
@@ -75,7 +75,7 @@ UMMC_CooldownDuration::UMMC_CooldownDuration()
 }
 float UMMC_CooldownDuration::CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const
 {
-	const UAuraGameplayAbility* Ability = Cast<UAuraGameplayAbility>(Spec.GetContext().GetAbilityInstance_NotReplicated());
+	const UCostCooldownAbility* Ability = Cast<UCostCooldownAbility>(Spec.GetContext().GetAbilityInstance_NotReplicated());
 	if (!Ability) return 0.f;
 	
 	// Gather tags from source and target
@@ -98,7 +98,7 @@ UMMC_AbilityManaCost::UMMC_AbilityManaCost()
 }
 float UMMC_AbilityManaCost::CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const
 {
-	if (const UAuraGameplayAbility* Ability = Cast<UAuraGameplayAbility>(Spec.GetContext().GetAbilityInstance_NotReplicated()))
+	if (const UCostCooldownAbility* Ability = Cast<UCostCooldownAbility>(Spec.GetContext().GetAbilityInstance_NotReplicated()))
 	{
 		if (Ability->ManaCost != 0.f)
 		{
@@ -115,7 +115,7 @@ UMMC_AbilityHealthCost::UMMC_AbilityHealthCost()
 }
 float UMMC_AbilityHealthCost::CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const
 {
-	if (const UAuraGameplayAbility* Ability = Cast<UAuraGameplayAbility>(Spec.GetContext().GetAbilityInstance_NotReplicated()))
+	if (const UCostCooldownAbility* Ability = Cast<UCostCooldownAbility>(Spec.GetContext().GetAbilityInstance_NotReplicated()))
 	{
 		if (Ability->HealthCost != 0.f)
 		{

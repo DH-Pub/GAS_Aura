@@ -16,7 +16,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnPlayerPointsChangedSignature, in
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnVitalAttributeChanged, float, NewValue);
 
 // Used to set Controller, State, ASC, AttributeSet
-USTRUCT(BlueprintType)
+USTRUCT()
 struct FWidgetControllerParams
 {
 	GENERATED_BODY()
@@ -27,14 +27,14 @@ struct FWidgetControllerParams
 	: PlayerController(PC), PlayerState(PS), AbilitySystemComponent(ASC), AttributeSet(AS) {}
 	explicit FWidgetControllerParams(AAuraPlayerController* PC); // When ASC and AS are initialized
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY()
 	TObjectPtr<AAuraPlayerController> PlayerController = nullptr;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY()
 	TObjectPtr<AAuraPlayerState> PlayerState = nullptr;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY()
 	TObjectPtr<UAuraAbilitySystemComponent> AbilitySystemComponent = nullptr;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY()
 	TObjectPtr<UAuraAttributeSet> AttributeSet = nullptr;
 };
 

@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "AbilitySystem/Abilities/AuraGameplayAbility.h"
+#include "CostCooldownAbility.h"
 #include "AuraDamageGameplayAbility.generated.h"
 
 class UNiagaraSystem;
@@ -37,7 +37,7 @@ struct FDamageCueList
  * 
  */
 UCLASS()
-class AURA_API UAuraDamageGameplayAbility : public UAuraGameplayAbility
+class AURA_API UAuraDamageGameplayAbility : public UCostCooldownAbility
 {
 	GENERATED_BODY()
 public:

@@ -15,12 +15,12 @@ class AURA_API UGlobeWidget : public UAuraUserWidget
 {
 	GENERATED_BODY()
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Properties")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Default|Properties")
 	FSlateBrush RingBrush = FSlateBrush(); // Decorate Ring
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Properties")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Default|Properties")
 	FSlateBrush DefaultBackground = FSlateBrush(); // For Empty Spell Globes
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Properties")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Default|Properties")
 	FMargin InPadding = FMargin(30.f); // Background, Glass, SpellIcon
 protected:
 	virtual void NativePreConstruct() override;

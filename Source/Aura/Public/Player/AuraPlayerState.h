@@ -40,7 +40,7 @@ public:
 #pragma endregion
 	// End Interface ===================================================================================================
 	
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, Category="Default")
 	TObjectPtr<ULevelUpDataAsset> LevelUpDataAsset;
 	
 	FOnPlayerStatChanged OnLevelChangedDelegate;
@@ -72,17 +72,17 @@ protected:
 	TObjectPtr<UAuraAttributeSet> AttributeSet;
 	
 private:
-	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_Level)
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_Level, Category="Default")
 	int32 Level = 1;
 	UFUNCTION()
 	void OnRep_Level(int32 OldLevel) const;
 	
-	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_XP)
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_XP, Category="Default")
 	int32 XP = 0;
 	UFUNCTION()
 	void OnRep_XP(int32 OldXP) const;
 	
-	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_AttributePoints)
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_AttributePoints, Category="Default")
 	int32 AttributePoints = 0;
 	UFUNCTION()
 	void OnRep_AttributePoints(int32 OldAttributePoints) const
@@ -90,7 +90,7 @@ private:
 		OnAttributePointsChangedDelegate.Broadcast(AttributePoints);
 	};
 	
-	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_SpellPoints)
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_SpellPoints, Category="Default")
 	int32 SpellPoints = 0;
 	UFUNCTION()
 	void OnRep_SpellPoints(int32 OldSpellPoints) const

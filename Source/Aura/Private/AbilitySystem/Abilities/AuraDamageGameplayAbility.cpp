@@ -15,7 +15,10 @@
 
 UAuraDamageGameplayAbility::UAuraDamageGameplayAbility()
 {
-	SetAssetTags(FGameplayTagContainer(AuraGameplayTags::Ability_Attack));
+	FGameplayTagContainer DefaultTags(AuraGameplayTags::Ability_Attack);
+	DefaultTags.AddTag(AuraGameplayTags::Ability_Type_Activatable_Blockable);
+	SetAssetTags(DefaultTags);
+	BlockAbilitiesWithTag = FGameplayTagContainer(AuraGameplayTags::Ability_Type_Activatable_Blockable);
 }
 
 void UAuraDamageGameplayAbility::CauseDamageToActors(FGameplayTag GameplayCueTag, const TArray<AActor*>& Actors,

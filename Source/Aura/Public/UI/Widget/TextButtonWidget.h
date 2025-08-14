@@ -19,11 +19,11 @@ class AURA_API UTextButtonWidget : public UAuraButtonWidget
 {
 	GENERATED_BODY()
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Properties")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Default|Properties")
 	FVector2D ScaleBoxPadding = FVector2D(0.15, 0.15);
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Properties")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Default|Properties")
 	FText ButtonText = FText();
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Properties")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Default|Properties")
 	FSlateFontInfo FontInfo = FSlateFontInfo();
 protected:
 	virtual void NativePreConstruct() override;

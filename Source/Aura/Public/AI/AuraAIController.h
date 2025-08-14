@@ -18,7 +18,7 @@ public:
 	AAuraAIController();
 
 protected:
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Default")
 	TObjectPtr<class UStateTreeAIComponent> StateTreeAI;
 	// UPROPERTY()
 	// TObjectPtr<UBehaviorTreeComponent> BehaviorTreeComponent;

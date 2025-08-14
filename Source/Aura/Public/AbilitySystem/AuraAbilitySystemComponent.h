@@ -6,6 +6,7 @@
 #include "AbilitySystemComponent.h"
 #include "AuraAbilitySystemComponent.generated.h"
 
+class UAuraInputAbility;
 class UAuraGameplayAbility;
 struct FUpgradeAllocation;
 class AAuraPlayerState;
@@ -51,7 +52,7 @@ public:
 	
 	FEffectAssetTags EffectAssetTags; // Convert OnGameplayEffectAppliedDelegateToSelf to Client RPC
 	
-	void AddCharacterAbilities(const TArray<TSubclassOf<UAuraGameplayAbility>>& StartupAbilities); // Add Startup Abilities in PossessedBy
+	void AddCharacterAbilities(const TArray<TSubclassOf<UAuraInputAbility>>& StartupAbilities); // Add Startup Abilities in PossessedBy
 	void AddCharacterPassives(const TArray<TSubclassOf<UAuraGameplayAbility>>& StartupPassives); // Add Startup Passives
 	
 	FOnGiveAbilitySignature OnGiveAbilityDelegate;
@@ -61,8 +62,6 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void ReduceCooldownByTag(const FGameplayTagContainer& TagContainer, const float Amount = 0.f, const float Percent = 0.f);
-	/*UFUNCTION(BlueprintCallable)
-	float ReduceCooldownDuration(const FGameplayTagContainer& TagContainer, const float Amount = 0.f, const float Percent = 0.f);*/
 	
 	void UpgradeAttribute(const TArray<FPointAllocation>& PointsAllocated);
 	UFUNCTION(Server, Reliable)

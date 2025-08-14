@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "AbilitySystem/Abilities/AuraGameplayAbility.h"
+#include "CostCooldownAbility.h"
 #include "AuraSummonAbility.generated.h"
 
 class UNiagaraSystem;
@@ -24,7 +24,7 @@ struct FSummonCueInfo
  * 
  */
 UCLASS()
-class AURA_API UAuraSummonAbility : public UAuraGameplayAbility
+class AURA_API UAuraSummonAbility : public UCostCooldownAbility
 {
 	GENERATED_BODY()
 public:
@@ -35,22 +35,22 @@ public:
 	UFUNCTION(BlueprintPure)
 	TSubclassOf<APawn> GetRandomMinionsClass() {return MinionClasses[FMath::RandRange(0, MinionClasses.Num() - 1)];}
 
-	UPROPERTY(EditDefaultsOnly, meta=(UIMin=0), Category="Summoning")
+	UPROPERTY(EditDefaultsOnly, meta=(UIMin=0), Category="Default|Summoning")
 	int32 NumMinions = 5; // How many to summon when ActivateAbility
 
-	UPROPERTY(EditDefaultsOnly, Category="Summoning")
+	UPROPERTY(EditDefaultsOnly, Category="Default|Summoning")
 	TArray<TSubclassOf<APawn>> MinionClasses;
 
-	UPROPERTY(BlueprintReadWrite, Category="Summoning")
+	UPROPERTY(BlueprintReadWrite, Category="Default|Summoning")
 	FSummonCueInfo SummonInfo = FSummonCueInfo();
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Summoning")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Default|Summoning")
 	int32 SpawnLocationIndex;
 
-	UPROPERTY(EditDefaultsOnly, meta=(UIMin=0), Category="Summoning")
+	UPROPERTY(EditDefaultsOnly, meta=(UIMin=0), Category="Default|Summoning")
 	float MinSpawnDistance = 150.f;
-	UPROPERTY(EditDefaultsOnly, meta=(UIMin=0), Category="Summoning")
+	UPROPERTY(EditDefaultsOnly, meta=(UIMin=0), Category="Default|Summoning")
 	float MaxSpawnDistance = 350.f;
-	UPROPERTY(EditDefaultsOnly, meta=(ClampMin=0.f, UIMax= 360.f, Delta=1.f), Category="Summoning")
+	UPROPERTY(EditDefaultsOnly, meta=(ClampMin=0.f, UIMax= 360.f, Delta=1.f), Category="Default|Summoning")
 	float SpawnSpread = 120.f;
 protected:
 	virtual void PreActivate(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,

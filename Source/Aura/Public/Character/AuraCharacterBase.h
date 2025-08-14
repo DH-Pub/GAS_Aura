@@ -8,6 +8,7 @@
 #include "Interaction/CombatInterface.h"
 #include "AuraCharacterBase.generated.h"
 
+class UAuraInputAbility;
 class UAuraGameplayAbility;
 enum class ECharacterClass : uint8;
 class UAuraAbilitySystemComponent;
@@ -37,6 +38,9 @@ public:
 	UFUNCTION(BlueprintPure)
 	UAuraAbilitySystemComponent* GetAuraAbilitySystemComponent() const {return AbilitySystemComponent;}
 	UAuraAttributeSet* GetAttributeSet() const { return AttributeSet; }
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Default")
+	float BaseWalkSpeed = 250.f;
 	
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
 	void UpdateFacingTarget(const FVector& InTargetLocation);
@@ -135,7 +139,7 @@ protected:
 	TObjectPtr<USoundBase> DeathSound;
 private:
 	UPROPERTY(EditAnywhere, Category="Default|Abilities")
-	TArray<TSubclassOf<UAuraGameplayAbility>> StartupAbilities;
+	TArray<TSubclassOf<UAuraInputAbility>> StartupAbilities;
 	UPROPERTY(EditAnywhere, Category="Default|Abilities")
 	TArray<TSubclassOf<UAuraGameplayAbility>> StartupPassives;
 

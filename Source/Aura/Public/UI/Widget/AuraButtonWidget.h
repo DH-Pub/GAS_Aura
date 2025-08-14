@@ -20,12 +20,12 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void ButtonWidgetClicked();
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Properties")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Default|Properties")
 	FVector2D ButtonWidthHeight = FVector2D(40., 40.);
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Properties")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Default|Properties")
 	FSlateBrush BorderBrush = FSlateBrush();
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Properties")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Default|Properties")
 	FButtonStyle InnerStyle = FButtonStyle();
 protected:
 	virtual void NativePreConstruct() override;

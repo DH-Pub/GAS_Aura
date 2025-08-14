@@ -50,6 +50,7 @@ namespace AuraGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_Combat_Passive_1, "Input.Combat.Passive.1", "")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_Combat_Passive_2, "Input.Combat.Passive.2", "")
 #pragma endregion
+
 	
 #pragma region Ability
 	// Abilities
@@ -58,9 +59,9 @@ namespace AuraGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Move_Mouse, "Ability.Move.Mouse", "CharacterMovement Ability")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_HitReact, "Ability.HitReact", "")
 	
-	
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Attack, "Ability.Attack", "Attack Gameplay Ability")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Summon, "Ability.Summon", "Summon Gameplay Ability")
+	
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Cooldown_Reduce, "Ability.Cooldown.Reduce", "")
 	
 	// Abilities with Cooldown ============================================================================================
@@ -74,7 +75,8 @@ namespace AuraGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Status_Unlocked, "Ability.Status.Unlocked", "")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Status_Equipped, "Ability.Status.Equipped", "")
 	
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Type_Offensive, "Ability.Type.Offensive", "")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Type_Activatable, "Ability.Type.Activatable", "")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Type_Activatable_Blockable, "Ability.Type.Activatable.Blockable", "Ability is blocked when stunned, hit-reacting,...")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Type_Passive, "Ability.Type.Passive", "")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Type_None, "Ability.Type.None", "")
 #pragma endregion

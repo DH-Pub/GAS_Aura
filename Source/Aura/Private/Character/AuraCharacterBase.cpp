@@ -137,6 +137,7 @@ void AAuraCharacterBase::ShowDamageNumber_Implementation(const AController* Sour
 void AAuraCharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
+	GetCharacterMovement()->MaxWalkSpeed = BaseWalkSpeed;
 }
 
 // Called in PossessedBy, which is called only on server or standalone

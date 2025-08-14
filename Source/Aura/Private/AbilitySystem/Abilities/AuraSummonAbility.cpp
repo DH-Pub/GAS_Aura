@@ -14,7 +14,10 @@
 
 UAuraSummonAbility::UAuraSummonAbility()
 {
-	SetAssetTags(FGameplayTagContainer(AuraGameplayTags::Ability_Summon));
+	FGameplayTagContainer DefaultTags(AuraGameplayTags::Ability_Summon);
+	DefaultTags.AddTag(AuraGameplayTags::Ability_Type_Activatable_Blockable);
+	SetAssetTags(DefaultTags);
+	BlockAbilitiesWithTag = FGameplayTagContainer(AuraGameplayTags::Ability_Type_Activatable_Blockable);
 }
 
 void UAuraSummonAbility::SetSpawnLocations()

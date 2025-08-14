@@ -96,7 +96,7 @@ void UAsync_CooldownChange::OnGameplayEffectRemoved(const FActiveGameplayEffect&
 	ActiveEffect.Spec.GetAllGrantedTags(GrantedTags);
 	if (GrantedTags.HasTagExact(CooldownTag))
 	{
-		CooldownTime = ActiveEffect.GetTimeRemaining(ASC->GetWorld()->GetTimeSeconds()); // Remaining Cooldown before Removed
+		CooldownTime = ActiveEffect.GetTimeRemaining(ASC->GetWorld()->GetTimeSeconds()); // Remaining Cooldown before Replaced
 	}
 }
 

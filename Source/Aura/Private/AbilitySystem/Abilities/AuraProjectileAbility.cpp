@@ -13,7 +13,6 @@
 
 UAuraProjectileAbility::UAuraProjectileAbility()
 {
-	BlockAbilitiesWithTag = FGameplayTagContainer(AuraGameplayTags::Ability);
 }
 
 void UAuraProjectileAbility::PreActivate(const FGameplayAbilitySpecHandle Handle,
@@ -27,6 +26,8 @@ void UAuraProjectileAbility::PreActivate(const FGameplayAbilitySpecHandle Handle
 void UAuraProjectileAbility::SpawnProjectile(const FVector& TargetLocation, const FVector& InSpawnLocation,
 	const bool bStartFromCharacter, const float SpawnDistance, const float SpawnHeightAdd)
 {
+	/*if (HasAuthorityOrPredictionKey(&GetActorInfo(), &GetCurrentActivationInfo()))
+	HasAuthority(&GetCurrentActivationInfo());*/
 	if (!AuraCharacterFromActorInfo->HasAuthority()) return; // GetCurrentActivationInfo()
 	FVector Loc = bStartFromCharacter ? AuraCharacterFromActorInfo->GetActorLocation() + AuraCharacterFromActorInfo->GetActorForwardVector() * SpawnDistance
 		: InSpawnLocation;

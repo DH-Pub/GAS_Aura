@@ -5,6 +5,8 @@
 
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "Character/AuraCharacterBase.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/PawnMovementComponent.h"
 #include "Player/AuraPlayerController.h"
 
 UAuraGameplayAbility::UAuraGameplayAbility()
@@ -13,32 +15,26 @@ UAuraGameplayAbility::UAuraGameplayAbility()
 	// bRetriggerInstancedAbility = true;
 }
 
-const FGameplayTagContainer* UAuraGameplayAbility::GetCooldownTags() const
+void UAuraGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
+	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo,
+	const FGameplayEventData* TriggerEventData)
 {
-	if (!CooldownTags.IsValid()) return Super::GetCooldownTags();
-
-	FGameplayTagContainer* MutableTags = const_cast<FGameplayTagContainer*>(&TempCooldownTags);
-	MutableTags->Reset(); // MutableTags writes to the TempCooldownTags on the CDO so clear it in case the cooldown tags change (to a different slot)
-	if (const FGameplayTagContainer* ParentTags = Super::GetCooldownTags())
+	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
+	if (bMaxSpeedZeroedOnActivated)
 	{
-		MutableTags->AppendTags(*ParentTags);
+		//TODO: remember that this may cause rubberbanding issue and do not use Deactivate
+		AuraCharacterFromActorInfo->GetCharacterMovement()->MaxWalkSpeed = 0.f;
 	}
-	MutableTags->AppendTags(CooldownTags);
-	return MutableTags;
 }
 
-void UAuraGameplayAbility::ApplyCooldown(const FGameplayAbilitySpecHandle Handle,
-	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo) const
+void UAuraGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle,
+	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo,
+	bool bReplicateEndAbility, bool bWasCancelled)
 {
-	if (!CooldownTags.IsValid()) {Super::ApplyCooldown(Handle, ActorInfo, ActivationInfo); return;}
-	
-	if (UGameplayEffect* CooldownGE = GetCooldownGameplayEffect())
+	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
+	if (bMaxSpeedZeroedOnActivated)
 	{
-		const FGameplayEffectSpecHandle SpecHandle = MakeOutgoingGameplayEffectSpec(CooldownGE->GetClass(), GetAbilityLevel());
-		SpecHandle.Data->DynamicGrantedTags.AppendTags(CooldownTags);
-		SpecHandle.Data->SetSetByCallerMagnitude(CooldownTags.GetByIndex(0), CooldownDuration.GetValueAtLevel(GetAbilityLevel()));
-		// Use MMC
-		FActiveGameplayEffectHandle ActiveEffectHandle = ApplyGameplayEffectSpecToOwner(Handle, ActorInfo, ActivationInfo, SpecHandle);
+		AuraCharacterFromActorInfo->GetCharacterMovement()->MaxWalkSpeed = AuraCharacterFromActorInfo->BaseWalkSpeed;
 	}
 }
 

@@ -7,7 +7,6 @@
 #include "Engine/DataAsset.h"
 #include "AbilityDataAsset.generated.h"
 
-struct FGameplayAbilitySpecHandle;
 class UGameplayAbility;
 
 USTRUCT(BlueprintType)

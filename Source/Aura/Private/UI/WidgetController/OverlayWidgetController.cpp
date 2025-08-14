@@ -5,8 +5,8 @@
 
 #include "AuraGameplayTags.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
-#include "AbilitySystem/AuraAbilitySystemLibrary.h"
 #include "AbilitySystem/AuraAttributeSet.h"
+#include "AbilitySystem/Abilities/AuraInputAbility.h"
 #include "AbilitySystem/Data/AbilityDataAsset.h"
 #include "AbilitySystem/Data/LevelUpDataAsset.h"
 #include "Player/AuraPlayerController.h"
@@ -56,7 +56,7 @@ void UOverlayWidgetController::BroadcastInitialValues()
 
 void UOverlayWidgetController::BroadcastGivenAbility(const FGameplayAbilitySpec& AbilitySpec)
 {
-	if (const UAuraGameplayAbility* Ability = Cast<UAuraGameplayAbility>(AbilitySpec.Ability))
+	if (const UAuraInputAbility* Ability = Cast<UAuraInputAbility>(AbilitySpec.Ability))
 	{
 		if (Ability->StartupInputTag.IsValid())
 		{

@@ -20,12 +20,12 @@ class AURA_API USpellGlobeWidget : public UGlobeWidget
 {
 	GENERATED_BODY()
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GlobeProperties")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Default|GlobeProperties")
 	FSlateBrush SpellIconBrush;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GlobeProperties")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Default|GlobeProperties")
 	FSlateBrush WheelBrush; // Cooldown Wheel
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GlobeProperties", meta=(GameplayTagFilter=Input))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Default|GlobeProperties", meta=(GameplayTagFilter=Input))
 	FGameplayTag InputTag; // Player input for spells, set in overlay first
 protected:
 	virtual void NativePreConstruct() override;
@@ -55,16 +55,16 @@ protected:
 	UFUNCTION(BlueprintCallable, meta=(ExpandBoolAsExecs = "ReturnValue"))
 	bool SuccessUpdateAbilityData(const FAuraAbilityData& InAbilityData);
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Properties")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Default|Properties")
 	float Frequency = 0.05f;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GlobeProperties")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Default|GlobeProperties")
 	float DisableTint = 0.1f; // force value in NativePreConstruct()
 
 	bool bOnCooldown = false;
-	UPROPERTY(BlueprintReadWrite, Category="Properties")
+	UPROPERTY(BlueprintReadWrite)
 	float CooldownDuration = 0.f;
-	UPROPERTY(BlueprintReadWrite, Category="Properties")
+	UPROPERTY(BlueprintReadWrite)
 	float TimeRemaining = 0.f;
 	UFUNCTION(BlueprintCallable)
 	void UpdateCooldown(float InTime, float InDuration = -1.f);

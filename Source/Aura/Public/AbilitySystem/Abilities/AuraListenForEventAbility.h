@@ -19,7 +19,7 @@ protected:
 		const FGameplayAbilityActivationInfo ActivationInfo, FOnGameplayAbilityEnded::FDelegate* OnGameplayAbilityEndedDelegate,
 		const FGameplayEventData* TriggerEventData = nullptr) override;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Default")
 	TSubclassOf<UGameplayEffect> EventBasedEffectClass;
 	UPROPERTY()
 	FGameplayTagContainer ModifiersDataTags; // DataTags from EventBasedEffectClass

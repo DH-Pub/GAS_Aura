@@ -5,7 +5,7 @@
 
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AuraGameplayTags.h"
-#include "AbilitySystem/Abilities/AuraGameplayAbility.h"
+#include "AbilitySystem/Abilities/AuraInputAbility.h"
 #include "Character/AuraCharacter.h"
 #include "Player/AuraPlayerState.h"
 
@@ -24,7 +24,7 @@ void UAuraAbilitySystemComponent::ClientEffectApplied_Implementation(UAbilitySys
 
 
 #pragma region Add Startup Abilities
-void UAuraAbilitySystemComponent::AddCharacterAbilities(const TArray<TSubclassOf<UAuraGameplayAbility>>& StartupAbilities)
+void UAuraAbilitySystemComponent::AddCharacterAbilities(const TArray<TSubclassOf<UAuraInputAbility>>& StartupAbilities)
 {
 	for (const TSubclassOf AbilityClass : StartupAbilities)
 	{
@@ -135,10 +135,7 @@ const FGameplayTag* UAuraAbilitySystemComponent::GetStatusFromSpec(const FGamepl
 {
 	for (const FGameplayTag& Tag : AbilitySpec.GetDynamicSpecSourceTags())
 	{
-		if (Tag.MatchesTag(AuraGameplayTags::Ability_Status))
-		{
-			return &Tag;
-		}
+		if (Tag.MatchesTag(AuraGameplayTags::Ability_Status)) return &Tag;
 	}
 	return nullptr;
 }
@@ -164,7 +161,6 @@ void UAuraAbilitySystemComponent::OnRep_ActivateAbilities()
 		{
 			for (const auto& AbilitySpec : GetActivatableAbilities())
 			{
-				// OnGiveAbilityDelegate.Broadcast(AbilitySpec);
 				//TODO: Find something to do with this
 			}
 		}

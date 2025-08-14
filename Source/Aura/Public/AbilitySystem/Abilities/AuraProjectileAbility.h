@@ -26,9 +26,9 @@ protected:
 	void SpawnProjectile(const FVector& TargetLocation, const FVector& InSpawnLocation, bool bStartFromCharacter = true,
 		const float SpawnDistance = 60.f, float SpawnHeightAdd = 50.f);
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Default|Projectile")
 	TSubclassOf<AAuraProjectile> ProjectileClass;
 private:
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, Category="Default|Projectile")
 	bool bStagger = false;
 };

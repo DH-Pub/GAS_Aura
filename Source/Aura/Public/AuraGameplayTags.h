@@ -63,8 +63,8 @@ namespace AuraGameplayTags
 	
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Attack)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Summon)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Cooldown_Reduce)
 	
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Cooldown_Reduce)
 	// Abilities with CD =============================================================================================
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Fire_FireBolt)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Fire_FireBolt_Cooldown)
@@ -76,7 +76,8 @@ namespace AuraGameplayTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Status_Unlocked)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Status_Equipped)
 	
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Type_Offensive)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Type_Activatable)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Type_Activatable_Blockable) // For ability that when hit-reacting, stunned,...
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Type_Passive)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Type_None)
 #pragma endregion

@@ -40,6 +40,8 @@ void UMoveMouseAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 	AuraPlayerController->MouseMovementState = HoldMove;
 	// if (HasAuthorityOrPredictionKey(ActorInfo, &ActivationInfo)){}
+	/*GEngine->AddOnScreenDebugMessage(1, 1.f, FColor::Orange, FString::Printf(TEXT("%s"),
+	*AuraCharacterFromActorInfo->GetAuraAbilitySystemComponent()->GetFullName()));*/
 }
 
 void UMoveMouseAbility::HoldReleased()
