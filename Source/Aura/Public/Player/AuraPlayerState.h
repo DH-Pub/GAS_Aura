@@ -43,7 +43,7 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category="Default")
 	TObjectPtr<ULevelUpDataAsset> LevelUpDataAsset;
 	
-	FOnPlayerStatChanged OnLevelChangedDelegate;
+	FOnPlayerStatChanged OnLevelChangedDelegate; //TODO: Find some use for this (currently not being used)
 	FOnXPChanged OnXPChangedDelegate;
 	
 	FOnPlayerStatChanged OnAttributePointsChangedDelegate;
@@ -59,11 +59,11 @@ public:
 	void AddToXP(const int32 PlusXP) {SetXP(XP + PlusXP);}
 	
 	FORCEINLINE int32 GetAttributePoints() const {return AttributePoints;}
-	void SetAttributePoints(const int32 NewPoints);
+	void SetAttributePoints(const int32 NewPoints) {AttributePoints = NewPoints; OnAttributePointsChangedDelegate.Broadcast(AttributePoints);}
 	void AddToAttributePoints(const int32 InPoints) {SetAttributePoints(AttributePoints + InPoints);}
 	
 	FORCEINLINE int32 GetSpellPoints() const {return SpellPoints;}
-	void SetSpellPoints(const int32 NewPoints);
+	void SetSpellPoints(const int32 NewPoints) {SpellPoints = NewPoints; OnSpellPointsChangedDelegate.Broadcast(SpellPoints);}
 	void AddToSpellPoints(const int32 InPoints) {SetSpellPoints(SpellPoints + InPoints);}
 protected:
 	UPROPERTY(VisibleAnywhere)
@@ -75,26 +75,20 @@ private:
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_Level, Category="Default")
 	int32 Level = 1;
 	UFUNCTION()
-	void OnRep_Level(int32 OldLevel) const;
+	void OnRep_Level(const int32 OldLevel) const {if (Level != OldLevel) OnLevelChangedDelegate.Broadcast(Level);}
 	
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_XP, Category="Default")
 	int32 XP = 0;
 	UFUNCTION()
-	void OnRep_XP(int32 OldXP) const;
+	void OnRep_XP(const int32 OldXP) const {OnXPChangedDelegate.Broadcast(XP, Level, LevelUpDataAsset);}
 	
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_AttributePoints, Category="Default")
 	int32 AttributePoints = 0;
 	UFUNCTION()
-	void OnRep_AttributePoints(int32 OldAttributePoints) const
-	{
-		OnAttributePointsChangedDelegate.Broadcast(AttributePoints);
-	};
+	void OnRep_AttributePoints(int32 OldAttributePoints) const {OnAttributePointsChangedDelegate.Broadcast(AttributePoints);}
 	
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_SpellPoints, Category="Default")
-	int32 SpellPoints = 0;
+	int32 SpellPoints = 1;
 	UFUNCTION()
-	void OnRep_SpellPoints(int32 OldSpellPoints) const
-	{
-		OnSpellPointsChangedDelegate.Broadcast(SpellPoints);
-	};
+	void OnRep_SpellPoints(int32 OldSpellPoints) const {OnSpellPointsChangedDelegate.Broadcast(SpellPoints);}
 };

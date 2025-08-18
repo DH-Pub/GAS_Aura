@@ -11,6 +11,15 @@
 #include "Kismet/KismetTextLibrary.h"
 #include "UI/WidgetController/OverlayWidgetController.h"
 
+void USpellGlobeWidget::SetWidgetController(UAuraWidgetController* InWidgetController)
+{
+	OverlayWC = Cast<UOverlayWidgetController>(InWidgetController); check(OverlayWC);
+	WheelMaterialInstance = Image_WheelProgress->GetDynamicMaterial();
+	WheelMaterialInstance->SetScalarParameterValue(WheelPercentParam, 0.f);
+	Image_WheelProgress->SetRenderOpacity(0.f);
+	Super::SetWidgetController(InWidgetController);
+}
+
 void USpellGlobeWidget::NativePreConstruct()
 {
 	Super::NativePreConstruct();
@@ -34,14 +43,6 @@ void USpellGlobeWidget::NativeDestruct()
 {
 	Super::NativeDestruct();
 	GetWorld()->GetTimerManager().ClearTimer(CooldownTimerHandle);
-}
-
-void USpellGlobeWidget::WidgetControllerSet_Implementation(UAuraWidgetController* Controller)
-{
-	OverlayWC = Cast<UOverlayWidgetController>(Controller); check(OverlayWC);
-	WheelMaterialInstance = Image_WheelProgress->GetDynamicMaterial();
-	WheelMaterialInstance->SetScalarParameterValue(WheelPercentParam, 0.f);
-	Image_WheelProgress->SetRenderOpacity(0.f);
 }
 
 bool USpellGlobeWidget::SuccessUpdateAbilityData(const FAuraAbilityData& InAbilityData)

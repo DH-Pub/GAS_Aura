@@ -28,12 +28,6 @@ void UAttributeMenuWidgetController::BindCallbacksDependencies()
 		AttributePoints = Points;
 		AttributePointsToUIDelegate.Broadcast(AttributePoints, GetTotalPointsAllocating());
 	});
-	PlayerState->OnSpellPointsChangedDelegate.AddLambda([this](const int32 Points)
-	{
-		//TODO: Modify PointAllocating
-		SpellPointsToUIDelegate.Broadcast(Points, 0);
-	});
-	
 	PlayerState->OnApplyingStatFinishedDelegate.AddLambda([this]()
 	{
 		bIsApplying = false;
@@ -52,8 +46,6 @@ void UAttributeMenuWidgetController::BroadcastInitialValues()
 	AttributePoints = PlayerState->GetAttributePoints();
 	PointAllocationList.Empty();
 	AttributePointsToUIDelegate.Broadcast(AttributePoints, 0);
-	
-	SpellPointsToUIDelegate.Broadcast(PlayerState->GetSpellPoints(), 0);
 }
 
 int32& UAttributeMenuWidgetController::FindPointAllocationByTag(const FGameplayTag& Tag, bool& bFound)

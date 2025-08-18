@@ -33,27 +33,26 @@ public:
 	void InitOverlay(const FWidgetControllerParams& WCParams);
 	UPROPERTY()
 	TObjectPtr<UAuraUserWidget> OverlayWidget;
+	
+	UPROPERTY()
+	TObjectPtr<UOverlayWidgetController> OverlayWidgetController;
+	UPROPERTY()
+	TObjectPtr<UAttributeMenuWidgetController> AttributeMenuWidgetController; // Widget created in OverlayWidget BP
+	UPROPERTY()
+	TObjectPtr<USpellMenuWidgetController> SpellMenuWidgetController;
 
 	UPROPERTY(EditDefaultsOnly, Category="Default")
 	TObjectPtr<UAttributeDataAsset> AttributeData;
 	UPROPERTY(EditDefaultsOnly, Category="Default")
 	TObjectPtr<UAbilityDataAsset> AbilityData;
 private:
-	UPROPERTY(EditAnywhere, Category="Default")
+	UPROPERTY(EditDefaultsOnly, Category="Default")
 	TSubclassOf<UAuraUserWidget> OverlayWidgetClass; // For OverlayWidget
-	UPROPERTY()
-	TObjectPtr<UOverlayWidgetController> OverlayWidgetController;
-	UPROPERTY(EditAnywhere, Category="Default")
+	
+	UPROPERTY(EditDefaultsOnly, Category="Default")
 	TSubclassOf<UOverlayWidgetController> OverlayWidgetControllerClass;
-
-	// Widget created in OverlayWidget BP
-	UPROPERTY()
-	TObjectPtr<UAttributeMenuWidgetController> AttributeMenuWidgetController;
-	UPROPERTY(EditAnywhere, Category="Default")
+	UPROPERTY(EditDefaultsOnly, Category="Default")
 	TSubclassOf<UAttributeMenuWidgetController> AttributeMenuWidgetControllerClass;
-
-	UPROPERTY()
-	TObjectPtr<USpellMenuWidgetController> SpellMenuWidgetController;
-	UPROPERTY(EditAnywhere, Category="Default")
+	UPROPERTY(EditDefaultsOnly, Category="Default")
 	TSubclassOf<USpellMenuWidgetController> SpellMenuWidgetControllerClass;
 };

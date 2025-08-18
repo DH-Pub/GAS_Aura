@@ -20,6 +20,8 @@ class AURA_API USpellGlobeWidget : public UGlobeWidget
 {
 	GENERATED_BODY()
 public:
+	virtual void SetWidgetController(UAuraWidgetController* InWidgetController) override;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Default|GlobeProperties")
 	FSlateBrush SpellIconBrush;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Default|GlobeProperties")
@@ -31,7 +33,6 @@ protected:
 	virtual void NativePreConstruct() override;
 	virtual void NativeDestruct() override;
 	
-	virtual void WidgetControllerSet_Implementation(UAuraWidgetController* Controller) override;
 	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<class UOverlayWidgetController> OverlayWC;
 

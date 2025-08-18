@@ -35,42 +35,23 @@ UAbilitySystemComponent* AAuraPlayerState::GetAbilitySystemComponent() const {re
 void AAuraPlayerState::SetXP(const int32 NewXP)
 {
 	checkf(LevelUpDataAsset, TEXT("Unable to find LevelUpData. Please fill out AuraPlayerState"));
-	XP = NewXP;
-	const int32 NewLevel = LevelUpDataAsset->FindLevelForXP(XP);
+	const int32 NewLevel = LevelUpDataAsset->FindLevelForXP(NewXP);
+	if (Level != NewLevel)
+	{
+		AbilitySystemComponent->UpdateAbilityStatuses(NewLevel);
+		
+		if (AAuraCharacter* Character = Cast<AAuraCharacter>(GetPawn()))
+		{
+			Character->MulticastLevelUpEffects(NewLevel);
+		}
+	}
 	while (Level < NewLevel)
 	{
 		Level++;
-		if (AAuraCharacter* Character = Cast<AAuraCharacter>(GetPawn()))
-		{
-			Character->MulticastLevelUpEffects(Level);
-		}
 		const FAuraLevelUpData& LevelUpData = LevelUpDataAsset->LevelUpDataList[Level];
 		AddToAttributePoints(LevelUpData.AttributePointsGain);
 		AddToSpellPoints(LevelUpData.SpellPointsGain);
 	}
+	XP = NewXP;
 	OnXPChangedDelegate.Broadcast(XP, Level, LevelUpDataAsset);
 }
-
-void AAuraPlayerState::SetAttributePoints(const int32 NewPoints)
-{
-	AttributePoints = NewPoints;
-	OnAttributePointsChangedDelegate.Broadcast(AttributePoints);
-}
-
-void AAuraPlayerState::SetSpellPoints(const int32 NewPoints)
-{
-	SpellPoints = NewPoints;
-	OnSpellPointsChangedDelegate.Broadcast(SpellPoints);
-}
-
-
-#pragma region OnRep
-void AAuraPlayerState::OnRep_Level(int32 OldLevel) const
-{
-	if (Level != OldLevel) OnLevelChangedDelegate.Broadcast(Level);
-}
-void AAuraPlayerState::OnRep_XP(int32 OldXP) const
-{
-	OnXPChangedDelegate.Broadcast(XP, Level, LevelUpDataAsset);
-}
-#pragma endregion

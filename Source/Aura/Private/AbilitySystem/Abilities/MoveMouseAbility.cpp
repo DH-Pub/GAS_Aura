@@ -33,26 +33,17 @@ void UMoveMouseAbility::OnAvatarSet(const FGameplayAbilityActorInfo* ActorInfo,
 	NavSystem = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
 }
 
-void UMoveMouseAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
-	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo,
-	const FGameplayEventData* TriggerEventData)
+void UMoveMouseAbility::StartPressedOngoing_Implementation()
 {
-	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
+	Super::StartPressedOngoing_Implementation();
+	if (AuraPlayerController == nullptr) return;
 	AuraPlayerController->MouseMovementState = HoldMove;
-	// if (HasAuthorityOrPredictionKey(ActorInfo, &ActivationInfo)){}
-	/*GEngine->AddOnScreenDebugMessage(1, 1.f, FColor::Orange, FString::Printf(TEXT("%s"),
-	*AuraCharacterFromActorInfo->GetAuraAbilitySystemComponent()->GetFullName()));*/
 }
 
-void UMoveMouseAbility::HoldReleased()
-{
-	Super::HoldReleased();
-	AuraPlayerController->MouseMovementState = Stop;
-}
 
-void UMoveMouseAbility::TapReleased()
+void UMoveMouseAbility::TapReleased_Implementation()
 {
-	Super::TapReleased();
+	Super::TapReleased_Implementation();
 	if (AuraPlayerController->GetCursorHitResult().bBlockingHit)
 	{
 		AuraPlayerController->AutoMoveDestination = AuraPlayerController->GetCursorHitResult().ImpactPoint;
@@ -82,15 +73,21 @@ void UMoveMouseAbility::TapReleased()
 	}
 	AuraPlayerController->MouseMovementState = Stop;
 }
-
-void UMoveMouseAbility::DoubleClick()
+void UMoveMouseAbility::HoldReleased_Implementation()
 {
-	Super::DoubleClick();
-	GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Yellow, FString("DoubleClick"));
+	Super::HoldReleased_Implementation();
+	if (AuraPlayerController == nullptr) return;
+	AuraPlayerController->MouseMovementState = Stop;
 }
 
-void UMoveMouseAbility::TripleClick()
+
+void UMoveMouseAbility::DoubleClick_Implementation()
 {
-	Super::TripleClick();
+	Super::DoubleClick_Implementation();;
+	GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Yellow, FString("DoubleClick"));
+}
+void UMoveMouseAbility::TripleClick_Implementation()
+{
+	Super::TripleClick_Implementation();
 	GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Orange, FString("TripleClick"));
 }

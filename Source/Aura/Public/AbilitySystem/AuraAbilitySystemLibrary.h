@@ -8,6 +8,7 @@
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "AuraAbilitySystemLibrary.generated.h"
 
+class UAbilityDataAsset;
 class AAuraHUD;
 class USpellMenuWidgetController;
 struct FAuraGameplayEffectContext;
@@ -45,6 +46,7 @@ public:
 
 	UFUNCTION(BlueprintPure, meta=(DefaultToSelf="WorldContextObject"), Category = "AuraAbilitySystemLibrary|XP")
 	static int32 GetXPRewardForClassAndLevel(const UObject* WorldContextObject, ECharacterClass CharacterClass, int32 CharacterLevel);
+
 	
 #pragma region ActorFunctions
 	// Add widget to OverlayWidget -> Canvas -> Overlay_Screen
@@ -67,7 +69,9 @@ public:
 	 * Get DA_CharacterClass.
 	 * Client can't get GameMode so this will always return nullptr
 	 */
-	static UCharacterClassDataAsset* GetCharacterClassDataAsset(const UObject* WorldContextObject);
+	static UCharacterClassDataAsset* GetGameModeCharacterClassDataAsset(const UObject* WorldContextObject);
+	static UAbilityDataAsset* GetGameModeAbilityDataAsset(const UObject* WorldContextObject);
+	
 	static AAuraHUD* GetAuraHUD(const UObject* WorldContextObject);
 
 

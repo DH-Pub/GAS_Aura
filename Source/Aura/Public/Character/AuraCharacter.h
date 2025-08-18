@@ -46,7 +46,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Default|Character")
 	TObjectPtr<UWidgetComponent> LevelUpWidgetComponent;
 	UPROPERTY()
-	TObjectPtr<UCharacterWidgetController> CharacterWidgetController;
+	TObjectPtr<UCharacterWidgetController> CharacterWC;
 	UPROPERTY(EditAnywhere, Category = "Default|CharacterWidgetClass")
 	TSubclassOf<UCharacterWidgetController> CharacterWidgetClass;
 };

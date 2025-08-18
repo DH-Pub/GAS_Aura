@@ -10,7 +10,7 @@
 UOverlayWidgetController* AAuraHUD::CreateOrGetOverlayWC(const FWidgetControllerParams& WCParams)
 {
 	return UAuraWidgetController::CreateOrGetWidgetController<UOverlayWidgetController>(
-		this,OverlayWidgetController, OverlayWidgetControllerClass, WCParams);
+		this, OverlayWidgetController, OverlayWidgetControllerClass, WCParams);
 }
 UAttributeMenuWidgetController* AAuraHUD::CreateOrGetAttributeMenuWC(const FWidgetControllerParams& WCParams)
 {

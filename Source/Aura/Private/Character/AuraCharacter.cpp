@@ -77,10 +77,7 @@ void AAuraCharacter::MulticastLevelUpEffects_Implementation(int32 Level)
 		LevelUpNiagaraComponent->SetWorldRotation(FRotator(CameraRotation.Pitch * -1., CameraRotation.Yaw + 180., 0.));
 		LevelUpNiagaraComponent->Activate(true);
 	}
-	if (CharacterWidgetController)
-	{
-		CharacterWidgetController->OnLevelUpDelegate.Broadcast(Level);
-	}
+	CharacterWC->OnLevelUpDelegate.Broadcast(Level);
 }
 
 void AAuraCharacter::BeginPlay()
@@ -89,24 +86,24 @@ void AAuraCharacter::BeginPlay()
 
 	if (UAuraUserWidget* LevelUpWidget = Cast<UAuraUserWidget>(LevelUpWidgetComponent->GetUserWidgetObject()))
 	{
-		UAuraWidgetController::CreateOrGetWidgetController(this, CharacterWidgetController, CharacterWidgetClass,
+		UAuraWidgetController::CreateOrGetWidgetController(this, CharacterWC, CharacterWidgetClass,
 			FWidgetControllerParams(
 				Cast<AAuraPlayerController>(GetController()), GetPlayerState<AAuraPlayerState>(),
 				AbilitySystemComponent, AttributeSet));
-		LevelUpWidget->SetWidgetController(CharacterWidgetController);
+		LevelUpWidget->SetWidgetController(CharacterWC);
 	}
 }
 
 void AAuraCharacter::InitAbilityActorInfo()
 {
 	AAuraPlayerState* AuraPlayerState = GetPlayerState<AAuraPlayerState>();
-	check(AuraPlayerState);
+	check(AuraPlayerState); // Every Client has access to every PlayerState
 	AbilitySystemComponent = AuraPlayerState->GetAuraAbilitySystemComponent();
 	AbilitySystemComponent->InitAbilityActorInfo(AuraPlayerState,this); // Set Owner and Avatar
 	AbilitySystemComponent->AbilityActorInfoSet();
 	AttributeSet = AuraPlayerState->GetAuraAttributeSet();
 	
-	if (AAuraPlayerController* AuraPC = Cast<AAuraPlayerController>(GetController()))
+	if (AAuraPlayerController* AuraPC = Cast<AAuraPlayerController>(GetController())) // Server and local client
 	{
 		if (AAuraHUD* AuraHUD = AuraPC->GetHUD<AAuraHUD>()) // Only Local Client can get HUD
 		{

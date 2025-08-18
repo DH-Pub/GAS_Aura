@@ -4,9 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "AbilitySystem/Abilities/AuraGameplayAbility.h"
+#include "InputTriggers.h"
 #include "AuraInputAbility.generated.h"
 
 /**
+ * Input connected to this ability HAS to be NON-OneShot Hold Trigger (UInputTriggerHold) And InstancedPerActor
  * Base class for Ability that use input
  * Check "class UGameplayAbility_CharacterJump : public UGameplayAbility"
  */
@@ -15,6 +17,7 @@ class AURA_API UAuraInputAbility : public UAuraGameplayAbility
 {
 	GENERATED_BODY()
 public:
+	UAuraInputAbility();
 	// Input =======================================================================================================
 	virtual void InputReleased(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
 		const FGameplayAbilityActivationInfo ActivationInfo) override;
@@ -23,34 +26,29 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category="Default", meta=(GameplayTagFilter="Input"))
 	FGameplayTag StartupInputTag;
 protected:
-	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
-		const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
-	virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
-		const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
-	
-	UPROPERTY(BlueprintReadWrite)
-	FTimerHandle HoldInputTimer;
-	virtual void HoldThresholdReached();
-	bool bPassHoldThreshold = false;
-	
-	UPROPERTY(BlueprintReadWrite)
-	FTimerHandle MultiClickTimer;
-	virtual void MultiClickTimePassed();
-	bool bPassMultiClickThreshold = false;
+	UFUNCTION(BlueprintNativeEvent)
+	void StartPressedOngoing(); // Started / Ongoing start
+	UFUNCTION(BlueprintNativeEvent)
+	void StartHoldTriggered(); // Triggered start
 
-	virtual void HoldReleased(){}; // override this
-	virtual void TapReleased(){}; // override this
-	virtual void DoubleClick(){}; // override this
-	virtual void TripleClick(){}; // override this
-private:
-	UPROPERTY(VisibleAnywhere, Category="Default")
-	uint8 ClickNums = 0;
-	UPROPERTY(EditDefaultsOnly, Category="Default")
-	float HoldThreshold = 0.35f;
-	UPROPERTY(EditDefaultsOnly, Category="Default")
-	float MultiClickThreshold = 0.5f;
+	UFUNCTION(BlueprintNativeEvent)
+	void TapReleased(); // Canceled
+	UFUNCTION(BlueprintNativeEvent)
+	void HoldReleased(); // Completed
 	
-	FVector2D ClickScreenPosition = FVector2D::ZeroVector;
-	UPROPERTY(EditDefaultsOnly, Category="Default|Mouse")
-	float MouseMoveLimit = 50.f;
+	UFUNCTION(BlueprintNativeEvent)
+	void DoubleClick(); // override this
+	UFUNCTION(BlueprintNativeEvent)
+	void TripleClick(); // override this
+private:
+	ETriggerEvent AbilityTriggerEvent = ETriggerEvent::None;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Default")
+	float RepeatDelayTime = 0.5;
+	FTimerHandle RepeatDelayTimer; // for (RepeatedTap)
+	UPROPERTY(EditDefaultsOnly, Category="Default")
+	uint8 MaxRepeatedClick = 3;
+	uint8 ClickNums = 0;
+public:
+	void SetAbilityTriggerEvent(ETriggerEvent TriggerEvent);
 };

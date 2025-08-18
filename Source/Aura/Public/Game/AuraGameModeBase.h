@@ -20,8 +20,11 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category=Default)
 	TObjectPtr<UCharacterClassDataAsset> CharacterClassData;
 	
+	UPROPERTY(EditDefaultsOnly, Category=Default)
+	TObjectPtr<UAbilityDataAsset> AbilityData;
+	
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 	virtual void Logout(AController* Exiting) override;
 	UPROPERTY()
-	TArray<AAuraPlayerController*> PlayerControllers;
+	TArray<TObjectPtr<AAuraPlayerController>> PlayerControllers;
 };

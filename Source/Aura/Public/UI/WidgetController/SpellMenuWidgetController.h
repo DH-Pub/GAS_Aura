@@ -7,6 +7,7 @@
 #include "SpellMenuWidgetController.generated.h"
 
 class UOverlayWidgetController;
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSpellPointsChanged, int32, NewValue);
 /**
  * 
  */
@@ -17,9 +18,13 @@ class AURA_API USpellMenuWidgetController : public UAuraWidgetController
 public:
 	virtual void BindCallbacksDependencies() override;
 	virtual void BroadcastInitialValues() override;
-protected:
+	
 	UPROPERTY(BlueprintReadOnly, BlueprintGetter=GetOverlayWidgetController)
 	TObjectPtr<UOverlayWidgetController> OverlayWC;
+	
+	UPROPERTY(BlueprintAssignable, Category="GAS|Attributes")
+	FOnSpellPointsChanged SpellPointsToUIDelegate;
+protected:
 	UFUNCTION(BlueprintGetter)
 	UOverlayWidgetController* GetOverlayWidgetController();
 };

@@ -8,6 +8,7 @@
 
 class UAttributeDataAsset;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnAttriubtePointsChanged, int32, NewValue, int32, PointsAllocating);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FAttributeInfoSignature, const FGameplayTag&, Tag, const FAuraAttributeData&, Info);
 /**
  * Constructed in AuraHUD like OverlayWidgetController
@@ -35,12 +36,9 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	bool bIsApplying = false;
 	UPROPERTY(BlueprintAssignable, Category="GAS|Attributes")
-	FOnPlayerPointsChangedSignature AttributePointsToUIDelegate;
+	FOnAttriubtePointsChanged AttributePointsToUIDelegate;
 	UFUNCTION(BlueprintCallable)
 	void AllocatePointToAttribute(UPARAM(meta=(GameplayTagFilter="Attributes")) const FGameplayTag& AttributeTag, int32 Points);
-	
-	UPROPERTY(BlueprintAssignable, Category="GAS|Attributes")
-	FOnPlayerPointsChangedSignature SpellPointsToUIDelegate;
 private:
 	int32 ZeroInteger = 0; // Default Value if GetPointAllocationByTag() not found, DO NOT modify this if used
 };

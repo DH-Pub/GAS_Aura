@@ -24,13 +24,12 @@ public:
 		const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateCancelAbility) override;
 	virtual void OnAvatarSet(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec) override;
 protected:
-	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
-		const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
-	
-	virtual void HoldReleased() override;
-	virtual void TapReleased() override;
-	virtual void DoubleClick() override;
-	virtual void TripleClick() override;
+	virtual void StartPressedOngoing_Implementation() override;
+
+	virtual void TapReleased_Implementation() override;
+	virtual void HoldReleased_Implementation() override;
+	virtual void DoubleClick_Implementation() override;
+	virtual void TripleClick_Implementation() override;
 private:
 	UPROPERTY(EditDefaultsOnly, Category="Default")
 	bool bDrawNavBox = false;

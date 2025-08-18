@@ -7,25 +7,37 @@
 #include "Engine/DataAsset.h"
 #include "AbilityDataAsset.generated.h"
 
-class UGameplayAbility;
+struct FGameplayAbilitySpec;
+class UAuraAbilitySystemComponent;
+class UAuraGameplayAbility;
 
 USTRUCT(BlueprintType)
 struct FAuraAbilityData
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditDefaultsOnly, meta=(GameplayTagFilter="Abilities"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(GameplayTagFilter="Ability"))
 	FGameplayTag AbilityTag = FGameplayTag();
-	
-	UPROPERTY(BlueprintReadOnly)
-	FGameplayTag InputTag = FGameplayTag();
-	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(GameplayTagFilter="Ability"))
 	FGameplayTag CooldownTag = FGameplayTag();
+	
+	UPROPERTY(BlueprintReadOnly)
+	FGameplayTag StatusTag = FGameplayTag(); // Set in C++
+	UPROPERTY(BlueprintReadOnly)
+	FGameplayTag InputTag = FGameplayTag(); // Set in C++
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<UTexture2D> Icon = nullptr;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<UMaterialInterface> BackgroundMaterial = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	int32 LevelRequirement = 1;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TSubclassOf<UAuraGameplayAbility> AbilityClass = nullptr;
+
+	void SetInputAndStatusTag(const FGameplayAbilitySpec& AbilitySpec);
 };
 
 /**
@@ -41,4 +53,9 @@ public:
 	TArray<FAuraAbilityData> AbilityDataList;
 
 	FAuraAbilityData* FindAbilityDataByTag(const FGameplayTagContainer& AbilityTags);
+
+	
+#if WITH_EDITOR
+	virtual EDataValidationResult IsDataValid(FDataValidationContext& Context) const override;
+#endif
 };

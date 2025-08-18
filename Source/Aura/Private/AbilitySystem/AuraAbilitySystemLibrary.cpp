@@ -58,7 +58,7 @@ USpellMenuWidgetController* UAuraAbilitySystemLibrary::GetSpellMenuWidgetControl
 void UAuraAbilitySystemLibrary::InitializeDefaultAttributes(const UObject* WorldContextObject, UObject* SourceObject,
 	const ECharacterClass CharacterClass, const float Level, UAbilitySystemComponent* ASC)
 {
-	UCharacterClassDataAsset* ClassData = GetCharacterClassDataAsset(WorldContextObject);
+	UCharacterClassDataAsset* ClassData = GetGameModeCharacterClassDataAsset(WorldContextObject);
 	const FCharacterClassDefaultInfo ClassDefaultInfo = ClassData->GetClassDefaultInfo(CharacterClass);
 	FGameplayEffectContextHandle ContextHandle = ASC->MakeEffectContext();
 	ContextHandle.AddSourceObject(SourceObject);
@@ -76,7 +76,7 @@ void UAuraAbilitySystemLibrary::InitializeDefaultAttributes(const UObject* World
 /* Make sure to check HasAuthority() before calling this */
 void UAuraAbilitySystemLibrary::GiveStartupAbilities(const UObject* WorldContextObject, UAbilitySystemComponent* ASC, const ECharacterClass CharacterClass)
 {
-	UCharacterClassDataAsset* ClassData = GetCharacterClassDataAsset(WorldContextObject);
+	UCharacterClassDataAsset* ClassData = GetGameModeCharacterClassDataAsset(WorldContextObject);
 	if (ClassData == nullptr) return;
 	
 	for (const TSubclassOf ClassAbility : ClassData->CommonAbilities)
@@ -96,7 +96,7 @@ void UAuraAbilitySystemLibrary::GiveStartupAbilities(const UObject* WorldContext
 int32 UAuraAbilitySystemLibrary::GetXPRewardForClassAndLevel(const UObject* WorldContextObject,
 	const ECharacterClass CharacterClass, const int32 CharacterLevel)
 {
-	UCharacterClassDataAsset* ClassData = GetCharacterClassDataAsset(WorldContextObject);
+	UCharacterClassDataAsset* ClassData = GetGameModeCharacterClassDataAsset(WorldContextObject);
 	if (ClassData == nullptr) return 0;
 
 	const FCharacterClassDefaultInfo Info = ClassData->GetClassDefaultInfo(CharacterClass);
@@ -171,11 +171,19 @@ bool UAuraAbilitySystemLibrary::IsNotFriend(const AActor* FirstActor, const AAct
 }
 
 
-UCharacterClassDataAsset* UAuraAbilitySystemLibrary::GetCharacterClassDataAsset(const UObject* WorldContextObject)
+UCharacterClassDataAsset* UAuraAbilitySystemLibrary::GetGameModeCharacterClassDataAsset(const UObject* WorldContextObject)
 {
 	if (const AAuraGameModeBase* AuraGameMode = Cast<AAuraGameModeBase>(UGameplayStatics::GetGameMode(WorldContextObject)))
 	{
 		return AuraGameMode->CharacterClassData;
+	}
+	return nullptr;
+}
+UAbilityDataAsset* UAuraAbilitySystemLibrary::GetGameModeAbilityDataAsset(const UObject* WorldContextObject)
+{
+	if (const AAuraGameModeBase* AuraGameMode = Cast<AAuraGameModeBase>(UGameplayStatics::GetGameMode(WorldContextObject)))
+	{
+		return AuraGameMode->AbilityData;
 	}
 	return nullptr;
 }

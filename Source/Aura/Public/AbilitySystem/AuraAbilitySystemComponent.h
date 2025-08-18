@@ -6,6 +6,7 @@
 #include "AbilitySystemComponent.h"
 #include "AuraAbilitySystemComponent.generated.h"
 
+enum class ETriggerEvent : uint8;
 class UAuraInputAbility;
 class UAuraGameplayAbility;
 struct FUpgradeAllocation;
@@ -40,6 +41,7 @@ struct FPointAllocation
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FEffectAssetTags, const FGameplayTagContainer& /* AssetTags */);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnGiveAbilitySignature, const FGameplayAbilitySpec&);
+DECLARE_MULTICAST_DELEGATE_TwoParams(FAbilityStatusChanged, const FGameplayTag& /*AbilityTag*/, const FGameplayTag& /*StatusTag*/);
 /**
  * 
  */
@@ -57,8 +59,7 @@ public:
 	
 	FOnGiveAbilitySignature OnGiveAbilityDelegate;
 	
-	void AbilityInputTagPressed(const FGameplayTag& InputTag);
-	void AbilityInputTagReleased(const FGameplayTag& InputTag);
+	void AbilityInputTagTrigger(const ETriggerEvent TriggerEvent, const FGameplayTag& InputTag);
 
 	UFUNCTION(BlueprintCallable)
 	void ReduceCooldownByTag(const FGameplayTagContainer& TagContainer, const float Amount = 0.f, const float Percent = 0.f);
@@ -69,7 +70,8 @@ public:
 	UFUNCTION(Client, Reliable)
 	void ClientFinishUpgrade(const AAuraPlayerState* AuraPS); // Called in Server RPC to broadcast back to client
 
-	static const FGameplayTag* GetStatusFromSpec(const FGameplayAbilitySpec& AbilitySpec);
+	FGameplayAbilitySpec* GetSpecFromAssetTag(const FGameplayTag& AbilityTag);
+	void UpdateAbilityStatuses(int32 CharacterLevel);
 protected:
 	virtual void OnRep_ActivateAbilities() override;
 	virtual void OnGiveAbility(FGameplayAbilitySpec& AbilitySpec) override;

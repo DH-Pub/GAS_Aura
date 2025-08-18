@@ -5,9 +5,13 @@
 
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AuraGameplayTags.h"
+#include "EnhancedInputComponent.h"
+#include "AbilitySystem/AuraAbilitySystemLibrary.h"
 #include "AbilitySystem/Abilities/AuraInputAbility.h"
+#include "AbilitySystem/Data/AbilityDataAsset.h"
 #include "Character/AuraCharacter.h"
 #include "Player/AuraPlayerState.h"
+#include "UI/WidgetController/OverlayWidgetController.h"
 
 void UAuraAbilitySystemComponent::AbilityActorInfoSet()
 {
@@ -45,32 +49,47 @@ void UAuraAbilitySystemComponent::AddCharacterPassives(const TArray<TSubclassOf<
 #pragma endregion
 
 
-#pragma region Ability Pressed/Released
-void UAuraAbilitySystemComponent::AbilityInputTagPressed(const FGameplayTag& InputTag)
+// ===================================== Input =====================================================================
+#pragma region Ability Input
+void UAuraAbilitySystemComponent::AbilityInputTagTrigger(const ETriggerEvent TriggerEvent, const FGameplayTag& InputTag)
 {
-	if (!InputTag.IsValid()) return;
 	for (FGameplayAbilitySpec& AbilitySpec : GetActivatableAbilities())
 	{
 		if (AbilitySpec.GetDynamicSpecSourceTags().HasTagExact(InputTag))
 		{
-			AbilitySpecInputPressed(AbilitySpec);
-			// if (!AbilitySpec.IsActive())
-			TryActivateAbility(AbilitySpec.Handle);
+			if (AbilitySpec.IsActive())
+			{
+				for (UGameplayAbility* Ability : AbilitySpec.GetAbilityInstances())
+				{
+					Cast<UAuraInputAbility>(Ability)->SetAbilityTriggerEvent(TriggerEvent);
+				}
+			}
+			switch (TriggerEvent)
+			{
+			case ETriggerEvent::Ongoing:
+			case ETriggerEvent::Triggered:
+				// AbilitySpec.GetDynamicSpecSourceTags().AddTag(AuraGameplayTags::Input_TriggerEvent_Triggered);
+				TryActivateAbility(AbilitySpec.Handle);
+				// AbilitySpec.GetDynamicSpecSourceTags().RemoveTag(AuraGameplayTags::Input_TriggerEvent_Triggered);
+				break;
+				
+			case ETriggerEvent::Started:
+				// AbilitySpecInputPressed(AbilitySpec); // InputPressed called if Spec.IsActive()
+				break;
+				
+			case ETriggerEvent::Canceled:
+			case ETriggerEvent::Completed:
+				AbilitySpecInputReleased(AbilitySpec);
+				break;
+			
+			case ETriggerEvent::None: break;
+			}
 		}
 	}
 }
-void UAuraAbilitySystemComponent::AbilityInputTagReleased(const FGameplayTag& InputTag)
-{
-	if (!InputTag.IsValid()) return;
-	for (FGameplayAbilitySpec& AbilitySpec : GetActivatableAbilities())
-	{
-		if (AbilitySpec.GetDynamicSpecSourceTags().HasTagExact(InputTag))
-		{
-			AbilitySpecInputReleased(AbilitySpec);
-		}
-	}
-}
+
 #pragma endregion
+// ============================================================================================================
 
 
 void UAuraAbilitySystemComponent::ReduceCooldownByTag(const FGameplayTagContainer& TagContainer, const float Amount, const float Percent)
@@ -131,15 +150,30 @@ void UAuraAbilitySystemComponent::ClientFinishUpgrade_Implementation(const AAura
 }
 
 
-const FGameplayTag* UAuraAbilitySystemComponent::GetStatusFromSpec(const FGameplayAbilitySpec& AbilitySpec)
+FGameplayAbilitySpec* UAuraAbilitySystemComponent::GetSpecFromAssetTag(const FGameplayTag& AbilityTag)
 {
-	for (const FGameplayTag& Tag : AbilitySpec.GetDynamicSpecSourceTags())
+	FScopedAbilityListLock AbilityListLock(*this);
+	for (FGameplayAbilitySpec& AbilitySpec : GetActivatableAbilities())
 	{
-		if (Tag.MatchesTag(AuraGameplayTags::Ability_Status)) return &Tag;
+		if (AbilitySpec.Ability->GetAssetTags().HasTagExact(AbilityTag)) return &AbilitySpec;
 	}
 	return nullptr;
 }
+void UAuraAbilitySystemComponent::UpdateAbilityStatuses(const int32 CharacterLevel)
+{
+	if (UAbilityDataAsset* AbilityData = UAuraAbilitySystemLibrary::GetGameModeAbilityDataAsset(GetAvatarActor()))
+	{
+		for (FAuraAbilityData& Data : AbilityData->AbilityDataList)
+		{
+			if (!Data.AbilityTag.IsValid() || CharacterLevel < Data.LevelRequirement || GetSpecFromAssetTag(Data.AbilityTag)) continue;
 
+			FGameplayAbilitySpec AbilitySpec(Data.AbilityClass, 1);
+			AbilitySpec.GetDynamicSpecSourceTags().AddTag(AuraGameplayTags::Ability_Status_Eligible);
+			GiveAbility(AbilitySpec);
+			MarkAbilitySpecDirty(AbilitySpec);
+		}
+	}
+}
 
 /*void UAuraAbilitySystemComponent::ForEachAbility(const FForEachAbility& Delegate)
 {

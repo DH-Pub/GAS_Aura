@@ -22,7 +22,6 @@ void UOverlayWidgetController::BindCallbacksDependencies()
 
 	PlayerState->OnXPChangedDelegate.AddUObject(this, &UOverlayWidgetController::BroadcastXPToUI);
 	
-	// if (!AbilitySystemComponent->OnGiveAbilityDelegate.IsBound())
 	AbilitySystemComponent->OnGiveAbilityDelegate.AddUObject(this, &UOverlayWidgetController::BroadcastGivenAbility);
 	// Receive broadcast from AuraAbilitySystemComponent
 	AbilitySystemComponent->EffectAssetTags.AddLambda([this](const FGameplayTagContainer& AssetTags)
@@ -56,31 +55,15 @@ void UOverlayWidgetController::BroadcastInitialValues()
 
 void UOverlayWidgetController::BroadcastGivenAbility(const FGameplayAbilitySpec& AbilitySpec)
 {
-	if (const UAuraInputAbility* Ability = Cast<UAuraInputAbility>(AbilitySpec.Ability))
+	if (AbilitySpec.Ability->GetAssetTags().HasTag(AuraGameplayTags::Ability))
 	{
-		if (Ability->StartupInputTag.IsValid())
+		const AAuraHUD* HUD = PlayerController->GetHUD<AAuraHUD>();
+		if (FAuraAbilityData* Data = HUD->AbilityData->FindAbilityDataByTag(AbilitySpec.Ability->GetAssetTags()))
 		{
-			const AAuraHUD* HUD = PlayerController->GetHUD<AAuraHUD>();
-			if (FAuraAbilityData* Data = HUD->AbilityData->FindAbilityDataByTag(AbilitySpec.Ability->GetAssetTags()))
-			{
-				Data->InputTag = Ability->StartupInputTag;
-				AbilityDataDelegate.Broadcast(*Data);
-			}
+			Data->SetInputAndStatusTag(AbilitySpec);
+			AbilityDataDelegate.Broadcast(*Data);
 		}
 	}
-	/*for (const FGameplayTag& Tag : AbilitySpec.GetDynamicSpecSourceTags())
-	{
-		if (Tag.MatchesTag(AuraGameplayTags::Input))
-		{
-			const AAuraHUD* HUD = PlayerController->GetHUD<AAuraHUD>();
-			if (FAuraAbilityData* Data = HUD->AbilityData->FindAbilityDataByTag(AbilitySpec.Ability->GetAssetTags()))
-			{
-				Data->InputTag = Tag;
-				AbilityDataDelegate.Broadcast(*Data);
-			}
-			return;
-		}
-	}*/
 }
 
 void UOverlayWidgetController::BroadcastXPToUI(const int32 XP, const int32 Level, ULevelUpDataAsset* LevelUpDA) const

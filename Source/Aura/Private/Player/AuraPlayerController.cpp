@@ -4,7 +4,6 @@
 #include "Player/AuraPlayerController.h"
 
 #include "AbilitySystemBlueprintLibrary.h"
-#include "AuraGameplayTags.h"
 #include "EnhancedInputSubsystems.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "Aura/Aura.h"
@@ -50,6 +49,7 @@ void AAuraPlayerController::PlayerTick(const float DeltaTime)
 		}
 		break;
 	case HoldMove:
+		if (GetPawn() == nullptr) return;
 		/*const FVector WorldDirection = (CursorHitResult.ImpactPoint - GetPawn()->GetActorLocation()).GetSafeNormal();
 		GetPawn()->AddMovementInput(WorldDirection);*/
 
@@ -59,7 +59,13 @@ void AAuraPlayerController::PlayerTick(const float DeltaTime)
 		GetMousePosition(MouseInput.X, MouseInput.Y);
 		MouseInput -= CharacterLocToScreen;
 		MouseInput.Y *= -1.f;  // Y-axis direction in input is reverse for screen vector
-		Move(MouseInput);
+		
+		const FRotator Rotation = GetControlRotation();
+		const FRotator YawRotation(0., Rotation.Yaw, 0.);
+		const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+
+		GetPawn()->GetMovementComponent()->AddInputVector(ForwardDirection * MouseInput.Y + RightDirection * MouseInput.X);
 		break;
 	}
 }
@@ -85,24 +91,24 @@ void AAuraPlayerController::CursorTrace()
 	GetHitResultUnderCursor(ECC_Mouse, false, CursorHitResult);
 	if (!CursorHitResult.bBlockingHit) return;
 	
-	const TScriptInterface<IEnemyInterface> LastActor = CurrentActor;
-	CurrentActor = CursorHitResult.GetActor(); // cast to IEnemyInterface, nullptr if can't (i.e. Floor -> nullptr)
+	const TScriptInterface<IEnemyInterface> LastActor = CurrentCursorHitActor;
+	CurrentCursorHitActor = CursorHitResult.GetActor(); // cast to IEnemyInterface, nullptr if can't (i.e. Floor -> nullptr)
 
-	if (CurrentActor != LastActor)
+	if (CurrentCursorHitActor != LastActor)
 	{
 		if (LastActor) LastActor->UnHighlightActor();
-		if (CurrentActor) CurrentActor->HighlightActor();
+		if (CurrentCursorHitActor) CurrentCursorHitActor->HighlightActor();
 	}
 }
 
 void AAuraPlayerController::BeginPlay()
 {
-	check(AuraContext); // check/verify/ensure
+	check(InputMappingContext); // check/verify/ensure
 	Super::BeginPlay();
 
 	if (UEnhancedInputLocalPlayerSubsystem* InputSystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
 	{
-		InputSystem->AddMappingContext(AuraContext, 0);
+		InputSystem->AddMappingContext(InputMappingContext, 0);
 	}
 
 	// Mouse Cursor Settings
@@ -119,11 +125,9 @@ void AAuraPlayerController::SetupInputComponent()
 
 	UAuraInputComponent* AuraInputComponent = CastChecked<UAuraInputComponent>(InputComponent);
 	AuraInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AAuraPlayerController::Move);
-	AuraInputComponent->BindAction(ShiftAction, ETriggerEvent::Started, this, &AAuraPlayerController::ShiftPress);
-	AuraInputComponent->BindAction(ShiftAction, ETriggerEvent::Completed, this, &AAuraPlayerController::ShiftReleased);
 	
-	AuraInputComponent->BindAbilityActions(InputConfig, this,
-		&ThisClass::ControllerInputPressed, &ThisClass::ControllerInputReleased);
+	UEnhancedInputLocalPlayerSubsystem* InputSystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
+	AuraInputComponent->BindAbilityActions(InputConfig, InputMappingContext, InputSystem,this, &AAuraPlayerController::ControllerInputTrigger);
 }
 
 
@@ -190,7 +194,7 @@ void AAuraPlayerController::OnCameraCapsuleEndOverlap(UPrimitiveComponent* Overl
 void AAuraPlayerController::Move(const FInputActionValue& InputActionValue)
 {
 	if (GetPawn() == nullptr) return;
-	// MouseMovementState = Stop;
+	MouseMovementState = Stop;
 	const FVector2D InputAxisVector = InputActionValue.Get<FVector2D>();
 	const FRotator Rotation = GetControlRotation();
 	const FRotator YawRotation(0., Rotation.Yaw, 0.);
@@ -205,12 +209,7 @@ void AAuraPlayerController::Move(const FInputActionValue& InputActionValue)
 	// GEngine->AddOnScreenDebugMessage(1, 1.f, FColor::Green, FString::Printf(TEXT("%f"),GetPawn()->GetVelocity().Length()));
 }
 
-
-void AAuraPlayerController::ControllerInputPressed(const FGameplayTag InputTag)
+void AAuraPlayerController::ControllerInputTrigger(const ETriggerEvent TriggerEvent, const FGameplayTag InputTag)
 {
-	if (GetAuraASC()) AbilitySystemComponent->AbilityInputTagPressed(InputTag);
-}
-void AAuraPlayerController::ControllerInputReleased(FGameplayTag InputTag)
-{
-	if (GetAuraASC()) AbilitySystemComponent->AbilityInputTagReleased(InputTag);
+	if (GetAuraASC()) AbilitySystemComponent->AbilityInputTagTrigger(TriggerEvent, InputTag);
 }

@@ -7,6 +7,7 @@
 #include "GameFramework/PlayerController.h"
 #include "AuraPlayerController.generated.h"
 
+enum class ETriggerEvent : uint8;
 class UAuraAbilitySystemComponent;
 class UAuraInputConfig;
 class UInputAction;
@@ -21,9 +22,6 @@ struct FCameraOccludedStaticMesh
 
 	UPROPERTY(BlueprintReadWrite)
 	TArray<TObjectPtr<UMaterialInterface>> DefaultMaterials;
-	
-	/*UPROPERTY(BlueprintReadWrite)
-	TMap<TObjectPtr<UMaterialInterface>, TObjectPtr<UMaterialInstanceDynamic>> Materials; // <Default Material, Fade Material>*/
 	FCameraOccludedStaticMesh(){}
 };
 
@@ -32,7 +30,7 @@ enum EMouseMovementState : uint8
 	Stop, AutoMove, HoldMove
 };
 /**
- * 
+ * For multiplayer: Project Settings -> Engine/Navigation System -> Allow Client Side Navigation
  */
 UCLASS()
 class AURA_API AAuraPlayerController : public APlayerController
@@ -53,6 +51,9 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess))
 	TObjectPtr<class USplineComponent> Spline;
 	FVector AutoMoveDestination = FVector::ZeroVector;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(AllowPrivateAccess), Category = "Default|Input")
+	float AutoRunAcceptanceRadius = 25.f;
+	
 protected:
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
@@ -81,39 +82,26 @@ protected:
 
 private:
 	UPROPERTY(EditDefaultsOnly, Category = "Default|Input")
-	TObjectPtr<UInputMappingContext> AuraContext;
+	TObjectPtr<UInputMappingContext> InputMappingContext;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Default|Input")
 	TObjectPtr<UInputAction> MoveAction;
 	void Move(const FInputActionValue& InputActionValue);
 
-	UPROPERTY(EditDefaultsOnly, Category = "Default|Input")
-	TObjectPtr<UInputAction> ShiftAction;
-	void ShiftPress() { bShiftKeyDown = true; }
-	void ShiftReleased() { bShiftKeyDown = false; }
-	bool bShiftKeyDown = false;
-
 	UPROPERTY(BlueprintGetter=GetCursorHitResult, meta=(AllowPrivateAccess))
 	FHitResult CursorHitResult;
 	void CursorTrace();
 	UPROPERTY(BlueprintReadWrite, meta=(AllowPrivateAccess))
-	TScriptInterface<IEnemyInterface> CurrentActor;
+	TScriptInterface<IEnemyInterface> CurrentCursorHitActor;
 
 
 #pragma region AbilitySystem
-	void ControllerInputPressed(FGameplayTag InputTag);
-	void ControllerInputReleased(FGameplayTag InputTag);
+	void ControllerInputTrigger(const ETriggerEvent TriggerEvent, const FGameplayTag InputTag);
+	
 	UPROPERTY(EditDefaultsOnly, Category="Default|Input")
 	TObjectPtr<UAuraInputConfig> InputConfig;
 
 	UPROPERTY()
 	TObjectPtr<UAuraAbilitySystemComponent> AbilitySystemComponent;
-#pragma endregion
-
-
-	/*** For multiplayer: Project Settings -> Engine/Navigation System -> Allow Client Side Navigation */
-#pragma region ClickMove
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(AllowPrivateAccess), Category = "Default|Input")
-	float AutoRunAcceptanceRadius = 25.f;
 #pragma endregion
 };

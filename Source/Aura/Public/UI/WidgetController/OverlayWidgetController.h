@@ -7,7 +7,6 @@
 #include "UI/WidgetController/AuraWidgetController.h"
 #include "OverlayWidgetController.generated.h"
 
-class UAbilityDataAsset;
 class ULevelUpDataAsset;
 class UMessageInfo;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMessageWidgetInfoSignature, FAuraMessageInfo, Info);
@@ -39,13 +38,13 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "GAS|Attributes")
 	FOnVitalAttributeChanged OnMaxManaChanged;
 
-	UPROPERTY(BlueprintAssignable, Category = "GAS|Messages")
+	UPROPERTY(BlueprintAssignable)
 	FMessageWidgetInfoSignature MessageWidgetInfoDelegate; // Item Pickup Message
 
-	UPROPERTY(BlueprintAssignable, Category="GAS|XP")
+	UPROPERTY(BlueprintAssignable)
 	FOnXPChangedSignature OnXPPercentChangedDelegate; // Send XP% and Level to UI
 protected:
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="GAS|WidgetData")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Default|WidgetData")
 	TObjectPtr<UMessageInfo> MessageInfo;
 
 	UFUNCTION()

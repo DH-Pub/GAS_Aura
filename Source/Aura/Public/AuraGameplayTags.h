@@ -68,6 +68,9 @@ namespace AuraGameplayTags
 	// Abilities with CD =============================================================================================
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Fire_FireBolt)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Fire_FireBolt_Cooldown)
+	
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Lightning_Electrocute)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Lightning_Electrocute_Cooldown)
 	//================================================================================================================
 	
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Status)

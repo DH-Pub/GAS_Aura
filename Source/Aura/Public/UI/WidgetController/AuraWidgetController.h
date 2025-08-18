@@ -11,8 +11,6 @@ class AAuraPlayerController;
 class UAuraAbilitySystemComponent;
 class UAuraAttributeSet;
 
-// Custom Delegate to handle Attribute
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnPlayerPointsChangedSignature, int32, NewValue, int32, PointsAllocating);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnVitalAttributeChanged, float, NewValue);
 
 // Used to set Controller, State, ASC, AttributeSet

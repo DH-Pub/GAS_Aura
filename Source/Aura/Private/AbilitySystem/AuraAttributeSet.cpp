@@ -169,11 +169,11 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 		const float LocalIncomingXP = GetIncomingXP(); // SetIncomingXP(0.f); // if GE_EventIncomingXP is not "Override"
 
 		// Source/Target is the owner, since GA_ListenForEvents applies GE_EventIncomingXP to self
-		if (AAuraPlayerState* AuraAS = Props.TargetController->GetPlayerState<AAuraPlayerState>())
+		if (AAuraPlayerState* AuraPS = Props.TargetController->GetPlayerState<AAuraPlayerState>())
 		{
-			const int32 OldLevel = AuraAS->GetPlayerLevel();
-			AuraAS->AddToXP(LocalIncomingXP);
-			if (OldLevel < AuraAS->GetPlayerLevel())
+			const int32 OldLevel = AuraPS->GetPlayerLevel();
+			AuraPS->AddToXP(LocalIncomingXP);
+			if (OldLevel < AuraPS->GetPlayerLevel())
 			{
 				bTopOfHealth = true;
 				bTopOfMana = true;
