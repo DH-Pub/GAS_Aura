@@ -7,6 +7,7 @@
 #include "AuraAssetManager.generated.h"
 
 /**
+ * //TODO: Delete this
  * =====DEPRECATED========
  *
  * This is to load old AuraGameplayTags from the course inside StartInitialLoading()

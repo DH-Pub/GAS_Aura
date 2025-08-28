@@ -41,8 +41,10 @@ namespace AuraGameplayTags
 #pragma region Input
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input) // ==PARENT==
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_UI_AttributeMenu)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Move_XY) //Todo: This is not used
+	
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Move_Directional)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Move_Mouse)
+	
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Combat_Ability_1)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Combat_Ability_2)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Combat_Ability_3)
@@ -57,8 +59,12 @@ namespace AuraGameplayTags
 	
 #pragma region Ability
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability)
-	
+
+	// Asset Tags
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Move)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Move_Directional)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Move_Mouse)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Move_Auto)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_HitReact)
 	
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Attack)
@@ -67,12 +73,13 @@ namespace AuraGameplayTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Cooldown_Reduce)
 	// Abilities with CD =============================================================================================
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Fire_FireBolt)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Fire_FireBolt_Cooldown)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Fire_FireBolt_Cooldown) // CD Tags
 	
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Lightning_Electrocute)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Lightning_Electrocute_Cooldown)
 	//================================================================================================================
-	
+
+	// Dynamic Tags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Status)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Status_Locked)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Status_Eligible)
@@ -80,10 +87,13 @@ namespace AuraGameplayTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Status_Equipped)
 	
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Type_Activatable)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Type_Activatable_Blockable) // For ability that when hit-reacting, stunned,...
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Type_Passive)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Type_None)
 #pragma endregion
+	
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Generic_Ability)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Generic_Ability_Cancelable)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Generic_Ability_Blockable)
+	
 
 	
 #pragma region Combat
@@ -92,12 +102,12 @@ namespace AuraGameplayTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Damage_Lightning)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Damage_Arcane)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Damage_Physical)
-	static const TMap<FGameplayTag, FGameplayTag> DamageTypesToResistances = {
+	/*static const TMap<FGameplayTag, FGameplayTag> DamageTypesToResistances = {
 		{Damage_Fire, Attributes_Resistance_Fire},
 		{Damage_Lightning, Attributes_Resistance_Lightning},
 		{Damage_Arcane, Attributes_Resistance_Arcane},
 		{Damage_Physical, Attributes_Resistance_Physical},
-	};
+	};*/
 	
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Montage_Attack_1)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Montage_Attack_2)
@@ -112,4 +122,14 @@ namespace AuraGameplayTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Impact_Projectile)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Summon)
 #pragma endregion
+}
+
+
+namespace MessageTags
+{
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Message)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Message_HealthCrystal)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Message_HealthPotion)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Message_ManaCrystal)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Message_ManaPotion)
 }

@@ -10,8 +10,8 @@
 UHitReactAbility::UHitReactAbility()
 {
 	SetAssetTags(FGameplayTagContainer(AuraGameplayTags::Ability_HitReact));
-	CancelAbilitiesWithTag = FGameplayTagContainer(AuraGameplayTags::Ability_Type_Activatable_Blockable);
-	BlockAbilitiesWithTag = FGameplayTagContainer(AuraGameplayTags::Ability_Type_Activatable_Blockable);
+	CancelAbilitiesWithTag = FGameplayTagContainer(AuraGameplayTags::Generic_Ability_Cancelable);
+	BlockAbilitiesWithTag = FGameplayTagContainer(AuraGameplayTags::Generic_Ability_Blockable);
 
 	bRetriggerInstancedAbility = true;
 }

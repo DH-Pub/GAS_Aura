@@ -15,6 +15,7 @@
 #include "UI/HUD/AuraHUD.h"
 #include "UI/Widget/AuraUserWidget.h"
 #include "UI/WidgetController/AuraWidgetController.h"
+#include "UI/WidgetController/OverlayWidgetController.h"
 
 UOverlayWidgetController* UAuraAbilitySystemLibrary::GetOverlayWidgetController(const UObject* WorldContextObject)
 {
@@ -58,12 +59,12 @@ USpellMenuWidgetController* UAuraAbilitySystemLibrary::GetSpellMenuWidgetControl
 void UAuraAbilitySystemLibrary::InitializeDefaultAttributes(const UObject* WorldContextObject, UObject* SourceObject,
 	const ECharacterClass CharacterClass, const float Level, UAbilitySystemComponent* ASC)
 {
-	UCharacterClassDataAsset* ClassData = GetGameModeCharacterClassDataAsset(WorldContextObject);
-	const FCharacterClassDefaultInfo ClassDefaultInfo = ClassData->GetClassDefaultInfo(CharacterClass);
+	const UCharacterClassDataAsset* ClassData = GetGameModeCharacterClassDataAsset(WorldContextObject);
+	const FCharacterClassDefaultInfo* ClassDefaultInfo = ClassData->GetClassDefaultInfo(CharacterClass);
 	FGameplayEffectContextHandle ContextHandle = ASC->MakeEffectContext();
 	ContextHandle.AddSourceObject(SourceObject);
 
-	const FGameplayEffectSpecHandle PrimaryAttrSpecHandle = ASC->MakeOutgoingSpec(ClassDefaultInfo.PrimaryAttributes, Level, ContextHandle);
+	const FGameplayEffectSpecHandle PrimaryAttrSpecHandle = ASC->MakeOutgoingSpec(ClassDefaultInfo->PrimaryAttributes, Level, ContextHandle);
 	ASC->ApplyGameplayEffectSpecToSelf(*PrimaryAttrSpecHandle.Data);
 
 	const FGameplayEffectSpecHandle SecondaryAttrSpecHandle = ASC->MakeOutgoingSpec(ClassData->SecondaryAttributes, Level, ContextHandle);
@@ -76,7 +77,7 @@ void UAuraAbilitySystemLibrary::InitializeDefaultAttributes(const UObject* World
 /* Make sure to check HasAuthority() before calling this */
 void UAuraAbilitySystemLibrary::GiveStartupAbilities(const UObject* WorldContextObject, UAbilitySystemComponent* ASC, const ECharacterClass CharacterClass)
 {
-	UCharacterClassDataAsset* ClassData = GetGameModeCharacterClassDataAsset(WorldContextObject);
+	const UCharacterClassDataAsset* ClassData = GetGameModeCharacterClassDataAsset(WorldContextObject);
 	if (ClassData == nullptr) return;
 	
 	for (const TSubclassOf ClassAbility : ClassData->CommonAbilities)
@@ -87,7 +88,7 @@ void UAuraAbilitySystemLibrary::GiveStartupAbilities(const UObject* WorldContext
 	
 	if (ASC->GetAvatarActor()->Implements<UCombatInterface>())
 	{
-		for (TSubclassOf Ability : ClassData->GetClassDefaultInfo(CharacterClass).ClassAbilities)
+		for (const TSubclassOf Ability : ClassData->GetClassDefaultInfo(CharacterClass)->ClassAbilities)
 		{
 			ASC->GiveAbility(FGameplayAbilitySpec(Ability, ICombatInterface::Execute_GetCharacterLevel(ASC->GetAvatarActor())));
 		}
@@ -96,29 +97,22 @@ void UAuraAbilitySystemLibrary::GiveStartupAbilities(const UObject* WorldContext
 int32 UAuraAbilitySystemLibrary::GetXPRewardForClassAndLevel(const UObject* WorldContextObject,
 	const ECharacterClass CharacterClass, const int32 CharacterLevel)
 {
-	UCharacterClassDataAsset* ClassData = GetGameModeCharacterClassDataAsset(WorldContextObject);
+	const UCharacterClassDataAsset* ClassData = GetGameModeCharacterClassDataAsset(WorldContextObject);
 	if (ClassData == nullptr) return 0;
 
-	const FCharacterClassDefaultInfo Info = ClassData->GetClassDefaultInfo(CharacterClass);
-	const float XPReward = Info.XPReward.GetValueAtLevel(CharacterLevel);
-	return static_cast<int32>(XPReward);
+	const FCharacterClassDefaultInfo* Info = ClassData->GetClassDefaultInfo(CharacterClass);
+	return static_cast<int32>(Info->XPReward.GetValueAtLevel(CharacterLevel));
 }
 
 bool UAuraAbilitySystemLibrary::AddWidgetToRootCanvasPanel(const UObject* WorldContextObject, UUserWidget* InNewWidget)
 {
 	if (InNewWidget == nullptr) return false;
-	if (const APlayerController* PC = GEngine->GetFirstLocalPlayerController(WorldContextObject->GetWorld()))
+	if (const UOverlayWidgetController* OverlayWC = GetOverlayWidgetController(WorldContextObject))
 	{
-		const AAuraHUD* AuraHUD = PC->GetHUD<AAuraHUD>(); if (AuraHUD == nullptr) return false;
-		if (AuraHUD->OverlayWidget == nullptr) return false;
-		if (const UCanvasPanel* CanvasPanel = Cast<UCanvasPanel>(AuraHUD->OverlayWidget->GetRootWidget()))
+		if (UOverlay* Overlay = OverlayWC->Overlay_Screen) // Set inside WBP_Overlay WidgetControllerSet
 		{
-			//TODO: Find Alternative to GetChildAt(), Index needs to be Overlay_Screen
-			if (UOverlay* OverlayGame = Cast<UOverlay>(CanvasPanel->GetChildAt(0)))
-			{
-				OverlayGame->AddChildToOverlay(InNewWidget);
-				return true;
-			}
+			Overlay->AddChildToOverlay(InNewWidget);
+			return true;
 		}
 	}
 	return false;
@@ -171,7 +165,7 @@ bool UAuraAbilitySystemLibrary::IsNotFriend(const AActor* FirstActor, const AAct
 }
 
 
-UCharacterClassDataAsset* UAuraAbilitySystemLibrary::GetGameModeCharacterClassDataAsset(const UObject* WorldContextObject)
+const UCharacterClassDataAsset* UAuraAbilitySystemLibrary::GetGameModeCharacterClassDataAsset(const UObject* WorldContextObject)
 {
 	if (const AAuraGameModeBase* AuraGameMode = Cast<AAuraGameModeBase>(UGameplayStatics::GetGameMode(WorldContextObject)))
 	{
@@ -179,7 +173,7 @@ UCharacterClassDataAsset* UAuraAbilitySystemLibrary::GetGameModeCharacterClassDa
 	}
 	return nullptr;
 }
-UAbilityDataAsset* UAuraAbilitySystemLibrary::GetGameModeAbilityDataAsset(const UObject* WorldContextObject)
+const UAbilityDataAsset* UAuraAbilitySystemLibrary::GetGameModeAbilityDataAsset(const UObject* WorldContextObject)
 {
 	if (const AAuraGameModeBase* AuraGameMode = Cast<AAuraGameModeBase>(UGameplayStatics::GetGameMode(WorldContextObject)))
 	{
@@ -283,7 +277,7 @@ void UAuraAbilitySystemLibrary::SetInstancedStruct(FGameplayEffectContextHandle&
 {
 	if (FAuraGameplayEffectContext* AuraEffectContext =  static_cast<FAuraGameplayEffectContext*>(EffectContextHandle.Get()))
 	{
-		AuraEffectContext->AddInstancedStruct(InStruct);
+		AuraEffectContext->SetInstancedStruct(InStruct);
 	}
 }
 #pragma endregion

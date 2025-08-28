@@ -13,16 +13,26 @@
 #include "Character/AuraCharacterBase.h"
 #include "StructUtils/InstancedStruct.h"
 
-UAuraDamageGameplayAbility::UAuraDamageGameplayAbility()
+float UAuraDamageGameplayAbility::GetDamageAtLevel(const int32 Level, const FGameplayTag TypeTag)
 {
-	FGameplayTagContainer DefaultTags(AuraGameplayTags::Ability_Attack);
-	DefaultTags.AddTag(AuraGameplayTags::Ability_Type_Activatable_Blockable);
-	SetAssetTags(DefaultTags);
-	BlockAbilitiesWithTag = FGameplayTagContainer(AuraGameplayTags::Ability_Type_Activatable_Blockable);
+	if (const FScalableFloat* ScalableFloat = DamageTypes.Find(TypeTag))
+	{
+		return static_cast<int32>(ScalableFloat->GetValueAtLevel(Level) * 10.f) / 10.f;
+	}
+	return 0.f;
+}
+void UAuraDamageGameplayAbility::GetDamageAtLevelChanged(float& Damage, float& DamageChanged,
+	const FGameplayTag TypeTag, const int32 Level, const int32 LevelDelta)
+{
+	if (const FScalableFloat* ScalableFloat = DamageTypes.Find(TypeTag))
+	{
+		Damage = static_cast<int32>(ScalableFloat->GetValueAtLevel(Level) * 10.f) / 10.f;
+		DamageChanged = static_cast<int32>(ScalableFloat->GetValueAtLevel(Level + LevelDelta) * 10.f) / 10.f;
+	}
 }
 
-void UAuraDamageGameplayAbility::CauseDamageToActors(FGameplayTag GameplayCueTag, const TArray<AActor*>& Actors,
-	USoundBase* ImpactSound, bool bStagger)
+void UAuraDamageGameplayAbility::CauseDamageToActors(const FGameplayTag GameplayCueTag, const TArray<AActor*>& Actors,
+                                                     USoundBase* ImpactSound, const bool bStagger)
 {
 	if (Actors.IsEmpty()) return;
 	UAbilitySystemComponent* SourceASC = GetCurrentActorInfo()->AbilitySystemComponent.Get();

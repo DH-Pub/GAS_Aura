@@ -6,6 +6,7 @@
 #include "UI/WidgetController/AuraWidgetController.h"
 #include "AttributeMenuWidgetController.generated.h"
 
+class UOverlayWidgetController;
 class UAttributeDataAsset;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnAttriubtePointsChanged, int32, NewValue, int32, PointsAllocating);

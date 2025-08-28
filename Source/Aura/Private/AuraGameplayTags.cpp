@@ -38,8 +38,10 @@ namespace AuraGameplayTags
 #pragma region Input
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input, "Input", "") // ==PARENT==
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_UI_AttributeMenu, "Input.UI.AttributeMenu", "")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_Move_XY, "Input.Move.XY", "Controls")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_Move_Mouse, "Input.Move.Mouse", "Controls")
+	
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_Move_Directional, "Input.Move.Directional", "Keyboard, Gamepad")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_Move_Mouse, "Input.Move.Mouse", "")
+	
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_Combat_Ability_1, "Input.Combat.Ability.1", "")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_Combat_Ability_2, "Input.Combat.Ability.2", "")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_Combat_Ability_3, "Input.Combat.Ability.3", "")
@@ -56,11 +58,14 @@ namespace AuraGameplayTags
 	// Abilities
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability, "Ability", "Parent Tag") // ==PARENT==
 	
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Move_Mouse, "Ability.Move.Mouse", "CharacterMovement Ability")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Move, "Ability.Move", "CharacterMovement Ability parent")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Move_Directional, "Ability.Move.Directional", "CharacterMovement Ability using keyboard, gamepad")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Move_Mouse, "Ability.Move.Mouse", "CharacterMovement Ability using mouse")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Move_Auto, "Ability.Move.Auto", "For AI, on player, Mouse will activate this")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_HitReact, "Ability.HitReact", "")
 	
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Attack, "Ability.Attack", "Attack Gameplay Ability")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Summon, "Ability.Summon", "Summon Gameplay Ability")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Attack, "Ability.Attack", "")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Summon, "Ability.Summon", "")
 	
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Cooldown_Reduce, "Ability.Cooldown.Reduce", "")
 	
@@ -79,11 +84,17 @@ namespace AuraGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Status_Equipped, "Ability.Status.Equipped", "")
 	
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Type_Activatable, "Ability.Type.Activatable", "")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Type_Activatable_Blockable, "Ability.Type.Activatable.Blockable", "Ability is blocked when stunned, hit-reacting,...")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Type_Passive, "Ability.Type.Passive", "")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Type_None, "Ability.Type.None", "")
 #pragma endregion
 
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Generic_Ability, "Generic.Ability", "")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Generic_Ability_Cancelable, "Generic.Ability.Cancelable",
+		"Genric Tag for Ability that can be canceled"
+		"Ability can be canceled when another is triggered (Dash to cancel attack, ...), before EndAbility")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Generic_Ability_Blockable, "Generic.Ability.Blockable",
+		"Genric Tag for Ability that can't be activated when others are actives. (ex: HitReact, ...)"
+		"For bRetriggeredInstancedAbility=true, it can block itself from being retrigger until EndAbility/CancelAbility")
+	
 	
 #pragma region Combat
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Damage, "Damage", "Incoming Damage pass from UAuraGameplayAbility (UAuraProjectileAbility,...) to GE_Damage: ExecCalc_Damage")
@@ -105,4 +116,14 @@ namespace AuraGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(GameplayCue_Impact_Projectile, "GameplayCue.Impact.Projectile", "Impact Projectile")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(GameplayCue_Summon, "GameplayCue.Summon", "Summon Cue")
 #pragma endregion
+}
+
+
+namespace MessageTags
+{
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Message,"Message", "Parent Tag")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Message_HealthCrystal,"Message.HealthCrystal", "")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Message_HealthPotion,"Message.HealthPotion", "")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Message_ManaCrystal,"Message.ManaCrystal", "")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Message_ManaPotion,"Message.ManaPotion", "")
 }

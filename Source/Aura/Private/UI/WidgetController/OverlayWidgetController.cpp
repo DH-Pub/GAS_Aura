@@ -6,11 +6,10 @@
 #include "AuraGameplayTags.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/AuraAttributeSet.h"
-#include "AbilitySystem/Abilities/AuraInputAbility.h"
 #include "AbilitySystem/Data/AbilityDataAsset.h"
 #include "AbilitySystem/Data/LevelUpDataAsset.h"
-#include "Player/AuraPlayerController.h"
 #include "Player/AuraPlayerState.h"
+#include "UI/Data/TextDataAsset.h"
 #include "UI/HUD/AuraHUD.h"
 
 void UOverlayWidgetController::BindCallbacksDependencies()
@@ -21,8 +20,6 @@ void UOverlayWidgetController::BindCallbacksDependencies()
 	BindGameplayAttributeToBroadcast(AttributeSet->GetMaxManaAttribute(), OnMaxManaChanged);
 
 	PlayerState->OnXPChangedDelegate.AddUObject(this, &UOverlayWidgetController::BroadcastXPToUI);
-	
-	AbilitySystemComponent->OnGiveAbilityDelegate.AddUObject(this, &UOverlayWidgetController::BroadcastGivenAbility);
 	// Receive broadcast from AuraAbilitySystemComponent
 	AbilitySystemComponent->EffectAssetTags.AddLambda([this](const FGameplayTagContainer& AssetTags)
 	{
@@ -32,7 +29,15 @@ void UOverlayWidgetController::BindCallbacksDependencies()
 			// if (Tag.MatchesTag(FGameplayTag::RequestGameplayTag(FName("Message"))))
 			if (Tag.MatchesTag(MessageTags::Message))
 			{
-				MessageWidgetInfoDelegate.Broadcast(MessageInfo->FindMessageInfoForTag(Tag)); return;
+				// MessageWidgetInfoDelegate.Broadcast(*MessageInfo->FindMessageInfoForTag(Tag));
+				TArray<FMessageRow*> RowArray;
+				MessageDataTable->GetAllRows(TEXT(""), RowArray);
+				for (const FMessageRow* Row : RowArray)
+				{
+					if (Row->MessageTag.MatchesTagExact(Tag)) MessageTableDelegate.Broadcast(*Row);
+				}
+				// MessageTableDelegate.Broadcast(*GetDataTableRowByTag<FMessageRow>(MessageDataTable, Tag));
+				return;
 			}
 		}
 	});
@@ -46,24 +51,8 @@ void UOverlayWidgetController::BroadcastInitialValues()
 	OnMaxManaChanged.Broadcast(AttributeSet->GetMaxMana());
 
 	// if AddCharacterStartupAbilities is called on the server before InitAbilityActorInfo on client
-	for (const auto& AbilitySpec : AbilitySystemComponent->GetActivatableAbilities())
-	{
-		BroadcastGivenAbility(AbilitySpec);
-	}
+	AuraHUD->BroadcastAllActivatableAbilities();
 	BroadcastXPToUI(PlayerState->GetPlayerXP(), PlayerState->GetPlayerLevel(), PlayerState->LevelUpDataAsset);
-}
-
-void UOverlayWidgetController::BroadcastGivenAbility(const FGameplayAbilitySpec& AbilitySpec)
-{
-	if (AbilitySpec.Ability->GetAssetTags().HasTag(AuraGameplayTags::Ability))
-	{
-		const AAuraHUD* HUD = PlayerController->GetHUD<AAuraHUD>();
-		if (FAuraAbilityData* Data = HUD->AbilityData->FindAbilityDataByTag(AbilitySpec.Ability->GetAssetTags()))
-		{
-			Data->SetInputAndStatusTag(AbilitySpec);
-			AbilityDataDelegate.Broadcast(*Data);
-		}
-	}
 }
 
 void UOverlayWidgetController::BroadcastXPToUI(const int32 XP, const int32 Level, ULevelUpDataAsset* LevelUpDA) const

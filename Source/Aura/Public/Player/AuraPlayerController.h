@@ -7,6 +7,7 @@
 #include "GameFramework/PlayerController.h"
 #include "AuraPlayerController.generated.h"
 
+class UAuraInputComponent;
 enum class ETriggerEvent : uint8;
 class UAuraAbilitySystemComponent;
 class UAuraInputConfig;
@@ -42,13 +43,18 @@ public:
 	virtual void PlayerTick(float DeltaTime) override; // Processes player input
 	virtual void SetPawn(APawn* InPawn) override;
 
+	UPROPERTY()
+	TObjectPtr<UAuraInputComponent> AuraInputComponent;
+	UPROPERTY(EditDefaultsOnly, Category="Default|Input")
+	TObjectPtr<UAuraInputConfig> InputConfig;
+
 	UAuraAbilitySystemComponent* GetAuraASC();
 	
 	UFUNCTION(BlueprintGetter)
 	FORCEINLINE FHitResult& GetCursorHitResult() { return CursorHitResult; }
 
 	EMouseMovementState MouseMovementState = Stop;
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess))
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	TObjectPtr<class USplineComponent> Spline;
 	FVector AutoMoveDestination = FVector::ZeroVector;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(AllowPrivateAccess), Category = "Default|Input")
@@ -84,6 +90,7 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Default|Input")
 	TObjectPtr<UInputMappingContext> InputMappingContext;
 
+	//TODO Switch
 	UPROPERTY(EditDefaultsOnly, Category = "Default|Input")
 	TObjectPtr<UInputAction> MoveAction;
 	void Move(const FInputActionValue& InputActionValue);
@@ -94,14 +101,8 @@ private:
 	UPROPERTY(BlueprintReadWrite, meta=(AllowPrivateAccess))
 	TScriptInterface<IEnemyInterface> CurrentCursorHitActor;
 
-
-#pragma region AbilitySystem
-	void ControllerInputTrigger(const ETriggerEvent TriggerEvent, const FGameplayTag InputTag);
-	
-	UPROPERTY(EditDefaultsOnly, Category="Default|Input")
-	TObjectPtr<UAuraInputConfig> InputConfig;
+	void ControllerInputTrigger(const ETriggerEvent TriggerEvent, const FGameplayTag* InputTag, TObjectPtr<UInputAction> InputAction);
 
 	UPROPERTY()
 	TObjectPtr<UAuraAbilitySystemComponent> AbilitySystemComponent;
-#pragma endregion
 };

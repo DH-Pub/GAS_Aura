@@ -3,10 +3,10 @@
 
 #include "AbilitySystem/Abilities/AuraGameplayAbility.h"
 
+#include "AuraGameplayTags.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "Character/AuraCharacterBase.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "GameFramework/PawnMovementComponent.h"
 #include "Player/AuraPlayerController.h"
 
 UAuraGameplayAbility::UAuraGameplayAbility()
@@ -15,9 +15,8 @@ UAuraGameplayAbility::UAuraGameplayAbility()
 	// bRetriggerInstancedAbility = true;
 }
 
-void UAuraGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
-	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo,
-	const FGameplayEventData* TriggerEventData)
+void UAuraGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
+                                           const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
 {
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 	if (bMaxSpeedZeroedOnActivated)
@@ -45,4 +44,18 @@ void UAuraGameplayAbility::OnAvatarSet(const FGameplayAbilityActorInfo* ActorInf
 	// "BeginPlay" logic
 	AuraCharacterFromActorInfo = Cast<AAuraCharacterBase>(ActorInfo->AvatarActor);
 	AuraPlayerController = Cast<AAuraPlayerController>(AuraCharacterFromActorInfo->GetController());
+}
+
+FGameplayTagContainer& UAuraGameplayAbility::AddGenericAssetTags(FGameplayTagContainer& Tags)
+{
+	Tags.AddTag(AuraGameplayTags::Generic_Ability_Blockable);
+	Tags.AddTag(AuraGameplayTags::Generic_Ability_Cancelable);
+	return Tags;
+}
+void UAuraGameplayAbility::SetGenericCancelBlockAbility()
+{
+	FGameplayTagContainer CancelTags(AuraGameplayTags::Generic_Ability_Cancelable);
+	CancelAbilitiesWithTag = CancelTags;
+	FGameplayTagContainer BlockTags(AuraGameplayTags::Generic_Ability_Blockable);
+	BlockAbilitiesWithTag = BlockTags;
 }

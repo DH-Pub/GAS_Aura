@@ -5,6 +5,11 @@
 
 #include "AbilitySystemComponent.h"
 
+UAuraListenForEventAbility::UAuraListenForEventAbility()
+{
+	NetExecutionPolicy = EGameplayAbilityNetExecutionPolicy::ServerOnly;
+}
+
 void UAuraListenForEventAbility::PreActivate(const FGameplayAbilitySpecHandle Handle,
                                              const FGameplayAbilityActorInfo* ActorInfo,const FGameplayAbilityActivationInfo ActivationInfo,
                                              FOnGameplayAbilityEnded::FDelegate* OnGameplayAbilityEndedDelegate, const FGameplayEventData* TriggerEventData)

@@ -77,7 +77,7 @@ void UExecCalc_Damage::Execute_Implementation(const FGameplayEffectCustomExecuti
 	const UAbilitySystemComponent* TargetASC = ExecutionParams.GetTargetAbilitySystemComponent();
 	AActor* SourceAvatar = SourceASC ? SourceASC->GetAvatarActor() : nullptr;
 	AActor* TargetAvatar = TargetASC ? TargetASC->GetAvatarActor() : nullptr;
-	
+
 	const FGameplayEffectSpec& Spec = ExecutionParams.GetOwningSpec();
 	FAggregatorEvaluateParameters EvaluateParameters;
 	EvaluateParameters.SourceTags = Spec.CapturedSourceTags.GetAggregatedTags();
@@ -120,22 +120,22 @@ void UExecCalc_Damage::Execute_Implementation(const FGameplayEffectCustomExecuti
 		return FMath::Max<float>(0.f, Magnitude);
 	};
 	// Capture BlockChance and determine if there was a successful block
-	float TargetBlockChance = GetAttributeMagnitudeClamped(DamageStatics().BlockChanceDef);
+	const float TargetBlockChance = GetAttributeMagnitudeClamped(DamageStatics().BlockChanceDef);
 	FGameplayEffectContextHandle EffectContextHandle = Spec.GetContext();
 	if (FMath::FRandRange(UE_KINDA_SMALL_NUMBER, 100.f) <= TargetBlockChance)
 	{
 		UAuraAbilitySystemLibrary::SetIsBlocked(EffectContextHandle, true);
 		Damage *= .5f;
 	}
-	
-	float TargetArmor = GetAttributeMagnitudeClamped(DamageStatics().ArmorDef);
-	float SourceArmorPenetration = GetAttributeMagnitudeClamped(DamageStatics().ArmorPenetrationDef);
+
+	const float TargetArmor = GetAttributeMagnitudeClamped(DamageStatics().ArmorDef);
+	const float SourceArmorPenetration = GetAttributeMagnitudeClamped(DamageStatics().ArmorPenetrationDef);
 
 	// Get Graph
-	TObjectPtr<UCurveTable> DamageCalculationCurveTable = UAuraAbilitySystemLibrary::GetGameModeCharacterClassDataAsset(SourceAvatar)->DamageCalculationCoefficients;
-	FRealCurve* ArmorPenetrationCurve = DamageCalculationCurveTable->FindCurve(FName("ArmorPenetration"), FString());
+	const UCurveTable* DamageCalculationCurveTable = UAuraAbilitySystemLibrary::GetGameModeCharacterClassDataAsset(SourceAvatar)->DamageCalculationCoefficients;
+	const FRealCurve* ArmorPenetrationCurve = DamageCalculationCurveTable->FindCurve(FName("ArmorPenetration"), FString());
 	const float ArmorPenetrationCoefficient = ArmorPenetrationCurve->Eval(SourcePlayerLevel);
-	FRealCurve* EffectiveArmorCurve = DamageCalculationCurveTable->FindCurve(FName("EffectiveArmor"), FString());
+	const FRealCurve* EffectiveArmorCurve = DamageCalculationCurveTable->FindCurve(FName("EffectiveArmor"), FString());
 	const float EffectiveArmorCoefficient = EffectiveArmorCurve->Eval(TargetPlayerLevel);
 	
 	// Penetration ignores part of TargetAmor
@@ -144,16 +144,16 @@ void UExecCalc_Damage::Execute_Implementation(const FGameplayEffectCustomExecuti
 
 	
 	/** =================== Crit Calculation ======================================= */
-	float SourceCritChance = GetAttributeMagnitudeClamped(DamageStatics().CriticalHitChanceDef);
-	float TargetCritRes = GetAttributeMagnitudeClamped(DamageStatics().CriticalHitResistanceDef);
-	
-	FRealCurve* EffectiveCritResCurve = DamageCalculationCurveTable->FindCurve(FName("CriticalHitResistance"), FString());
+	const float SourceCritChance = GetAttributeMagnitudeClamped(DamageStatics().CriticalHitChanceDef);
+	const float TargetCritRes = GetAttributeMagnitudeClamped(DamageStatics().CriticalHitResistanceDef);
+
+	const FRealCurve* EffectiveCritResCurve = DamageCalculationCurveTable->FindCurve(FName("CriticalHitResistance"), FString());
 	const float EffectiveCritResCoefficient = EffectiveCritResCurve->Eval(TargetPlayerLevel);
 	
 	const float EffectiveCritChance = SourceCritChance - TargetCritRes * EffectiveCritResCoefficient;
 	if (FMath::RandRange(UE_KINDA_SMALL_NUMBER, 100.f) <= EffectiveCritChance)
 	{
-		float SourceCritDamage = GetAttributeMagnitudeClamped(DamageStatics().CriticalHitDamageDef);
+		const float SourceCritDamage = GetAttributeMagnitudeClamped(DamageStatics().CriticalHitDamageDef);
 		UAuraAbilitySystemLibrary::SetIsCrit(EffectContextHandle, true);
 		Damage *= (1 + SourceCritDamage);
 	}

@@ -11,7 +11,7 @@
 EStateTreeRunStatus FStateTree_Attack::EnterState(FStateTreeExecutionContext& Context,
                                                   const FStateTreeTransitionResult& Transition) const
 {
-	auto [AIController, Actor, AttackTag] = Context.GetInstanceData(*this);
+	auto& [AIController, Actor, AttackTag] = Context.GetInstanceData(*this);
 	AIController->StopMovement();
 	UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Actor);
 	ASC->TryActivateAbilitiesByTag(FGameplayTagContainer(AttackTag));
@@ -23,10 +23,13 @@ EStateTreeRunStatus FStateTree_Attack::EnterState(FStateTreeExecutionContext& Co
 EStateTreeRunStatus FStateTree_Attack_Elementalist::EnterState(FStateTreeExecutionContext& Context,
 	const FStateTreeTransitionResult& Transition) const
 {
-	auto& [AIController, Actor, AttackTag, SummonTag, MinionSpawnThreshold] = Context.GetInstanceData(*this);
+	auto& [AIController, Actor, AttackTag, SummonTag] = Context.GetInstanceData(*this);
 	AIController->StopMovement();
 	UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Actor);
-	ASC->TryActivateAbilitiesByTag(FGameplayTagContainer(Actor->Summons.Num() < MinionSpawnThreshold ? SummonTag : AttackTag));
+	if (!ASC->TryActivateAbilitiesByTag(FGameplayTagContainer(SummonTag))) // if Summon CanActivateAbility returns false
+	{
+		ASC->TryActivateAbilitiesByTag(FGameplayTagContainer(AttackTag));
+	}
 	return EStateTreeRunStatus::Succeeded;
 }
 #pragma endregion

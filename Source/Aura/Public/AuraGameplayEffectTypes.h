@@ -24,7 +24,7 @@ struct FAuraGameplayEffectContext : public FGameplayEffectContext
 	void SetIsStagger(const bool bIn) {bStagger = bIn;}
 
 	FInstancedStruct* GetInstancedStruct() const {return InstancedStruct.Get();}
-	void AddInstancedStruct(const FInstancedStruct& InStruct);
+	void SetInstancedStruct(const FInstancedStruct& InStruct);
 	
 	UPROPERTY()
 	bool bShowDamageOnTarget = false;

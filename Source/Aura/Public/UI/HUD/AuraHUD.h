@@ -6,16 +6,15 @@
 #include "GameFramework/HUD.h"
 #include "AuraHUD.generated.h"
 
-class UAttributeDataAsset;
-class UAbilityDataAsset;
+struct FGameplayAbilitySpec;
 class USpellMenuWidgetController;
-class AAuraPlayerController;
 class UAttributeMenuWidgetController;
 class UAuraUserWidget;
 class UOverlayWidgetController;
 
 struct FWidgetControllerParams;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAbilityDataSignature, const FAuraAbilityData&, Info);
 /**
  * 
  */
@@ -29,6 +28,9 @@ public:
 	UAttributeMenuWidgetController* CreateOrGetAttributeMenuWC(const FWidgetControllerParams& WCParams);
 	USpellMenuWidgetController* CreateOrGetSpellMenuWC(const FWidgetControllerParams& WCParams);
 
+	void InitAuraHUD(const FWidgetControllerParams& WCParams);
+	void BroadcastAllActivatableAbilities();
+	void BroadcastGivenAbility(const FGameplayAbilitySpec& Spec);
 	// Create and Set Overlay's WidgetController, then broadcast initial values
 	void InitOverlay(const FWidgetControllerParams& WCParams);
 	UPROPERTY()
@@ -42,13 +44,21 @@ public:
 	TObjectPtr<USpellMenuWidgetController> SpellMenuWidgetController;
 
 	UPROPERTY(EditDefaultsOnly, Category="Default")
-	TObjectPtr<UAttributeDataAsset> AttributeData;
+	TObjectPtr<class UAttributeDataAsset> AttributeData;
+
+	UPROPERTY(BlueprintReadOnly)
+	TObjectPtr<class UAuraAbilitySystemComponent> AbilitySystemComponent;
 	UPROPERTY(EditDefaultsOnly, Category="Default")
-	TObjectPtr<UAbilityDataAsset> AbilityData;
+	TObjectPtr<class UAbilityDataAsset> AbilityData;
+	UPROPERTY(BlueprintAssignable, Category = "GAS|AbilityData")
+	FAbilityDataSignature AbilityDataDelegate;// Send AbilityData (Icon, Tag, ...)
+
+	UFUNCTION(BlueprintImplementableEvent)
+	FText GetLockedDescription(const int32 LevelRequirement);
 private:
 	UPROPERTY(EditDefaultsOnly, Category="Default")
 	TSubclassOf<UAuraUserWidget> OverlayWidgetClass; // For OverlayWidget
-	
+
 	UPROPERTY(EditDefaultsOnly, Category="Default")
 	TSubclassOf<UOverlayWidgetController> OverlayWidgetControllerClass;
 	UPROPERTY(EditDefaultsOnly, Category="Default")

@@ -4,16 +4,15 @@
 #include "AbilitySystem/AsyncTasks/Async_CooldownChange.h"
 
 #include "AbilitySystemComponent.h"
-#include "AuraGameplayTags.h"
 
 UAsync_CooldownChange* UAsync_CooldownChange::WaitForCooldownChange(
-	UAbilitySystemComponent* AbilitySystemComponent, const FGameplayTag& InCooldownTag, const bool InUseServerCooldown)
+	UAbilitySystemComponent* AbilitySystemComponent, const FGameplayTagContainer& InCooldownTags, const bool InUseServerCooldown)
 {
 	UAsync_CooldownChange* WaitCooldownChange = NewObject<UAsync_CooldownChange>();
 	WaitCooldownChange->ASC = AbilitySystemComponent;
-	WaitCooldownChange->CooldownTag = InCooldownTag;
+	WaitCooldownChange->CooldownTags = InCooldownTags;
 	WaitCooldownChange->UseServerCooldown = InUseServerCooldown;
-	if (!IsValid(AbilitySystemComponent) || !InCooldownTag.IsValid())
+	if (!IsValid(AbilitySystemComponent) || InCooldownTags.IsEmpty())
 	{
 		WaitCooldownChange->EndTask();
 		return nullptr;
@@ -31,8 +30,11 @@ UAsync_CooldownChange* UAsync_CooldownChange::WaitForCooldownChange(
 	// Recommended because when the Server's corrected Cooldown GE comes in, it will remove our locally predicted one
 	// causing the OnAnyGameplayEffectRemovedDelegate() to fire even though we're still on cooldown.
 	// The Cooldown Tag will not change during the removal of the predicted Cooldown GE and the application of the Server's corrected Cooldown GE.
-	AbilitySystemComponent->RegisterGameplayTagEvent(InCooldownTag, EGameplayTagEventType::NewOrRemoved)
-	.AddUObject(WaitCooldownChange /* static function, 'this' means nothing */, &UAsync_CooldownChange::CooldownTagChanged);
+	for (const FGameplayTag& Tag : InCooldownTags)
+	{
+		AbilitySystemComponent->RegisterGameplayTagEvent(Tag, EGameplayTagEventType::NewOrRemoved)
+		.AddUObject(WaitCooldownChange /* static function, 'this' means nothing */, &UAsync_CooldownChange::CooldownTagChanged);
+	}
 
 	return WaitCooldownChange;
 }
@@ -40,7 +42,10 @@ UAsync_CooldownChange* UAsync_CooldownChange::WaitForCooldownChange(
 void UAsync_CooldownChange::EndTask()
 {
 	if (!IsValid(ASC)) return;
-	ASC->RegisterGameplayTagEvent(CooldownTag, EGameplayTagEventType::NewOrRemoved).RemoveAll(this);
+	for (const FGameplayTag& Tag : CooldownTags)
+	{
+		ASC->RegisterGameplayTagEvent(Tag, EGameplayTagEventType::NewOrRemoved).RemoveAll(this);
+	}
 	ASC->OnActiveGameplayEffectAddedDelegateToSelf.RemoveAll(this);
 	
 	SetReadyToDestroy();
@@ -50,15 +55,16 @@ void UAsync_CooldownChange::EndTask()
 void UAsync_CooldownChange::OnActiveEffectAdded(UAbilitySystemComponent* TargetASC,
 	const FGameplayEffectSpec& SpecApplied, FActiveGameplayEffectHandle ActiveEffectHandle)
 {
-	FGameplayTagContainer AssetTags;
-	SpecApplied.GetAllAssetTags(AssetTags);
+	/*FGameplayTagContainer AssetTags;
+	SpecApplied.GetAllAssetTags(AssetTags);*/
 	FGameplayTagContainer GrantedTags;
 	SpecApplied.GetAllGrantedTags(GrantedTags);
 
-	if (GrantedTags.HasTagExact(CooldownTag) || AssetTags.HasTagExact(CooldownTag))
+
+	if (GrantedTags.HasAnyExact(CooldownTags))
 	{
 		// CooldownTag.GetSingleTagContainer();
-		const FGameplayEffectQuery GameplayEffectQuery = FGameplayEffectQuery::MakeQuery_MatchAnyOwningTags(FGameplayTagContainer(CooldownTag));
+		const FGameplayEffectQuery GameplayEffectQuery = FGameplayEffectQuery::MakeQuery_MatchAnyOwningTags(CooldownTags);
 		if (CooldownTime > 0.f) // still on cooldown
 		{
 			const TArray<float> TimesRemaining = ASC->GetActiveEffectsTimeRemaining(GameplayEffectQuery);
@@ -94,7 +100,7 @@ void UAsync_CooldownChange::OnGameplayEffectRemoved(const FActiveGameplayEffect&
 {
 	FGameplayTagContainer GrantedTags;
 	ActiveEffect.Spec.GetAllGrantedTags(GrantedTags);
-	if (GrantedTags.HasTagExact(CooldownTag))
+	if (GrantedTags.HasAnyExact(CooldownTags))
 	{
 		CooldownTime = ActiveEffect.GetTimeRemaining(ASC->GetWorld()->GetTimeSeconds()); // Remaining Cooldown before Replaced
 	}
@@ -102,7 +108,7 @@ void UAsync_CooldownChange::OnGameplayEffectRemoved(const FActiveGameplayEffect&
 
 void UAsync_CooldownChange::CooldownTagChanged(const FGameplayTag InCooldownTag, const int32 NewCount)
 {
-	if (InCooldownTag.MatchesTagExact(CooldownTag) && NewCount == 0)
+	if (InCooldownTag.MatchesAnyExact(CooldownTags) && NewCount == 0)
 	{
 		CooldownTime = 0.f;
 		CooldownEnd.Broadcast();

@@ -13,6 +13,8 @@
 UMoveMouseAbility::UMoveMouseAbility()
 {
 	SetAssetTags(FGameplayTagContainer(AuraGameplayTags::Ability_Move_Mouse));
+	CancelAbilitiesWithTag = FGameplayTagContainer();
+	BlockAbilitiesWithTag = FGameplayTagContainer();
 	StartupInputTag = AuraGameplayTags::Input_Move_Mouse;
 	bRetriggerInstancedAbility = true;
 	NetExecutionPolicy = EGameplayAbilityNetExecutionPolicy::LocalOnly;
@@ -23,7 +25,7 @@ void UMoveMouseAbility::CancelAbility(const FGameplayAbilitySpecHandle Handle,
                                       bool bReplicateCancelAbility)
 {
 	Super::CancelAbility(Handle, ActorInfo, ActivationInfo, bReplicateCancelAbility);
-	AuraPlayerController->MouseMovementState = Stop;
+	if (AuraPlayerController) AuraPlayerController->MouseMovementState = Stop;
 }
 
 void UMoveMouseAbility::OnAvatarSet(const FGameplayAbilityActorInfo* ActorInfo,
@@ -36,14 +38,14 @@ void UMoveMouseAbility::OnAvatarSet(const FGameplayAbilityActorInfo* ActorInfo,
 void UMoveMouseAbility::StartPressedOngoing_Implementation()
 {
 	Super::StartPressedOngoing_Implementation();
-	if (AuraPlayerController == nullptr) return;
-	AuraPlayerController->MouseMovementState = HoldMove;
+	if (AuraPlayerController) AuraPlayerController->MouseMovementState = HoldMove;
 }
 
 
 void UMoveMouseAbility::TapReleased_Implementation()
 {
 	Super::TapReleased_Implementation();
+	if (AuraPlayerController == nullptr) return;
 	if (AuraPlayerController->GetCursorHitResult().bBlockingHit)
 	{
 		AuraPlayerController->AutoMoveDestination = AuraPlayerController->GetCursorHitResult().ImpactPoint;
@@ -76,18 +78,5 @@ void UMoveMouseAbility::TapReleased_Implementation()
 void UMoveMouseAbility::HoldReleased_Implementation()
 {
 	Super::HoldReleased_Implementation();
-	if (AuraPlayerController == nullptr) return;
-	AuraPlayerController->MouseMovementState = Stop;
-}
-
-
-void UMoveMouseAbility::DoubleClick_Implementation()
-{
-	Super::DoubleClick_Implementation();;
-	GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Yellow, FString("DoubleClick"));
-}
-void UMoveMouseAbility::TripleClick_Implementation()
-{
-	Super::TripleClick_Implementation();
-	GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Orange, FString("TripleClick"));
+	if (AuraPlayerController) AuraPlayerController->MouseMovementState = Stop;
 }

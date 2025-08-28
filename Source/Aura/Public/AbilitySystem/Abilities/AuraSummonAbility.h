@@ -29,6 +29,9 @@ class AURA_API UAuraSummonAbility : public UCostCooldownAbility
 	GENERATED_BODY()
 public:
 	UAuraSummonAbility();
+	virtual bool CanActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
+		const FGameplayTagContainer* SourceTags = nullptr, const FGameplayTagContainer* TargetTags = nullptr,
+		FGameplayTagContainer* OptionalRelevantTags = nullptr) const override;
 	
 	UFUNCTION(BlueprintCallable)
 	void SetSpawnLocations();

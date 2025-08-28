@@ -18,10 +18,10 @@ class AURA_API AAuraGameModeBase : public AGameModeBase
 	GENERATED_BODY()
 public:
 	UPROPERTY(EditDefaultsOnly, Category=Default)
-	TObjectPtr<UCharacterClassDataAsset> CharacterClassData;
+	const TObjectPtr<UCharacterClassDataAsset> CharacterClassData;
 	
 	UPROPERTY(EditDefaultsOnly, Category=Default)
-	TObjectPtr<UAbilityDataAsset> AbilityData;
+	const TObjectPtr<UAbilityDataAsset> AbilityData; // Server Ability Data
 	
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 	virtual void Logout(AController* Exiting) override;

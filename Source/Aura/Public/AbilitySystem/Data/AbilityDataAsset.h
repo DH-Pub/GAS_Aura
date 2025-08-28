@@ -18,14 +18,12 @@ struct FAuraAbilityData
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(GameplayTagFilter="Ability"))
 	FGameplayTag AbilityTag = FGameplayTag();
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(GameplayTagFilter="Ability"))
-	FGameplayTag CooldownTag = FGameplayTag();
-	
+
 	UPROPERTY(BlueprintReadOnly)
 	FGameplayTag StatusTag = FGameplayTag(); // Set in C++
 	UPROPERTY(BlueprintReadOnly)
 	FGameplayTag InputTag = FGameplayTag(); // Set in C++
-	
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<UTexture2D> Icon = nullptr;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
@@ -36,8 +34,6 @@ struct FAuraAbilityData
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TSubclassOf<UAuraGameplayAbility> AbilityClass = nullptr;
-
-	void SetInputAndStatusTag(const FGameplayAbilitySpec& AbilitySpec);
 };
 
 /**
@@ -52,7 +48,8 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(TitleProperty="{AbilityTag} - {Icon}"), Category="AbilityInformation")
 	TArray<FAuraAbilityData> AbilityDataList;
 
-	FAuraAbilityData* FindAbilityDataByTag(const FGameplayTagContainer& AbilityTags);
+	FAuraAbilityData* FindAbilityDataByTags(const FGameplayTagContainer& AbilityTags);
+	FAuraAbilityData* FindAbilityDataByTags(const FGameplayTag& AbilityTags);
 
 	
 #if WITH_EDITOR

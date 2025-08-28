@@ -11,6 +11,8 @@ class AAuraPlayerController;
 class UAuraAbilitySystemComponent;
 class UAuraAttributeSet;
 
+/* TODO: Next proj: For some Widgets, just put logic inside them directly
+ * use BlueprintImplementableEvent/BlueprintNativeEvent instead of DynamicDelegate */
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnVitalAttributeChanged, float, NewValue);
 
 // Used to set Controller, State, ASC, AttributeSet
@@ -44,13 +46,7 @@ class AURA_API UAuraWidgetController : public UObject
 {
 	GENERATED_BODY()
 public:
-	void SetWidgetControllerParams(const FWidgetControllerParams& WCParams)
-	{
-		PlayerController = WCParams.PlayerController;
-		PlayerState = WCParams.PlayerState;
-		AbilitySystemComponent = WCParams.AbilitySystemComponent;
-		AttributeSet = WCParams.AttributeSet;
-	}
+	void SetWidgetControllerParams(const FWidgetControllerParams& WCParams);
 
 	// bind callbacks, called when first created in CreateOrGetWidgetController
 	virtual void BindCallbacksDependencies() {};
@@ -81,6 +77,8 @@ public:
 	TObjectPtr<UAuraAbilitySystemComponent> AbilitySystemComponent;
 	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<UAuraAttributeSet> AttributeSet;
+	UPROPERTY(BlueprintReadOnly)
+	TObjectPtr<AAuraHUD> AuraHUD;
 
 	// Bind AbilitySystemComponent's FOnGameplayAttributeValueChange to 
 	template<typename DelegateT = TBaseDynamicMulticastDelegate>

@@ -30,4 +30,13 @@ public:
 	
 	UPROPERTY(Transient)
 	FGameplayTagContainer TempCooldownTags; // Temp container that we will return the (CooldownTags + Cooldown GE's CD Tags) pointer to in GetCooldownTags().
+
+protected:
+	UFUNCTION(BlueprintCallable)
+	void GetCost(float& Mana, float& Health, const int32 InLevel = 1);
+	UFUNCTION(BlueprintCallable, BlueprintPure=false) // const function automatically become BlueprintPure
+	void GetCostOnLevelChanged(float& Mana, float& ManaChanged, float& Health, float& HealthChanged,
+		const int32 InLevel = 1, const int32 LevelDelta = 0) const;
+	UFUNCTION(BlueprintPure)
+	float GetCooldown(const int32 InLevel = 1);
 };

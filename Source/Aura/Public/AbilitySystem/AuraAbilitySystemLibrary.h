@@ -14,10 +14,7 @@ class USpellMenuWidgetController;
 struct FAuraGameplayEffectContext;
 struct FInstancedStruct;
 struct FGameplayEffectContextHandle;
-class UAuraUserWidget;
-class UAuraWorldUserWidget;
 class UAbilitySystemComponent;
-struct FWidgetControllerParams;
 class UAttributeMenuWidgetController;
 class UOverlayWidgetController;
 /**
@@ -37,7 +34,7 @@ public:
 	UFUNCTION(BlueprintPure, meta=(DefaultToSelf="WorldContextObject"), Category = "AuraAbilitySystemLibrary|WidgetController")
 	static USpellMenuWidgetController* GetSpellMenuWidgetController(const UObject* WorldContextObject);
 
-	
+
 	UFUNCTION(BlueprintCallable, meta=(DefaultToSelf="WorldContextObject"), Category = "AuraAbilitySystemLibrary|CharacterClassDefaults")
 	static void InitializeDefaultAttributes(const UObject* WorldContextObject, UObject* SourceObject,
 		const ECharacterClass CharacterClass, const float Level, UAbilitySystemComponent* ASC);
@@ -47,7 +44,7 @@ public:
 	UFUNCTION(BlueprintPure, meta=(DefaultToSelf="WorldContextObject"), Category = "AuraAbilitySystemLibrary|XP")
 	static int32 GetXPRewardForClassAndLevel(const UObject* WorldContextObject, ECharacterClass CharacterClass, int32 CharacterLevel);
 
-	
+
 #pragma region ActorFunctions
 	// Add widget to OverlayWidget -> Canvas -> Overlay_Screen
 	UFUNCTION(BlueprintCallable, meta=(DefaultToSelf="WorldContextObject", ExpandBoolAsExecs="ReturnValue"), Category="AuraAbilitySystemLibrary|UI")
@@ -64,14 +61,16 @@ public:
 	static bool IsNotFriend(const AActor* FirstActor, const AActor* SecondActor);
 #pragma endregion
 
-	
+
 	/**
-	 * Get DA_CharacterClass.
-	 * Client can't get GameMode so this will always return nullptr
+	 * Get Server DA_CharacterClass, const can't be changed
+	 * Client can't access GameMode so this will always return nullptr
 	 */
-	static UCharacterClassDataAsset* GetGameModeCharacterClassDataAsset(const UObject* WorldContextObject);
-	static UAbilityDataAsset* GetGameModeAbilityDataAsset(const UObject* WorldContextObject);
+	static const UCharacterClassDataAsset* GetGameModeCharacterClassDataAsset(const UObject* WorldContextObject);
+	// Client can't get GameMode so this will always return nullptr
+	static const UAbilityDataAsset* GetGameModeAbilityDataAsset(const UObject* WorldContextObject);
 	
+	// return nullptr for non-local or dedicated-server
 	static AAuraHUD* GetAuraHUD(const UObject* WorldContextObject);
 
 

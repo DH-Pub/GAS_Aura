@@ -7,6 +7,7 @@
 #include "InputTriggers.h"
 #include "AuraInputAbility.generated.h"
 
+class UAuraInputComponent;
 /**
  * Input connected to this ability HAS to be NON-OneShot Hold Trigger (UInputTriggerHold) And InstancedPerActor
  * Base class for Ability that use input
@@ -25,7 +26,12 @@ public:
 	// This is Added to GetDynamicSpecSourceTags() during AddCharacterAbilities()
 	UPROPERTY(EditDefaultsOnly, Category="Default", meta=(GameplayTagFilter="Input"))
 	FGameplayTag StartupInputTag;
+	UPROPERTY()
+	TObjectPtr<UInputAction> InputAction;
 protected:
+	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
+		const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
+
 	UFUNCTION(BlueprintNativeEvent)
 	void StartPressedOngoing(); // Started / Ongoing start
 	UFUNCTION(BlueprintNativeEvent)
@@ -50,5 +56,7 @@ private:
 	uint8 MaxRepeatedClick = 3;
 	uint8 ClickNums = 0;
 public:
-	void SetAbilityTriggerEvent(ETriggerEvent TriggerEvent);
+	void SetAbilityTriggerEvent(ETriggerEvent TriggerEvent); // Called in AbilitySystemComponent
+
+	FInputActionValue GetBoundAuraActionValue();
 };

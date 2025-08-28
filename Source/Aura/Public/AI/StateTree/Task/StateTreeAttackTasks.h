@@ -55,8 +55,6 @@ struct FStateTree_Attack_Elementalist_InstanceData
 	FGameplayTag AttackTag = AuraGameplayTags::Ability_Attack;
 	UPROPERTY(EditAnywhere, Category=Parameter, meta=(GameplayTagFilter="Abilities"))
 	FGameplayTag SummonTag = AuraGameplayTags::Ability_Summon;
-	UPROPERTY(EditAnywhere, Category=Parameter, meta=(ClampMin=0, ClampMax=30, UIMin=0, UIMax=30))
-	int32 MinionSpawnThreshold = 2;
 };
 USTRUCT(DisplayName="Attack Elementalist", Category="Combat")
 struct FStateTree_Attack_Elementalist : public FStateTreeTaskCommonBase

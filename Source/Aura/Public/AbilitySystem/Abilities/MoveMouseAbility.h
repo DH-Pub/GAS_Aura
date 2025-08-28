@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "AuraInputAbility.h"
+#include "CostCooldownAbility.h"
 #include "MoveMouseAbility.generated.h"
 
 class AAuraPlayerController;
@@ -11,7 +11,7 @@ class AAuraPlayerController;
  * 
  */
 UCLASS()
-class AURA_API UMoveMouseAbility : public UAuraInputAbility
+class AURA_API UMoveMouseAbility : public UCostCooldownAbility
 {
 	GENERATED_BODY()
 public:
@@ -28,8 +28,6 @@ protected:
 
 	virtual void TapReleased_Implementation() override;
 	virtual void HoldReleased_Implementation() override;
-	virtual void DoubleClick_Implementation() override;
-	virtual void TripleClick_Implementation() override;
 private:
 	UPROPERTY(EditDefaultsOnly, Category="Default")
 	bool bDrawNavBox = false;

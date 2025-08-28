@@ -34,13 +34,13 @@ public:
 			{
 				/* FEnhancedInputActionEventBinding& BindAction(const UInputAction* Action, ETriggerEvent TriggerEvent,
 				UserClass* Object, typename HANDLER_SIG::template TMethodPtr< UserClass, VarTypes... > Func, VarTypes... Vars) */
-				BindAction(InputAction, ETriggerEvent::Triggered, Object, TriggerFunc, ETriggerEvent::Triggered, InputTag);
-				BindAction(InputAction, ETriggerEvent::Started, Object, TriggerFunc, ETriggerEvent::Started, InputTag);
-				BindAction(InputAction, ETriggerEvent::Ongoing, Object, TriggerFunc, ETriggerEvent::Ongoing, InputTag);
-				BindAction(InputAction, ETriggerEvent::Canceled, Object, TriggerFunc, ETriggerEvent::Canceled, InputTag);
-				BindAction(InputAction, ETriggerEvent::Completed, Object, TriggerFunc, ETriggerEvent::Completed, InputTag);
+				BindAction(InputAction, ETriggerEvent::Triggered, Object, TriggerFunc, ETriggerEvent::Triggered, &InputTag, InputAction);
+				BindAction(InputAction, ETriggerEvent::Started, Object, TriggerFunc, ETriggerEvent::Started, &InputTag, InputAction);
+				BindAction(InputAction, ETriggerEvent::Ongoing, Object, TriggerFunc, ETriggerEvent::Ongoing, &InputTag, InputAction);
+				BindAction(InputAction, ETriggerEvent::Canceled, Object, TriggerFunc, ETriggerEvent::Canceled, &InputTag, InputAction);
+				BindAction(InputAction, ETriggerEvent::Completed, Object, TriggerFunc, ETriggerEvent::Completed, &InputTag, InputAction);
 			}
-			for (const TPair<TEnumAsByte<EAuraTriggerType>, TObjectPtr<UInputAction>>& Pair : OtherTrigger)
+			for (const TTuple<TEnumAsByte<EAuraTriggerType>, TObjectPtr<UInputAction>>& Pair : OtherTrigger)
 			{
 				if (Pair.Value && EnhancedInputWorldSubsystem)
 				{
@@ -48,11 +48,11 @@ public:
 					{
 						InputMappingContext->MapKey(Pair.Value, Key);
 					}
-					BindAction(Pair.Value, ETriggerEvent::Triggered, Object, TriggerFunc, ETriggerEvent::Triggered, InputTag);
-					BindAction(Pair.Value, ETriggerEvent::Started, Object, TriggerFunc, ETriggerEvent::Started, InputTag);
-					BindAction(Pair.Value, ETriggerEvent::Ongoing, Object, TriggerFunc, ETriggerEvent::Ongoing, InputTag);
-					BindAction(Pair.Value, ETriggerEvent::Canceled, Object, TriggerFunc, ETriggerEvent::Canceled, InputTag);
-					BindAction(Pair.Value, ETriggerEvent::Completed, Object, TriggerFunc, ETriggerEvent::Completed, InputTag);
+					BindAction(Pair.Value, ETriggerEvent::Triggered, Object, TriggerFunc, ETriggerEvent::Triggered, &InputTag, Pair.Value);
+					BindAction(Pair.Value, ETriggerEvent::Started, Object, TriggerFunc, ETriggerEvent::Started, &InputTag, Pair.Value);
+					BindAction(Pair.Value, ETriggerEvent::Ongoing, Object, TriggerFunc, ETriggerEvent::Ongoing, &InputTag, Pair.Value);
+					BindAction(Pair.Value, ETriggerEvent::Canceled, Object, TriggerFunc, ETriggerEvent::Canceled, &InputTag, Pair.Value);
+					BindAction(Pair.Value, ETriggerEvent::Completed, Object, TriggerFunc, ETriggerEvent::Completed, &InputTag, Pair.Value);
 				}
 			}
 			UEnhancedInputLibrary::RequestRebuildControlMappingsUsingContext(InputMappingContext);

@@ -50,11 +50,8 @@ protected:
 	UPROPERTY(BlueprintReadWrite, meta=(BindWidget))
 	TObjectPtr<UTextBlock> Text_Cooldown; // Cooldown Remaining
 	
-	UPROPERTY(BlueprintReadWrite, Category = "GlobeProperties", meta=(GameplayTagFilter=Cooldown))
-	FGameplayTag CooldownTag;
-	
 	UFUNCTION(BlueprintCallable, meta=(ExpandBoolAsExecs = "ReturnValue"))
-	bool SuccessUpdateAbilityData(const FAuraAbilityData& InAbilityData);
+	bool SuccessUpdateAbilityData(const FAuraAbilityData& InAbilityData, FGameplayTagContainer& OutCooldownTags);
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Default|Properties")
 	float Frequency = 0.05f;

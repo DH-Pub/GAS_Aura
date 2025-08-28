@@ -109,7 +109,7 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 	FEffectProperties Props(Data);
 	
 	#pragma region IncomingDamage =======================================================================================
-	if (Data.EvaluatedData.Attribute == GetIncomingDamageAttribute())
+	if (Data.EvaluatedData.Attribute == GetIncomingDamageAttribute() && !Props.TargetCharacter->bIsDead)
 	{
 		const float LocalIncomingDamage = GetIncomingDamage(); // SetIncomingDamage(0.f); // Old Damage overriden in ExecCalc_Damage
 		if (LocalIncomingDamage > 0)
@@ -153,9 +153,13 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 			const bool bBlocked = UAuraAbilitySystemLibrary::IsBlocked(Props.EffectContextHandle);
 			const bool bCrit = UAuraAbilitySystemLibrary::IsCrit(Props.EffectContextHandle);
 			FVector HitLoc = Props.TargetAvatarActor->GetActorLocation();
-			if (const FHitResult* HitResult = Props.EffectContextHandle.GetHitResult())
+			// use actor's location if not Instant (only popup once), avoid popup in the same place when actor moves
+			if (Data.EffectSpec.Def->DurationPolicy == EGameplayEffectDurationType::Instant)
 			{
-				HitLoc = HitResult->ImpactPoint;
+				if (const FHitResult* HitResult = Props.EffectContextHandle.GetHitResult())
+				{
+					HitLoc = HitResult->ImpactPoint;
+				}
 			}
 			Props.TargetCharacter->ShowDamageNumber(Props.SourceController, HitLoc, LocalIncomingDamage, bBlocked, bCrit);
 		}

@@ -16,7 +16,7 @@ struct FAuraAttributeData
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	FText AttributeName = FText(); // for widget
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(MultiLine))
 	FText AttributeDescription = FText();
 
 	UPROPERTY(BlueprintReadOnly)
@@ -34,8 +34,8 @@ class AURA_API UAttributeDataAsset : public UDataAsset
 {
 	GENERATED_BODY()
 public:
-	FAuraAttributeData FindAttributeInfoForTag(const FGameplayTag& AttributeTag, bool bLogNotFound = false) const
-	{return AttributeDataList.FindRef(AttributeTag);} //TODO: return ptr
+	const FAuraAttributeData* FindAttributeInfoForTag(const FGameplayTag& AttributeTag)
+	{return AttributeDataList.Find(AttributeTag);}
 
 	/**
 	 * Future note: make this a TArray

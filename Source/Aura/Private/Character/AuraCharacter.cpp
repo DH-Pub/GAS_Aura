@@ -74,7 +74,7 @@ void AAuraCharacter::MulticastLevelUpEffects_Implementation(int32 Level)
 	if (IsValid(LevelUpNiagaraComponent))
 	{
 		const FRotator CameraRotation = Camera->GetComponentRotation();
-		LevelUpNiagaraComponent->SetWorldRotation(FRotator(CameraRotation.Pitch * -1., CameraRotation.Yaw + 180., 0.));
+		LevelUpNiagaraComponent->SetWorldRotation(FRotator(-CameraRotation.Pitch, CameraRotation.Yaw + 180., 0.));
 		LevelUpNiagaraComponent->Activate(true);
 	}
 	CharacterWC->OnLevelUpDelegate.Broadcast(Level);
@@ -107,7 +107,7 @@ void AAuraCharacter::InitAbilityActorInfo()
 	{
 		if (AAuraHUD* AuraHUD = AuraPC->GetHUD<AAuraHUD>()) // Only Local Client can get HUD
 		{
-			AuraHUD->InitOverlay(FWidgetControllerParams(AuraPC, AuraPlayerState, AbilitySystemComponent, AttributeSet));
+			AuraHUD->InitAuraHUD(FWidgetControllerParams(AuraPC, AuraPlayerState, AbilitySystemComponent, AttributeSet));
 		}
 	}
 

@@ -123,7 +123,8 @@ void AAuraPlayerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
 
-	UAuraInputComponent* AuraInputComponent = CastChecked<UAuraInputComponent>(InputComponent);
+	AuraInputComponent = CastChecked<UAuraInputComponent>(InputComponent);
+	AuraInputComponent->BindAction(MoveAction, ETriggerEvent::Ongoing, this, &AAuraPlayerController::Move);
 	AuraInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AAuraPlayerController::Move);
 	
 	UEnhancedInputLocalPlayerSubsystem* InputSystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
@@ -209,7 +210,11 @@ void AAuraPlayerController::Move(const FInputActionValue& InputActionValue)
 	// GEngine->AddOnScreenDebugMessage(1, 1.f, FColor::Green, FString::Printf(TEXT("%f"),GetPawn()->GetVelocity().Length()));
 }
 
-void AAuraPlayerController::ControllerInputTrigger(const ETriggerEvent TriggerEvent, const FGameplayTag InputTag)
+void AAuraPlayerController::ControllerInputTrigger(const ETriggerEvent TriggerEvent, const FGameplayTag* InputTag,
+	const TObjectPtr<UInputAction> InputAction)
 {
-	if (GetAuraASC()) AbilitySystemComponent->AbilityInputTagTrigger(TriggerEvent, InputTag);
+	if (GetAuraASC())
+	{
+		AbilitySystemComponent->AbilityInputTagTrigger(TriggerEvent, *InputTag, InputAction);
+	}
 }

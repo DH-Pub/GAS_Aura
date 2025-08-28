@@ -58,9 +58,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "CommonClassDefaults|Damage")
 	TObjectPtr<UCurveTable> DamageCalculationCoefficients; 
 	
-	FORCEINLINE FCharacterClassDefaultInfo GetClassDefaultInfo(const ECharacterClass CharacterClass)
+	FORCEINLINE const FCharacterClassDefaultInfo* GetClassDefaultInfo(const ECharacterClass CharacterClass) const
 	{
 		//TODO: return ptr
-		return CharacterClassInformation.FindChecked(CharacterClass);
+		return CharacterClassInformation.Find(CharacterClass);
 	}
 };

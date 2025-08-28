@@ -5,7 +5,7 @@
 
 #include "StructUtils/InstancedStruct.h"
 
-void FAuraGameplayEffectContext::AddInstancedStruct(const FInstancedStruct& InStruct)
+void FAuraGameplayEffectContext::SetInstancedStruct(const FInstancedStruct& InStruct)
 {
 	InstancedStruct = TSharedPtr<FInstancedStruct>(new FInstancedStruct(InStruct));
 }

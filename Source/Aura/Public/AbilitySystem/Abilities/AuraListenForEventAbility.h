@@ -14,6 +14,8 @@ UCLASS()
 class AURA_API UAuraListenForEventAbility : public UAuraGameplayAbility
 {
 	GENERATED_BODY()
+public:
+	UAuraListenForEventAbility();
 protected:
 	virtual void PreActivate(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
 		const FGameplayAbilityActivationInfo ActivationInfo, FOnGameplayAbilityEnded::FDelegate* OnGameplayAbilityEndedDelegate,

@@ -32,7 +32,7 @@ FText FStateTreeCombatCondition::GetDescription(const FGuid& ID, FStateTreeDataV
 
 	const FText Format = (Formatting == EStateTreeNodeFormatting::RichText)
 		? LOCTEXT("CombatRich", "{EmptyOrNot} in range {Range}")
-		: LOCTEXT("Combat", "{EmptyOrNot}Is EmptyOrNot");
+		: LOCTEXT("Combat", "{EmptyOrNot} Is EmptyOrNot");
 	return FText::FormatNamed(Format,
 		TEXT("EmptyOrNot"), InvertText,
 		TEXT("Range"), Range);

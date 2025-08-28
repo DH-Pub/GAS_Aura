@@ -33,6 +33,32 @@ struct FDamageCueList
 	UPROPERTY(BlueprintReadOnly)
 	TArray<FDamageCue> DamageCues;
 };
+
+
+USTRUCT(BlueprintType)
+struct FAbilityDescriptionDetails // For Ability Descriptions
+{
+	GENERATED_BODY()
+	UPROPERTY(BlueprintReadOnly)
+	int32 Level = 1;
+	UPROPERTY(BlueprintReadOnly)
+	int32 LevelChanged = 1;
+
+	UPROPERTY(BlueprintReadOnly)
+	float Damage = 0.f;
+	UPROPERTY(BlueprintReadOnly)
+	float DamageChanged = 0.f;
+	
+	UPROPERTY(BlueprintReadOnly)
+	float CostMana = 0.f;
+	UPROPERTY(BlueprintReadOnly)
+	float CostManaChanged = 0.f;
+	UPROPERTY(BlueprintReadOnly)
+	float CostHealth = 0.f;
+	UPROPERTY(BlueprintReadOnly)
+	float CostHealthChanged = 0.f;
+};
+
 /**
  * 
  */
@@ -40,18 +66,21 @@ UCLASS()
 class AURA_API UAuraDamageGameplayAbility : public UCostCooldownAbility
 {
 	GENERATED_BODY()
-public:
-	UAuraDamageGameplayAbility();
-	
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Default")
 	TSubclassOf<UGameplayEffect> DamageEffectClass;
 
-	UPROPERTY(EditDefaultsOnly, Category="Default", meta=(ForceInlineRow, GameplayTagFilter="Damage"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Default", meta=(ForceInlineRow, GameplayTagFilter="Damage"))
 	TMap<FGameplayTag, FScalableFloat> DamageTypes;
+	UFUNCTION(BlueprintPure)
+	float GetDamageAtLevel(const int32 Level, UPARAM(meta=(GameplayTagFilter="Damage")) const FGameplayTag TypeTag);
+	UFUNCTION(BlueprintCallable)
+	void GetDamageAtLevelChanged(float& Damage, float& DamageChanged,
+		UPARAM(meta=(GameplayTagFilter="Damage")) const FGameplayTag TypeTag,
+		const int32 Level = 0, const int32 LevelDelta = 0);
 
 	UFUNCTION(BlueprintCallable)
-	void CauseDamageToActors(UPARAM(meta=(GameplayTagFilter="GameplayCue.Impact")) FGameplayTag GameplayCueTag,
+	void CauseDamageToActors(UPARAM(meta=(GameplayTagFilter="GameplayCue.Impact")) const FGameplayTag GameplayCueTag,
 		const TArray<AActor*>& Actors, USoundBase* ImpactSound, bool bStagger = false);
 	// Call in GC_MeleeImpact
 	UFUNCTION(BlueprintCallable, meta=(WorldContext="WorldContextObject"))

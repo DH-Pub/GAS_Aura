@@ -5,13 +5,12 @@
 
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AuraGameplayTags.h"
-#include "EnhancedInputComponent.h"
 #include "AbilitySystem/AuraAbilitySystemLibrary.h"
 #include "AbilitySystem/Abilities/AuraInputAbility.h"
 #include "AbilitySystem/Data/AbilityDataAsset.h"
 #include "Character/AuraCharacter.h"
 #include "Player/AuraPlayerState.h"
-#include "UI/WidgetController/OverlayWidgetController.h"
+#include "UI/HUD/AuraHUD.h"
 
 void UAuraAbilitySystemComponent::AbilityActorInfoSet()
 {
@@ -51,35 +50,33 @@ void UAuraAbilitySystemComponent::AddCharacterPassives(const TArray<TSubclassOf<
 
 // ===================================== Input =====================================================================
 #pragma region Ability Input
-void UAuraAbilitySystemComponent::AbilityInputTagTrigger(const ETriggerEvent TriggerEvent, const FGameplayTag& InputTag)
+void UAuraAbilitySystemComponent::AbilityInputTagTrigger(const ETriggerEvent TriggerEvent, const FGameplayTag& InputTag, UInputAction* InputAction)
 {
+	FScopedAbilityListLock AbilityListLock(*this);
 	for (FGameplayAbilitySpec& AbilitySpec : GetActivatableAbilities())
 	{
 		if (AbilitySpec.GetDynamicSpecSourceTags().HasTagExact(InputTag))
 		{
-			if (AbilitySpec.IsActive())
+			for (UGameplayAbility* Ability : AbilitySpec.GetAbilityInstances())
 			{
-				for (UGameplayAbility* Ability : AbilitySpec.GetAbilityInstances())
+				if (UAuraInputAbility* InputAbility = Cast<UAuraInputAbility>(Ability))
 				{
-					Cast<UAuraInputAbility>(Ability)->SetAbilityTriggerEvent(TriggerEvent);
+					InputAbility->InputAction = InputAction;
+					InputAbility->SetAbilityTriggerEvent(TriggerEvent);
 				}
 			}
 			switch (TriggerEvent)
 			{
+			case ETriggerEvent::Started:
 			case ETriggerEvent::Ongoing:
 			case ETriggerEvent::Triggered:
-				// AbilitySpec.GetDynamicSpecSourceTags().AddTag(AuraGameplayTags::Input_TriggerEvent_Triggered);
 				TryActivateAbility(AbilitySpec.Handle);
-				// AbilitySpec.GetDynamicSpecSourceTags().RemoveTag(AuraGameplayTags::Input_TriggerEvent_Triggered);
-				break;
-				
-			case ETriggerEvent::Started:
-				// AbilitySpecInputPressed(AbilitySpec); // InputPressed called if Spec.IsActive()
 				break;
 				
 			case ETriggerEvent::Canceled:
 			case ETriggerEvent::Completed:
-				AbilitySpecInputReleased(AbilitySpec);
+				AbilitySpecInputReleased(AbilitySpec); // only called if Spec.IsActive() same as AbilitySpecInputPressed
+				MarkAbilitySpecDirty(AbilitySpec);
 				break;
 			
 			case ETriggerEvent::None: break;
@@ -96,13 +93,12 @@ void UAuraAbilitySystemComponent::ReduceCooldownByTag(const FGameplayTagContaine
 {
 	if (!GetAvatarActor()->HasAuthority()) return;
 	const FGameplayEffectQuery Query = FGameplayEffectQuery::MakeQuery_MatchAnyOwningTags(TagContainer);
-	TArray<FActiveGameplayEffectHandle> ActiveCooldownHandles = GetActiveEffects(Query);
-	for (const FActiveGameplayEffectHandle& Handle : ActiveCooldownHandles)
+	for (const FActiveGameplayEffectHandle& Handle : GetActiveEffects(Query))
 	{
 		if (const FActiveGameplayEffect* ActiveGameplayEffect = GetActiveGameplayEffect(Handle))
 		{
 			const float TimeRemaining = ActiveGameplayEffect->GetTimeRemaining(GetWorld()->GetTimeSeconds());
-			float NewTime = 0.004f; // Cannot apply effect with 0 duration
+			float NewTime = .01f; // Cannot apply effect with 0 duration
 			if (Amount > 0.f) NewTime = FMath::Max(TimeRemaining - Amount, NewTime);
 			if (Percent > 0.f) NewTime = FMath::Max(NewTime * (1 - Percent), NewTime);
 			
@@ -120,16 +116,6 @@ void UAuraAbilitySystemComponent::ReduceCooldownByTag(const FGameplayTagContaine
 	}
 }
 
-void UAuraAbilitySystemComponent::UpgradeAttribute(const TArray<FPointAllocation>& PointsAllocated)
-{
-	if (const AAuraCharacter* Character = Cast<AAuraCharacter>(GetAvatarActor()))
-	{
-		if (AAuraPlayerState* PS = Character->GetPlayerState<AAuraPlayerState>())
-		{
-			ServerUpgradeAttribute(PointsAllocated, PS);
-		}
-	}
-}
 void UAuraAbilitySystemComponent::ServerUpgradeAttribute_Implementation(const TArray<FPointAllocation>& PointsAllocated,
 	AAuraPlayerState* AuraPS)
 {
@@ -159,30 +145,79 @@ FGameplayAbilitySpec* UAuraAbilitySystemComponent::GetSpecFromAssetTag(const FGa
 	}
 	return nullptr;
 }
-void UAuraAbilitySystemComponent::UpdateAbilityStatuses(const int32 CharacterLevel)
+void UAuraAbilitySystemComponent::UnlockAbilityByLevel(const int32 CharacterLevel)
 {
-	if (UAbilityDataAsset* AbilityData = UAuraAbilitySystemLibrary::GetGameModeAbilityDataAsset(GetAvatarActor()))
+	if (const UAbilityDataAsset* AbilityData = UAuraAbilitySystemLibrary::GetGameModeAbilityDataAsset(GetAvatarActor()))
 	{
-		for (FAuraAbilityData& Data : AbilityData->AbilityDataList)
+		for (const FAuraAbilityData& Data : AbilityData->AbilityDataList)
 		{
 			if (!Data.AbilityTag.IsValid() || CharacterLevel < Data.LevelRequirement || GetSpecFromAssetTag(Data.AbilityTag)) continue;
 
 			FGameplayAbilitySpec AbilitySpec(Data.AbilityClass, 1);
 			AbilitySpec.GetDynamicSpecSourceTags().AddTag(AuraGameplayTags::Ability_Status_Eligible);
 			GiveAbility(AbilitySpec);
-			MarkAbilitySpecDirty(AbilitySpec);
 		}
 	}
 }
 
-/*void UAuraAbilitySystemComponent::ForEachAbility(const FForEachAbility& Delegate)
+const FGameplayTag& UAuraAbilitySystemComponent::GetAbilityTagFromSpec(const FGameplayAbilitySpec& AbilitySpec)
 {
-	FScopedAbilityListLock AbilityListLock(*this);
-	for (const FGameplayAbilitySpec& AbilitySpec : GetActivatableAbilities())
+	for (const FGameplayTag& Tag : AbilitySpec.Ability->GetAssetTags())
 	{
-		if (!Delegate.ExecuteIfBound(AbilitySpec)) UE_LOG(LogAura, Error, TEXT("Failed to execute delegate in %hs"), __FUNCTION__);
+		if (Tag.MatchesTag(AuraGameplayTags::Ability)) return Tag;
 	}
-}*/
+	return FGameplayTag::EmptyTag;
+}
+const FGameplayTag& UAuraAbilitySystemComponent::GetStatusFromSpec(const FGameplayAbilitySpec& AbilitySpec)
+{
+	for (const FGameplayTag& Tag : AbilitySpec.GetDynamicSpecSourceTags())
+	{
+		if (Tag.MatchesTag(AuraGameplayTags::Ability_Status)) return Tag;
+	}
+	return FGameplayTag::EmptyTag;
+}
+void UAuraAbilitySystemComponent::ClientUpdateAbilityStatus_Implementation(const FGameplayAbilitySpec& AbilitySpec,
+	const FGameplayTag& StatusTag)
+{
+	if (AAuraHUD* HUD = UAuraAbilitySystemLibrary::GetAuraHUD(this))
+	{
+		if (FAuraAbilityData* Data = HUD->AbilityData->FindAbilityDataByTags(AbilitySpec.Ability->GetAssetTags()))
+		{
+			Data->StatusTag = StatusTag;
+			HUD->AbilityDataDelegate.Broadcast(*Data);
+		}
+	}
+}
+
+
+void UAuraAbilitySystemComponent::ServerSpendSpellPoints_Implementation(const FGameplayTag& AbilityTag)
+{
+	if (FGameplayAbilitySpec* Spec = GetSpecFromAssetTag(AbilityTag))
+	{
+		if (const AAuraCharacter* Character = Cast<AAuraCharacter>(GetAvatarActor()))
+		{
+			if (AAuraPlayerState* PS = Character->GetPlayerState<AAuraPlayerState>())
+			{
+				if (PS->GetSpellPoints() < 1) return;
+				PS->AddToSpellPoints(-1);
+				FGameplayTag Status = GetStatusFromSpec(*Spec);
+				if (Status.MatchesTagExact(AuraGameplayTags::Ability_Status_Eligible)) // need to spend point to unlock
+				{
+					Spec->GetDynamicSpecSourceTags().RemoveTag(AuraGameplayTags::Ability_Status_Eligible);
+					Status = AuraGameplayTags::Ability_Status_Unlocked;
+					Spec->GetDynamicSpecSourceTags().AddTag(Status);
+				}
+				else if (Status.MatchesTagExact(AuraGameplayTags::Ability_Status_Equipped)
+					|| Status.MatchesTagExact(AuraGameplayTags::Ability_Status_Unlocked))
+				{
+					Spec->Level++; // without MarkAbilitySpecDirty(), client Spec's won't change
+				}
+				MarkAbilitySpecDirty(*Spec);
+				ClientUpdateAbilityStatus(*Spec, Status);
+			}
+		}
+	}
+}
 
 
 #pragma region On Activate/Give/Remove Ability
@@ -193,6 +228,7 @@ void UAuraAbilitySystemComponent::OnRep_ActivateAbilities()
 	{
 		if (Character->IsPlayerControlled())
 		{
+			FScopedAbilityListLock AbilityListLock(*this);
 			for (const auto& AbilitySpec : GetActivatableAbilities())
 			{
 				//TODO: Find something to do with this
@@ -205,7 +241,17 @@ void UAuraAbilitySystemComponent::OnGiveAbility(FGameplayAbilitySpec& AbilitySpe
 	Super::OnGiveAbility(AbilitySpec);
 	if (const AAuraCharacterBase* Character = Cast<AAuraCharacterBase>(GetAvatarActor()))
 	{
-		if (Character->IsPlayerControlled()) OnGiveAbilityDelegate.Broadcast(AbilitySpec);
+		if (Character->IsPlayerControlled())
+		{
+			OnGiveAbilityDelegate.Broadcast(AbilitySpec);
+			for (const FGameplayTag& Tag : AbilitySpec.GetDynamicSpecSourceTags())
+			{
+				if (Tag.MatchesTag(AuraGameplayTags::Ability_Status))
+				{
+					ClientUpdateAbilityStatus(AbilitySpec, Tag);
+				}
+			}
+		}
 	}
 }
 void UAuraAbilitySystemComponent::OnRemoveAbility(FGameplayAbilitySpec& AbilitySpec)

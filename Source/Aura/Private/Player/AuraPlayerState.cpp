@@ -38,7 +38,7 @@ void AAuraPlayerState::SetXP(const int32 NewXP)
 	const int32 NewLevel = LevelUpDataAsset->FindLevelForXP(NewXP);
 	if (Level != NewLevel)
 	{
-		AbilitySystemComponent->UpdateAbilityStatuses(NewLevel);
+		AbilitySystemComponent->UnlockAbilityByLevel(NewLevel);
 		
 		if (AAuraCharacter* Character = Cast<AAuraCharacter>(GetPawn()))
 		{

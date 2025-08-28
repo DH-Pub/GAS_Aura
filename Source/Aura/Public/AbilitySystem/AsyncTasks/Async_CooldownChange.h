@@ -29,14 +29,14 @@ public:
 
 	UFUNCTION(BlueprintCallable, meta=(BlueprintInternalUseOnly="true"))
 	static UAsync_CooldownChange* WaitForCooldownChange(UAbilitySystemComponent* AbilitySystemComponent,
-		const FGameplayTag& InCooldownTag, bool InUseServerCooldown = false);
+		const FGameplayTagContainer& InCooldownTags, bool InUseServerCooldown = false);
 
 	UFUNCTION(BlueprintCallable)
 	void EndTask();
 private:
 	UPROPERTY()
 	TObjectPtr<UAbilitySystemComponent> ASC;
-	FGameplayTag CooldownTag;
+	FGameplayTagContainer CooldownTags;
 	bool UseServerCooldown = false;
 	
 	float CooldownDuration = 0.f;

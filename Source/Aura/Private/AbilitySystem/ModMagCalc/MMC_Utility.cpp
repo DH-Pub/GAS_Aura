@@ -86,7 +86,7 @@ float UMMC_CooldownDuration::CalculateBaseMagnitude_Implementation(const FGamepl
 	float INT = 0.f;
 	GetCapturedAttributeMagnitude(IntelligenceDef, Spec, EvaluateParameters, INT);
 	const float CooldownReductionPercentage = FMath::Min<float>(INT * 0.01f, 0.6f);
-	const float CooldownDuration = Ability->CooldownDuration.GetValueAtLevel(Ability->GetAbilityLevel());
+	const float CooldownDuration = Ability->CooldownDuration.GetValueAtLevel(Spec.GetLevel());
 	
 	return CooldownDuration * (1 - CooldownReductionPercentage);
 }
@@ -102,7 +102,7 @@ float UMMC_AbilityManaCost::CalculateBaseMagnitude_Implementation(const FGamepla
 	{
 		if (Ability->ManaCost != 0.f)
 		{
-			return Ability->ManaCost.GetValueAtLevel(Ability->GetAbilityLevel());
+			return Ability->ManaCost.GetValueAtLevel(Spec.GetLevel());
 		}
 	}
 	return 0.f;
@@ -119,7 +119,7 @@ float UMMC_AbilityHealthCost::CalculateBaseMagnitude_Implementation(const FGamep
 	{
 		if (Ability->HealthCost != 0.f)
 		{
-			return Ability->HealthCost.GetValueAtLevel(Ability->GetAbilityLevel());
+			return Ability->HealthCost.GetValueAtLevel(Spec.GetLevel());
 		}
 	}
 	return 0.f;

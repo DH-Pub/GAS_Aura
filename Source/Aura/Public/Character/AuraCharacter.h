@@ -30,7 +30,7 @@ public:
 
 	UPROPERTY(VisibleAnywhere, Category=Default)
 	TObjectPtr<class UNiagaraComponent> LevelUpNiagaraComponent;
-	UFUNCTION(NetMulticast, Unreliable)
+	UFUNCTION(NetMulticast, Reliable)
 	void MulticastLevelUpEffects(int32 Level);
 protected:
 	virtual void BeginPlay() override;

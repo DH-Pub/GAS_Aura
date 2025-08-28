@@ -14,10 +14,16 @@
 
 UAuraSummonAbility::UAuraSummonAbility()
 {
-	FGameplayTagContainer DefaultTags(AuraGameplayTags::Ability_Summon);
-	DefaultTags.AddTag(AuraGameplayTags::Ability_Type_Activatable_Blockable);
-	SetAssetTags(DefaultTags);
-	BlockAbilitiesWithTag = FGameplayTagContainer(AuraGameplayTags::Ability_Type_Activatable_Blockable);
+	FGameplayTagContainer AssetTags(AuraGameplayTags::Ability_Summon);
+	SetAssetTags(AddGenericAssetTags(AssetTags));
+}
+
+bool UAuraSummonAbility::CanActivateAbility(const FGameplayAbilitySpecHandle Handle,
+	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayTagContainer* SourceTags,
+	const FGameplayTagContainer* TargetTags, FGameplayTagContainer* OptionalRelevantTags) const
+{
+	const bool bLessSummonsThanThreshold = AuraCharacterFromActorInfo->Summons.Num() < AuraCharacterFromActorInfo->SummonSpawnThreshold;
+	return Super::CanActivateAbility(Handle, ActorInfo, SourceTags, TargetTags, OptionalRelevantTags) && bLessSummonsThanThreshold;
 }
 
 void UAuraSummonAbility::SetSpawnLocations()
@@ -113,17 +119,3 @@ void UAuraSummonAbility::SummonCueFromEffectContext(const UObject* WorldContextO
 		}
 	}
 }
-
-/*bool UAuraSummonAbility::EffectContextHandleToSummonInfo(const FGameplayEffectContextHandle& EffectContextHandle,
-	TArray<FVector_NetQuantize>& Locations)
-{
-	if (const FInstancedStruct* InstancedStruct = UAuraAbilitySystemLibrary::GetInstancedStructPointer(EffectContextHandle))
-	{
-		if (const FSummonCueInfo* SummonInfo = InstancedStruct->GetPtr<FSummonCueInfo>())
-		{
-			Locations = SummonInfo->Locations;
-			return true;
-		}
-	}
-	return false;
-}*/

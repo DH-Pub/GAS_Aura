@@ -41,6 +41,8 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Default")
 	float BaseWalkSpeed = 250.f;
+	UPROPERTY(BlueprintReadWrite)
+	FVector AutoMoveDestination = FVector::ZeroVector;
 	
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
 	void UpdateFacingTarget(const FVector& InTargetLocation);
@@ -94,7 +96,9 @@ public:
 	FVector TargetLocation = FVector();
 	UPROPERTY(BlueprintReadWrite)
 	bool bTracking = false; // true if Facing Target
-	
+
+	UPROPERTY(EditAnywhere, Category=Parameter, meta=(ClampMin=0, ClampMax=30, UIMin=0, UIMax=30))
+	int32 SummonSpawnThreshold = 2; // When Summons.Num() < this, can summon more
 	UPROPERTY()
 	TArray<TObjectPtr<AAuraCharacterBase>> Summons;
 	void AddNewSummon(AAuraCharacterBase* NewSummon) {Summons.AddUnique(NewSummon);}

@@ -2,6 +2,11 @@
 
 
 #include "UI/HUD/AuraHUD.h"
+
+#include "AuraGameplayTags.h"
+#include "AbilitySystem/AuraAbilitySystemComponent.h"
+#include "AbilitySystem/Abilities/AuraInputAbility.h"
+#include "AbilitySystem/Data/AbilityDataAsset.h"
 #include "UI/Widget/AuraUserWidget.h"
 #include "UI/WidgetController/AttributeMenuWidgetController.h"
 #include "UI/WidgetController/OverlayWidgetController.h"
@@ -23,6 +28,33 @@ USpellMenuWidgetController* AAuraHUD::CreateOrGetSpellMenuWC(const FWidgetContro
 		this, SpellMenuWidgetController, SpellMenuWidgetControllerClass, WCParams);
 }
 
+void AAuraHUD::InitAuraHUD(const FWidgetControllerParams& WCParams)
+{
+	AbilitySystemComponent = WCParams.AbilitySystemComponent;
+	AbilitySystemComponent->OnGiveAbilityDelegate.AddUObject(this, &AAuraHUD::BroadcastGivenAbility);
+	InitOverlay(WCParams);
+}
+void AAuraHUD::BroadcastAllActivatableAbilities()
+{
+	FScopedAbilityListLock AbilityListLock(*AbilitySystemComponent);
+	for (const auto& AbilitySpec : AbilitySystemComponent->GetActivatableAbilities())
+	{
+		BroadcastGivenAbility(AbilitySpec);
+	}
+}
+void AAuraHUD::BroadcastGivenAbility(const FGameplayAbilitySpec& Spec)
+{
+	if (Spec.Ability->GetAssetTags().HasTag(AuraGameplayTags::Ability))
+	{
+		if (FAuraAbilityData* Data = AbilityData->FindAbilityDataByTags(Spec.Ability->GetAssetTags()))
+		{
+			Data->InputTag = Cast<UAuraInputAbility>(Spec.Ability)->StartupInputTag;
+			Data->StatusTag = AbilitySystemComponent->GetStatusFromSpec(Spec);
+			AbilityDataDelegate.Broadcast(*Data);
+		}
+	}
+}
+
 void AAuraHUD::InitOverlay(const FWidgetControllerParams& WCParams)
 {
 	checkf(OverlayWidgetClass, TEXT("Overlay Widget Class uninitialized, please fill out in BP_AuraHUD"));
@@ -33,7 +65,6 @@ void AAuraHUD::InitOverlay(const FWidgetControllerParams& WCParams)
 
 	 /**
 	  * Create/Get WidgetController, BindCallbacksDependencies()
-	  * Set WidgetController, Call WidgetControllerSet Event (Which will assign AbilityDataDelegate)
 	  */
 	OverlayWidget->SetWidgetController(CreateOrGetOverlayWC(WCParams));
 	OverlayWidgetController->BroadcastInitialValues();

@@ -3,6 +3,7 @@
 
 #include "UI/Widget/SpellGlobeWidget.h"
 
+#include "AbilitySystem/Abilities/AuraGameplayAbility.h"
 #include "AbilitySystem/Data/AbilityDataAsset.h"
 #include "Components/Image.h"
 #include "Components/OverlaySlot.h"
@@ -45,17 +46,17 @@ void USpellGlobeWidget::NativeDestruct()
 	GetWorld()->GetTimerManager().ClearTimer(CooldownTimerHandle);
 }
 
-bool USpellGlobeWidget::SuccessUpdateAbilityData(const FAuraAbilityData& InAbilityData)
+bool USpellGlobeWidget::SuccessUpdateAbilityData(const FAuraAbilityData& InAbilityData, FGameplayTagContainer& OutCooldownTags)
 {
 	if(!InputTag.MatchesTagExact(InAbilityData.InputTag)) return false;
-	
-	CooldownTag = InAbilityData.CooldownTag;
+
 	FSlateBrush ResourceImage;
 	ResourceImage.SetResourceObject(InAbilityData.Icon);
 	Image_SpellIcon->SetBrush(ResourceImage);
 	ResourceImage.SetResourceObject(InAbilityData.BackgroundMaterial);
 	Image_Background->SetBrush(ResourceImage);
 	// Image_Background->SetBrushFromMaterial(InAbilityData.BackgroundMaterial);
+	OutCooldownTags = *InAbilityData.AbilityClass.GetDefaultObject()->GetCooldownTags();
 	return true;
 }
 

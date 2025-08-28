@@ -3,16 +3,17 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UI/Data/MessageInfo.h"
 #include "UI/WidgetController/AuraWidgetController.h"
 #include "OverlayWidgetController.generated.h"
 
-class ULevelUpDataAsset;
 class UMessageInfo;
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMessageWidgetInfoSignature, FAuraMessageInfo, Info);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnXPChangedSignature, int32, Level, float, XPPercent);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAbilityDataSignature, const FAuraAbilityData&, Info);
+class UAuraUserWidget;
+class UOverlay;
+class ULevelUpDataAsset;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMessageTableSignature, const FMessageRow&, Data);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMessageWidgetInfoSignature, const FAuraMessageInfo&, Info);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnXPChangedSignature, int32, Level, float, XPPercent);
 /**
  *  Created in AuraHUD, which is only accessible by local client
  */
@@ -23,11 +24,6 @@ class AURA_API UOverlayWidgetController : public UAuraWidgetController
 public:
 	virtual void BindCallbacksDependencies() override;
 	virtual void BroadcastInitialValues() override; // Initial HP, MP, XP, Abilities, ...
-
-	UPROPERTY(BlueprintAssignable, Category = "GAS|AbilityData")
-	FAbilityDataSignature AbilityDataDelegate;// Send Ability's Tags, Icons, Assets, ...
-	UFUNCTION()
-	void BroadcastGivenAbility(const FGameplayAbilitySpec& AbilitySpec);
 	
 	UPROPERTY(BlueprintAssignable, Category = "GAS|Attributes")
 	FOnVitalAttributeChanged OnHealthChanged;
@@ -38,15 +34,28 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "GAS|Attributes")
 	FOnVitalAttributeChanged OnMaxManaChanged;
 
+	UPROPERTY(BlueprintReadWrite)
+	TObjectPtr<UOverlay> Overlay_Screen;
 	UPROPERTY(BlueprintAssignable)
 	FMessageWidgetInfoSignature MessageWidgetInfoDelegate; // Item Pickup Message
+	UPROPERTY(BlueprintAssignable)
+	FMessageTableSignature MessageTableDelegate; // Item Pickup Message
 
 	UPROPERTY(BlueprintAssignable)
 	FOnXPChangedSignature OnXPPercentChangedDelegate; // Send XP% and Level to UI
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Default|WidgetData")
 	TObjectPtr<UMessageInfo> MessageInfo;
+	UPROPERTY(EditDefaultsOnly, Category="Default|MessageData")
+	TObjectPtr<UDataTable> MessageDataTable;
 
 	UFUNCTION()
 	void BroadcastXPToUI(int32 XP, int32 Level, ULevelUpDataAsset* LevelUpDA) const;
+private:
+	// DEPRECATED
+	template<typename T = FTableRowBase>
+	static T* GetDataTableRowByTag(UDataTable* DataTable, const FGameplayTag& Tag)
+	{
+		return DataTable->FindRow<T>(Tag.GetTagName(), TEXT("")); // Find by RowName
+	}
 };

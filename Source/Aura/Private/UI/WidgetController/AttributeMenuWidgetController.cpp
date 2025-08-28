@@ -13,7 +13,7 @@
 
 void UAttributeMenuWidgetController::BindCallbacksDependencies()
 {
-	for (TTuple<FGameplayTag, FAuraAttributeData>& Pair : PlayerController->GetHUD<AAuraHUD>()->AttributeData->AttributeDataList)
+	for (TTuple<FGameplayTag, FAuraAttributeData>& Pair : AuraHUD->AttributeData->AttributeDataList)
 	{
 		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(Pair.Value.GameplayAttribute).AddLambda(
 			[this, &Pair](const FOnAttributeChangeData& Data)
@@ -37,7 +37,7 @@ void UAttributeMenuWidgetController::BindCallbacksDependencies()
 
 void UAttributeMenuWidgetController::BroadcastInitialValues()
 {
-	for (TTuple<FGameplayTag, FAuraAttributeData>& Pair : PlayerController->GetHUD<AAuraHUD>()->AttributeData->AttributeDataList)
+	for (TTuple<FGameplayTag, FAuraAttributeData>& Pair : AuraHUD->AttributeData->AttributeDataList)
 	{
 		Pair.Value.AttributeValue = Pair.Value.GameplayAttribute.GetNumericValue(AttributeSet);
 		AttributeInfoDelegate.Broadcast(Pair.Key, Pair.Value);
@@ -75,7 +75,7 @@ int32 UAttributeMenuWidgetController::GetTotalPointsAllocating()
 void UAttributeMenuWidgetController::ApplyUpgrades()
 {
 	bIsApplying = true;
-	CastChecked<UAuraAbilitySystemComponent>(AbilitySystemComponent)->UpgradeAttribute(PointAllocationList);
+	AbilitySystemComponent->ServerUpgradeAttribute(PointAllocationList, PlayerState);
 	PointAllocationList.Empty();
 }
 
