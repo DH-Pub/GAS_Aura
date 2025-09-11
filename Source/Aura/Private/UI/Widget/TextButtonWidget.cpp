@@ -20,4 +20,6 @@ void UTextButtonWidget::NativePreConstruct()
 	
 	Text->SetText(ButtonText);
 	Text->SetFont(FontInfo);
+
+	SetIsFocusable(true);
 }

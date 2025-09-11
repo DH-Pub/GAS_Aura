@@ -5,7 +5,7 @@
 
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
-#include "AbilitySystem/AuraAbilitySystemLibrary.h"
+#include "AbilitySystem/AuraLibrary.h"
 
 AAuraEffectActor::AAuraEffectActor()
 {
@@ -31,7 +31,7 @@ void AAuraEffectActor::ApplyEffectToTarget(AActor* TargetActor, const FEffectTyp
 		FGameplayEffectContextHandle EffectContextHandle = TargetASC->MakeEffectContext();
 		EffectContextHandle.AddSourceObject(this);
 		// EffectContextHandle.AddOrigin() // DEPRECATED: for showing dmg, but using ActorLocation
-		UAuraAbilitySystemLibrary::SetIsShowDamageOnTarget(EffectContextHandle, true);
+		UAuraLibrary::SetIsShowDamageOnTarget(EffectContextHandle, true);
 		const FGameplayEffectSpecHandle EffectSpecHandle = TargetASC->MakeOutgoingSpec(EffectType.GameplayEffectClass, ActorLevel, EffectContextHandle);
 		const FActiveGameplayEffectHandle ActiveEffectHandle = TargetASC->ApplyGameplayEffectSpecToSelf(*EffectSpecHandle.Data);
 		

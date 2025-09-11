@@ -7,24 +7,6 @@
 #include "AbilitySystem/Abilities/AuraGameplayAbility.h"
 #include "Misc/DataValidation.h"
 
-FAuraAbilityData* UAbilityDataAsset::FindAbilityDataByTags(const FGameplayTagContainer& AbilityTags)
-{
-	for (FAuraAbilityData& Data : AbilityDataList)
-	{
-		if (AbilityTags.HasTagExact(Data.AbilityTag)) return &Data;
-	}
-	// UE_LOG(LogAura, Error, TEXT("Can't find info for AbilityTag on List [%s]"), *GetNameSafe(this));
-	return nullptr;
-}
-FAuraAbilityData* UAbilityDataAsset::FindAbilityDataByTags(const FGameplayTag& AbilityTags)
-{
-	for (FAuraAbilityData& Data : AbilityDataList)
-	{
-		if (AbilityTags.MatchesTagExact(Data.AbilityTag)) return &Data;
-	}
-	return nullptr;
-}
-
 #if WITH_EDITOR
 EDataValidationResult UAbilityDataAsset::IsDataValid(FDataValidationContext& Context) const
 {
@@ -47,5 +29,17 @@ EDataValidationResult UAbilityDataAsset::IsDataValid(FDataValidationContext& Con
 		}
 	}
 	return Result;
+}
+
+void UAbilityDataAsset::PopulateDataAsset()
+{
+	for (FAuraAbilityData& Data : AbilityDataList)
+	{
+		if (Data.AbilityClass == nullptr || Data.AbilityTag.IsValid()) continue;
+		for (const FGameplayTag& Tag : Data.AbilityClass.GetDefaultObject()->GetAssetTags())
+		{
+			if (Tag.MatchesTag(AuraGameplayTags::Ability)) Data.AbilityTag = Tag;
+		}
+	}
 }
 #endif

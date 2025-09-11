@@ -6,11 +6,11 @@
 #include "AbilitySystemComponent.h"
 #include "AuraAbilitySystemComponent.generated.h"
 
+struct FPlayerAbilityData;
+class UCostCooldownAbility;
 class UInputAction;
 enum class ETriggerEvent : uint8;
-class UAuraInputAbility;
 class UAuraGameplayAbility;
-struct FUpgradeAllocation;
 class AAuraPlayerState;
 class UAuraAbilitySystemComponent;
 
@@ -42,6 +42,7 @@ struct FPointAllocation
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FEffectAssetTags, const FGameplayTagContainer& /* AssetTags */);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnGiveAbilitySignature, const FGameplayAbilitySpec&);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FAbilityDataSignature, const FAuraAbilityData&, Data, const FPlayerAbilityData&, PlayerData);
 /**
  * 
  */
@@ -51,40 +52,49 @@ class AURA_API UAuraAbilitySystemComponent : public UAbilitySystemComponent
 	GENERATED_BODY()
 public:
 	void AbilityActorInfoSet();
-	
 	FEffectAssetTags EffectAssetTags; // Convert OnGameplayEffectAppliedDelegateToSelf to Client RPC for UI use
-	
-	void AddCharacterAbilities(const TArray<TSubclassOf<UAuraInputAbility>>& StartupAbilities); // Add Startup Abilities in PossessedBy
+private:
+	// Remote Procedure Calls (RPCs) Broadcast EffectAssetTags
+	UFUNCTION(Client, Unreliable)
+	void ClientEffectApplied(UAbilitySystemComponent* AbilitySystemComponent, const FGameplayEffectSpec& EffectSpec,
+		FActiveGameplayEffectHandle ActiveGameplayEffectHandle);
+
+public:
+	void AddCharacterAbilities(const TArray<TSubclassOf<UCostCooldownAbility>>& StartupAbilities); // Add Startup Abilities in PossessedBy
 	void AddCharacterPassives(const TArray<TSubclassOf<UAuraGameplayAbility>>& StartupPassives); // Add Startup Passives
-	
-	FOnGiveAbilitySignature OnGiveAbilityDelegate; // used to broadcast AbilityDataDelegate
-	
+	void UnlockAbilityByLevel(int32 CharacterLevel);
+
 	void AbilityInputTagTrigger(const ETriggerEvent TriggerEvent, const FGameplayTag& InputTag, UInputAction* InputAction);
 
+	// Get ActivatableAbility Spec from Tag
+	FGameplayAbilitySpec* GetSpecFromAssetTag(const FGameplayTag& AbilityTag);
+	// return FGameplayTag::EmptyTag if not assigned to any input
+	const FGameplayTag& GetInputFromSpec(const FGameplayAbilitySpec* Spec);
+
+
+#pragma region Abilities Function
 	UFUNCTION(BlueprintCallable)
 	void ReduceCooldownByTag(const FGameplayTagContainer& TagContainer, const float Amount = 0.f, const float Percent = 0.f);
+#pragma endregion
+protected:
+	// virtual void OnRep_ActivateAbilities() override;
+	virtual void OnGiveAbility(FGameplayAbilitySpec& AbilitySpec) override;
+	virtual void OnRemoveAbility(FGameplayAbilitySpec& AbilitySpec) override;
 
+
+public:
+	UPROPERTY(BlueprintAssignable, Category = "GAS|AbilityData")
+	FAbilityDataSignature AbilityDataDelegate;// Send AbilityData (Icon, Tag, ...)
+	UFUNCTION(Client, Reliable)
+	void ClientUpdateAbilityData(const FGameplayAbilitySpec& AbilitySpec) const;
+	
 	UFUNCTION(Server, Reliable)
 	void ServerUpgradeAttribute(const TArray<FPointAllocation>& PointsAllocated, AAuraPlayerState* AuraPS); // apply upgrade from server
 	UFUNCTION(Client, Reliable)
-	void ClientFinishUpgrade(const AAuraPlayerState* AuraPS); // Called in Server RPC to broadcast back to client
-
-	FGameplayAbilitySpec* GetSpecFromAssetTag(const FGameplayTag& AbilityTag); // Get ActivatableAbility Spec from Tag
-	void UnlockAbilityByLevel(int32 CharacterLevel);
-
-	const FGameplayTag& GetAbilityTagFromSpec(const FGameplayAbilitySpec& AbilitySpec);
-	const FGameplayTag& GetStatusFromSpec(const FGameplayAbilitySpec& AbilitySpec);
-	UFUNCTION(Client, Reliable)
-	void ClientUpdateAbilityStatus(const FGameplayAbilitySpec& AbilitySpec, const FGameplayTag& StatusTag);
+	void ClientFinishUpgradeAttribute(const AAuraPlayerState* AuraPS); // Called in Server RPC to broadcast back to client
 
 	UFUNCTION(Server, Reliable)
-	void ServerSpendSpellPoints(const FGameplayTag& AbilityTag);
-protected:
-	virtual void OnRep_ActivateAbilities() override;
-	virtual void OnGiveAbility(FGameplayAbilitySpec& AbilitySpec) override;
-	virtual void OnRemoveAbility(FGameplayAbilitySpec& AbilitySpec) override;
-	
-    UFUNCTION(Client, Unreliable) // Remote Procedure Calls (RPCs)
-	void ClientEffectApplied(UAbilitySystemComponent* AbilitySystemComponent, const FGameplayEffectSpec& EffectSpec,
-		FActiveGameplayEffectHandle ActiveGameplayEffectHandle);
+	void ServerSpendSpellPoints(const FGameplayTag& AbilityTag, AAuraPlayerState* AuraPS);
+	UFUNCTION(Server, Reliable)
+	void ServerChangeAbilitySlot(const FGameplayTag& AbilityTag, const FGameplayTag& SlotTag = FGameplayTag::EmptyTag);
 };

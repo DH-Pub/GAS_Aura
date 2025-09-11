@@ -25,7 +25,7 @@ public:
 	UPROPERTY(BlueprintReadWrite, meta=(ExposeOnSpawn), Category="UI")
 	bool bFollow = true;
 protected:
-	virtual void NativeConstruct() override;
+	virtual void NativeConstruct() override; // BeginPlay
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
 	bool bWasOnScreen = true;

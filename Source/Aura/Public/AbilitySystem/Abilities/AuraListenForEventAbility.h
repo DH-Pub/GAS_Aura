@@ -17,10 +17,8 @@ class AURA_API UAuraListenForEventAbility : public UAuraGameplayAbility
 public:
 	UAuraListenForEventAbility();
 protected:
-	virtual void PreActivate(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
-		const FGameplayAbilityActivationInfo ActivationInfo, FOnGameplayAbilityEnded::FDelegate* OnGameplayAbilityEndedDelegate,
-		const FGameplayEventData* TriggerEventData = nullptr) override;
-	
+	virtual void OnAvatarSet(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec) override;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Default")
 	TSubclassOf<UGameplayEffect> EventBasedEffectClass;
 	UPROPERTY()

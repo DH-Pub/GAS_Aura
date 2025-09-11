@@ -4,11 +4,12 @@
 #include "AbilitySystem/AuraAttributeSet.h"
 
 #include "AbilitySystemBlueprintLibrary.h"
+#include "AuraGameplayEffectTypes.h"
 #include "AuraGameplayTags.h"
 #include "Net/UnrealNetwork.h" // DOREPLIFETIME_CONDITION_NOTIFY
 #include "GameplayEffectExtension.h" // FGameplayEffectModCallbackData.EvaluatedData
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
-#include "AbilitySystem/AuraAbilitySystemLibrary.h"
+#include "AbilitySystem/AuraLibrary.h"
 #include "Character/AuraCharacterBase.h"
 #include "Game/AuraGameModeBase.h"
 #include "Interaction/CombatInterface.h"
@@ -107,7 +108,8 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 	Super::PostGameplayEffectExecute(Data);
 
 	FEffectProperties Props(Data);
-	
+	const FAuraGameplayEffectContext* AuraContext = FAuraGameplayEffectContext::GetAuraContext(Props.EffectContextHandle);
+
 	#pragma region IncomingDamage =======================================================================================
 	if (Data.EvaluatedData.Attribute == GetIncomingDamageAttribute() && !Props.TargetCharacter->bIsDead)
 	{
@@ -119,49 +121,50 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 			
 			if (NewHealth > 0.f)
 			{
-				if (UAuraAbilitySystemLibrary::IsStaggerDamage(Props.EffectContextHandle)) // HitReact
+				if (AuraContext->IsStagger()) // HitReact
 				{
 					const FGameplayTagContainer TagContainer(AuraGameplayTags::Ability_HitReact); // Container with 1 default
-					// Activate GA_HitReact which has AssetTag(Effects.HitReact) given in GiveStartupAbilities(CommonAbilities)
+					// Activate GA_HitReact which has AssetTag(Ability_HitReact) given in GiveStartupAbilities(CommonAbilities)
 					Props.TargetASC->TryActivateAbilitiesByTag(TagContainer);
 				}
 			}
 			else
 			{
 				Props.TargetCharacter->Die();
-				
+
 				// Send XP To Source on death =====================================================================================
 				const int32 TargetLevel = ICombatInterface::Execute_GetCharacterLevel(Props.TargetCharacter);
-				
+
 				FGameplayEventData Payload;
 				Payload.EventTag = AuraGameplayTags::Attributes_Meta_IncomingXP;
-				Payload.EventMagnitude = UAuraAbilitySystemLibrary::GetXPRewardForClassAndLevel(
+				Payload.EventMagnitude = UAuraLibrary::GetXPRewardForClassAndLevel(
 					Props.TargetCharacter, Props.TargetCharacter->CharacterClass, TargetLevel);
-				// GA_ListenForEvent waits to receive
-				UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(Props.SourceCharacter, Payload.EventTag, Payload); // For last hit player
-
-				Payload.EventMagnitude *= .5f; // For allies
-				AAuraGameModeBase* GameMode = Cast<AAuraGameModeBase>(GetWorld()->GetAuthGameMode());
-				for (AAuraPlayerController* Controller : GameMode->PlayerControllers)
+				if (Payload.EventMagnitude > 0.f)
 				{
-					if (Controller == Props.SourceController) continue;
-					UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(Controller->GetPawn(), Payload.EventTag, Payload);
+					// GA_ListenForEvent waits to receive
+					UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(Props.SourceCharacter, Payload.EventTag, Payload); // Last Hit player
+
+					Payload.EventMagnitude *= .5f; // For allies
+					const AAuraGameModeBase* GameMode = Cast<AAuraGameModeBase>(GetWorld()->GetAuthGameMode());
+					for (AAuraPlayerController* Controller : GameMode->PlayerControllers)
+					{
+						if (Controller == Props.SourceController) continue;
+						UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(Controller->GetPawn(), Payload.EventTag, Payload);
+					}
 				}
 			}
-			
+
 			// if (Props.SourceCharacter != Props.TargetCharacter)
-			const bool bBlocked = UAuraAbilitySystemLibrary::IsBlocked(Props.EffectContextHandle);
-			const bool bCrit = UAuraAbilitySystemLibrary::IsCrit(Props.EffectContextHandle);
 			FVector HitLoc = Props.TargetAvatarActor->GetActorLocation();
 			// use actor's location if not Instant (only popup once), avoid popup in the same place when actor moves
 			if (Data.EffectSpec.Def->DurationPolicy == EGameplayEffectDurationType::Instant)
 			{
-				if (const FHitResult* HitResult = Props.EffectContextHandle.GetHitResult())
+				if (const FHitResult* HitResult = AuraContext->GetHitResult())
 				{
 					HitLoc = HitResult->ImpactPoint;
 				}
 			}
-			Props.TargetCharacter->ShowDamageNumber(Props.SourceController, HitLoc, LocalIncomingDamage, bBlocked, bCrit);
+			Props.TargetCharacter->ShowDamageNumber(Props.SourceController, HitLoc, LocalIncomingDamage, AuraContext->IsBlocked(), AuraContext->IsCrit());
 		}
 	}
 	#pragma endregion
@@ -170,13 +173,12 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 	#pragma region IncomingXP ==========================================================================================
 	if (Data.EvaluatedData.Attribute == GetIncomingXPAttribute())
 	{
-		const float LocalIncomingXP = GetIncomingXP(); // SetIncomingXP(0.f); // if GE_EventIncomingXP is not "Override"
-
+		// const float LocalIncomingXP = GetIncomingXP(); // SetIncomingXP(0.f); // if GE_EventIncomingXP is not "Override"
 		// Source/Target is the owner, since GA_ListenForEvents applies GE_EventIncomingXP to self
 		if (AAuraPlayerState* AuraPS = Props.TargetController->GetPlayerState<AAuraPlayerState>())
 		{
 			const int32 OldLevel = AuraPS->GetPlayerLevel();
-			AuraPS->AddToXP(LocalIncomingXP);
+			AuraPS->AddToXP(GetIncomingXP());
 			if (OldLevel < AuraPS->GetPlayerLevel())
 			{
 				bTopOfHealth = true;

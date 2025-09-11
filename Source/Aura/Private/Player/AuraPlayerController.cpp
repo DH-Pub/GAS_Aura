@@ -13,6 +13,7 @@
 #include "GameFramework/PawnMovementComponent.h"
 #include "Input/AuraInputComponent.h"
 #include "Interaction/EnemyInterface.h"
+#include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMaterialLibrary.h"
 
 
@@ -39,7 +40,7 @@ void AAuraPlayerController::PlayerTick(const float DeltaTime)
 			FVector Direction = Spline->FindTangentClosestToWorldLocation(GetPawn()->GetActorLocation(), ESplineCoordinateSpace::World);
 			Direction += LocationOnSpline - GetPawn()->GetActorLocation();
 			GetPawn()->AddMovementInput(Direction);
-			
+
 			const float DistanceToDestinationSquared = (LocationOnSpline - AutoMoveDestination).SizeSquared();
 			if (DistanceToDestinationSquared < AutoRunAcceptanceRadius * AutoRunAcceptanceRadius)
 			{
@@ -53,19 +54,19 @@ void AAuraPlayerController::PlayerTick(const float DeltaTime)
 		/*const FVector WorldDirection = (CursorHitResult.ImpactPoint - GetPawn()->GetActorLocation()).GetSafeNormal();
 		GetPawn()->AddMovementInput(WorldDirection);*/
 
-		FVector2D CharacterLocToScreen;
-		ProjectWorldLocationToScreen(GetPawn()->GetActorLocation(), CharacterLocToScreen);
-		FVector2D MouseInput;
-		GetMousePosition(MouseInput.X, MouseInput.Y);
-		MouseInput -= CharacterLocToScreen;
-		MouseInput.Y *= -1.f;  // Y-axis direction in input is reverse for screen vector
-		
-		const FRotator Rotation = GetControlRotation();
+		FVector2D CharacterToScreen;
+		ProjectWorldLocationToScreen(GetPawn()->GetActorLocation(), CharacterToScreen);
+		FVector2D MouseToScreen;
+		GetMousePosition(MouseToScreen.X, MouseToScreen.Y);
+		FVector2D ControlDirection = MouseToScreen - CharacterToScreen;
+		ControlDirection.Y *= -1.f;  // Y-axis direction in input is reverse for screen vector
+
+		const FRotator Rotation = CameraManager->GetCameraRotation();
 		const FRotator YawRotation(0., Rotation.Yaw, 0.);
 		const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
 		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 
-		GetPawn()->GetMovementComponent()->AddInputVector(ForwardDirection * MouseInput.Y + RightDirection * MouseInput.X);
+		GetPawn()->GetMovementComponent()->AddInputVector(ForwardDirection * ControlDirection.Y + RightDirection * ControlDirection.X);
 		break;
 	}
 }
@@ -73,7 +74,8 @@ void AAuraPlayerController::PlayerTick(const float DeltaTime)
 void AAuraPlayerController::SetPawn(APawn* InPawn)
 {
 	Super::SetPawn(InPawn);
-	SetCameraCapsule();
+	CameraManager = UGameplayStatics::GetPlayerCameraManager(this, 0);
+	SetCameraComponent();
 }
 UAuraAbilitySystemComponent* AAuraPlayerController::GetAuraASC()
 {
@@ -134,7 +136,7 @@ void AAuraPlayerController::SetupInputComponent()
 
 // ======================================================================================================================================
 #pragma region Occlusion
-void AAuraPlayerController::SetCameraCapsule()
+void AAuraPlayerController::SetCameraComponent()
 {
 	// APawn::Controller might replicate before AController::Pawn so GetPawn() might be nullptr
 	if (!IsLocalController()) return;
@@ -197,7 +199,9 @@ void AAuraPlayerController::Move(const FInputActionValue& InputActionValue)
 	if (GetPawn() == nullptr) return;
 	MouseMovementState = Stop;
 	const FVector2D InputAxisVector = InputActionValue.Get<FVector2D>();
-	const FRotator Rotation = GetControlRotation();
+
+	// const FRotator Rotation = GetControlRotation(); // Camera->bUsePawnControlRotation has to be true for this to work
+	const FRotator Rotation = CameraManager->GetCameraRotation();
 	const FRotator YawRotation(0., Rotation.Yaw, 0.);
 
 	// Camera to player leveled to the ground
@@ -207,7 +211,6 @@ void AAuraPlayerController::Move(const FInputActionValue& InputActionValue)
 	GetPawn()->GetMovementComponent()->AddInputVector(ForwardDirection * InputAxisVector.Y + RightDirection * InputAxisVector.X);
 	/*GetPawn()->AddMovementInput(ForwardDirection, InputAxisVector.Y);
 	GetPawn()->AddMovementInput(RightDirection, InputAxisVector.X);*/
-	// GEngine->AddOnScreenDebugMessage(1, 1.f, FColor::Green, FString::Printf(TEXT("%f"),GetPawn()->GetVelocity().Length()));
 }
 
 void AAuraPlayerController::ControllerInputTrigger(const ETriggerEvent TriggerEvent, const FGameplayTag* InputTag,

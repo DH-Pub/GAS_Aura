@@ -11,7 +11,7 @@ UAsync_CooldownChange* UAsync_CooldownChange::WaitForCooldownChange(
 	UAsync_CooldownChange* WaitCooldownChange = NewObject<UAsync_CooldownChange>();
 	WaitCooldownChange->ASC = AbilitySystemComponent;
 	WaitCooldownChange->CooldownTags = InCooldownTags;
-	WaitCooldownChange->UseServerCooldown = InUseServerCooldown;
+	WaitCooldownChange->bUseServerCooldown = InUseServerCooldown;
 	if (!IsValid(AbilitySystemComponent) || InCooldownTags.IsEmpty())
 	{
 		WaitCooldownChange->EndTask();
@@ -22,7 +22,7 @@ UAsync_CooldownChange* UAsync_CooldownChange::WaitForCooldownChange(
 	// Recommended because you also have access to the GameplayEffectSpec that applied it.
 	// From this you can determine if the Cooldown GE is the locally predicted one or the Server's correcting one.
 	AbilitySystemComponent->OnActiveGameplayEffectAddedDelegateToSelf.AddUObject(WaitCooldownChange, &UAsync_CooldownChange::OnActiveEffectAdded);
-	
+
 	// RemoveActiveGameplayEffect() will trigger this. but not RegisterGameplayTagEvent()
 	AbilitySystemComponent->OnAnyGameplayEffectRemovedDelegate().AddUObject(WaitCooldownChange, &UAsync_CooldownChange::OnGameplayEffectRemoved);
 
@@ -47,13 +47,26 @@ void UAsync_CooldownChange::EndTask()
 		ASC->RegisterGameplayTagEvent(Tag, EGameplayTagEventType::NewOrRemoved).RemoveAll(this);
 	}
 	ASC->OnActiveGameplayEffectAddedDelegateToSelf.RemoveAll(this);
-	
+	ASC->OnAnyGameplayEffectRemovedDelegate().RemoveAll(this);
+
 	SetReadyToDestroy();
 	MarkAsGarbage();
 }
 
+void UAsync_CooldownChange::BroadcastInitialCooldown() const
+{	
+	// When input is changed when on cooldown
+	const FGameplayEffectQuery GameplayEffectQuery = FGameplayEffectQuery::MakeQuery_MatchAnyOwningTags(CooldownTags);
+	TArray<TPair<float, float>> TimeAndDurations = ASC->GetActiveEffectsTimeRemainingAndDuration(GameplayEffectQuery);
+	for (const TPair<float, float>& Pair : TimeAndDurations)
+	{
+		GEngine->AddOnScreenDebugMessage(1, 1.f, FColor::Green, FString::Printf(TEXT("%f, %f"), Pair.Key, Pair.Value));
+		CooldownChanged.Broadcast(Pair.Key, Pair.Value); break;
+	}
+}
+
 void UAsync_CooldownChange::OnActiveEffectAdded(UAbilitySystemComponent* TargetASC,
-	const FGameplayEffectSpec& SpecApplied, FActiveGameplayEffectHandle ActiveEffectHandle)
+                                                const FGameplayEffectSpec& SpecApplied, FActiveGameplayEffectHandle ActiveEffectHandle)
 {
 	/*FGameplayTagContainer AssetTags;
 	SpecApplied.GetAllAssetTags(AssetTags);*/
@@ -67,12 +80,12 @@ void UAsync_CooldownChange::OnActiveEffectAdded(UAbilitySystemComponent* TargetA
 		const FGameplayEffectQuery GameplayEffectQuery = FGameplayEffectQuery::MakeQuery_MatchAnyOwningTags(CooldownTags);
 		if (CooldownTime > 0.f) // still on cooldown
 		{
-			const TArray<float> TimesRemaining = ASC->GetActiveEffectsTimeRemaining(GameplayEffectQuery);
+			const TArray<float> TimesRemaining = TargetASC->GetActiveEffectsTimeRemaining(GameplayEffectQuery);
 			CooldownTime = FMath::Max(TimesRemaining); // if empty, returns 0;
 		}
 		else // New Cooldown Session
 		{
-			for (const TPair Pair : ASC->GetActiveEffectsTimeRemainingAndDuration(GameplayEffectQuery))
+			for (const TPair Pair : TargetASC->GetActiveEffectsTimeRemainingAndDuration(GameplayEffectQuery))
 			{
 				if (Pair.Key > CooldownTime)
 				{
@@ -81,16 +94,20 @@ void UAsync_CooldownChange::OnActiveEffectAdded(UAbilitySystemComponent* TargetA
 				}
 			}
 		}
-		
-		if (ASC->GetOwnerRole() == ROLE_Authority /*Player is Server*/
-			|| !UseServerCooldown && SpecApplied.GetContext().GetAbilityInstance_NotReplicated() /*Client using Predicted cooldown*/
-			|| UseServerCooldown && SpecApplied.GetContext().GetAbilityInstance_NotReplicated() == nullptr /*Client using Server's corrective cooldown*/
+
+		if (TargetASC->GetOwnerRole() == ROLE_Authority /*Player is Server*/
+			/*Client's Predicted cooldown*/
+			|| !bUseServerCooldown && SpecApplied.GetContext().GetAbilityInstance_NotReplicated()
+			/*Client using Server's corrective cooldown*/
+			|| bUseServerCooldown && SpecApplied.GetContext().GetAbilityInstance_NotReplicated() == nullptr
 			)
 		{
 			CooldownChanged.Broadcast(CooldownTime, CooldownDuration);
 		}
-		else if (UseServerCooldown && SpecApplied.GetContext().GetAbilityInstance_NotReplicated())
-		{	/*using Server's cooldown but is predicted cooldown, grey out ability until Server's cooldown comes in to show timber*/
+		else if (bUseServerCooldown && SpecApplied.GetContext().GetAbilityInstance_NotReplicated())
+		{
+			/* using Server's cooldown but is "predicted" cooldown
+			 * Gray out ability Widget until Server broadcast OnActiveGameplayEffectAddedDelegateToSelf */
 			CooldownChanged.Broadcast(-1.f, -1.f);
 		}
 	}
@@ -101,8 +118,8 @@ void UAsync_CooldownChange::OnGameplayEffectRemoved(const FActiveGameplayEffect&
 	FGameplayTagContainer GrantedTags;
 	ActiveEffect.Spec.GetAllGrantedTags(GrantedTags);
 	if (GrantedTags.HasAnyExact(CooldownTags))
-	{
-		CooldownTime = ActiveEffect.GetTimeRemaining(ASC->GetWorld()->GetTimeSeconds()); // Remaining Cooldown before Replaced
+	{	// Remaining Cooldown before Replaced
+		CooldownTime = ActiveEffect.GetTimeRemaining(ASC->GetWorld()->GetTimeSeconds()); // this does not have access to GetWorld()
 	}
 }
 

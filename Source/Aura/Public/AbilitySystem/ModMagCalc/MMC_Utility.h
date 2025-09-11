@@ -39,16 +39,22 @@ private:
 /**
  * Cooldown =======================================================================================================
  */
+struct FCooldown
+{
+	
+};
 UCLASS()
 class AURA_API UMMC_CooldownDuration : public UGameplayModMagnitudeCalculation
 {
 	GENERATED_BODY()
-
 public:
 	UMMC_CooldownDuration();
 	virtual float CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const override;
+	/* For UI Display */
+	TPair<float, float> GetBaseCooldownAndReductionPercent(const FGameplayEffectSpec& Spec) const;
 private:
 	FGameplayEffectAttributeCaptureDefinition IntelligenceDef;
+	float GetCooldownReductionPercent(const float Intelligence) const;
 };
 
 

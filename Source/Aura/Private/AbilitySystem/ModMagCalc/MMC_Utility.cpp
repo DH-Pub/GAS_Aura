@@ -77,7 +77,7 @@ float UMMC_CooldownDuration::CalculateBaseMagnitude_Implementation(const FGamepl
 {
 	const UCostCooldownAbility* Ability = Cast<UCostCooldownAbility>(Spec.GetContext().GetAbilityInstance_NotReplicated());
 	if (!Ability) return 0.f;
-	
+
 	// Gather tags from source and target
 	FAggregatorEvaluateParameters EvaluateParameters;
 	EvaluateParameters.SourceTags = Spec.CapturedSourceTags.GetAggregatedTags();
@@ -85,10 +85,23 @@ float UMMC_CooldownDuration::CalculateBaseMagnitude_Implementation(const FGamepl
 
 	float INT = 0.f;
 	GetCapturedAttributeMagnitude(IntelligenceDef, Spec, EvaluateParameters, INT);
-	const float CooldownReductionPercentage = FMath::Min<float>(INT * 0.01f, 0.6f);
 	const float CooldownDuration = Ability->CooldownDuration.GetValueAtLevel(Spec.GetLevel());
 	
-	return CooldownDuration * (1 - CooldownReductionPercentage);
+	return CooldownDuration * (1 - GetCooldownReductionPercent(INT));
+}
+TPair<float, float> UMMC_CooldownDuration::GetBaseCooldownAndReductionPercent(const FGameplayEffectSpec& Spec) const
+{
+	const UCostCooldownAbility* Ability = Cast<UCostCooldownAbility>(Spec.GetContext().GetAbilityInstance_NotReplicated());
+	if (!Ability) return TPair<float, float>();
+	
+	// float Intelligence = Ability->AuraCharacterFromActorInfo->GetAttributeSet()->GetIntelligence();
+	const float Intelligence = Ability->GetAbilitySystemComponentFromActorInfo()->GetNumericAttribute(UAuraAttributeSet::GetIntelligenceAttribute());
+	const float BaseCooldown = Ability->CooldownDuration.GetValueAtLevel(Spec.GetLevel());
+	return TPair<float, float>(BaseCooldown, GetCooldownReductionPercent(Intelligence));
+}
+float UMMC_CooldownDuration::GetCooldownReductionPercent(const float Intelligence) const
+{
+	return FMath::Min<float>(Intelligence * 0.01f, 0.6f); // Max 60%
 }
 
 
@@ -100,10 +113,7 @@ float UMMC_AbilityManaCost::CalculateBaseMagnitude_Implementation(const FGamepla
 {
 	if (const UCostCooldownAbility* Ability = Cast<UCostCooldownAbility>(Spec.GetContext().GetAbilityInstance_NotReplicated()))
 	{
-		if (Ability->ManaCost != 0.f)
-		{
-			return Ability->ManaCost.GetValueAtLevel(Spec.GetLevel());
-		}
+		return Ability->ManaCost.GetValueAtLevel(Spec.GetLevel());
 	}
 	return 0.f;
 }
@@ -117,10 +127,7 @@ float UMMC_AbilityHealthCost::CalculateBaseMagnitude_Implementation(const FGamep
 {
 	if (const UCostCooldownAbility* Ability = Cast<UCostCooldownAbility>(Spec.GetContext().GetAbilityInstance_NotReplicated()))
 	{
-		if (Ability->HealthCost != 0.f)
-		{
-			return Ability->HealthCost.GetValueAtLevel(Spec.GetLevel());
-		}
+		return Ability->HealthCost.GetValueAtLevel(Spec.GetLevel());
 	}
 	return 0.f;
 }

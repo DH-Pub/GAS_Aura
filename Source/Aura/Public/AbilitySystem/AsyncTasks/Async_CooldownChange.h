@@ -33,11 +33,14 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void EndTask();
+
+	UFUNCTION(BlueprintCallable)
+	void BroadcastInitialCooldown() const;
 private:
 	UPROPERTY()
 	TObjectPtr<UAbilitySystemComponent> ASC;
 	FGameplayTagContainer CooldownTags;
-	bool UseServerCooldown = false;
+	bool bUseServerCooldown = false; // whether to wait for server to send cooldown information, not "predicted"
 	
 	float CooldownDuration = 0.f;
 	float CooldownTime = 0.f;

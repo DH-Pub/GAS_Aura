@@ -21,8 +21,10 @@ void UAuraGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Hand
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 	if (bMaxSpeedZeroedOnActivated)
 	{
-		//TODO: remember that this may cause rubberbanding issue and do not use Deactivate
+		//TODO: do not use Deactivate, this may cause rubberbanding issue and 
+		AuraCharacterFromActorInfo->GetCharacterMovement()->StopActiveMovement();
 		AuraCharacterFromActorInfo->GetCharacterMovement()->MaxWalkSpeed = 0.f;
+		AuraCharacterFromActorInfo->GetCharacterMovement()->RotationRate = FRotator();
 	}
 }
 
@@ -34,6 +36,7 @@ void UAuraGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle,
 	if (bMaxSpeedZeroedOnActivated)
 	{
 		AuraCharacterFromActorInfo->GetCharacterMovement()->MaxWalkSpeed = AuraCharacterFromActorInfo->BaseWalkSpeed;
+		AuraCharacterFromActorInfo->GetCharacterMovement()->RotationRate = AuraCharacterFromActorInfo->BaseRotationRate;
 	}
 }
 
@@ -44,6 +47,8 @@ void UAuraGameplayAbility::OnAvatarSet(const FGameplayAbilityActorInfo* ActorInf
 	// "BeginPlay" logic
 	AuraCharacterFromActorInfo = Cast<AAuraCharacterBase>(ActorInfo->AvatarActor);
 	AuraPlayerController = Cast<AAuraPlayerController>(AuraCharacterFromActorInfo->GetController());
+
+	// if (bActivateAbilityOnGranted) ActorInfo->AbilitySystemComponent->TryActivateAbility(Spec.Handle, false);
 }
 
 FGameplayTagContainer& UAuraGameplayAbility::AddGenericAssetTags(FGameplayTagContainer& Tags)
@@ -54,8 +59,6 @@ FGameplayTagContainer& UAuraGameplayAbility::AddGenericAssetTags(FGameplayTagCon
 }
 void UAuraGameplayAbility::SetGenericCancelBlockAbility()
 {
-	FGameplayTagContainer CancelTags(AuraGameplayTags::Generic_Ability_Cancelable);
-	CancelAbilitiesWithTag = CancelTags;
-	FGameplayTagContainer BlockTags(AuraGameplayTags::Generic_Ability_Blockable);
-	BlockAbilitiesWithTag = BlockTags;
+	CancelAbilitiesWithTag.AddTag(AuraGameplayTags::Generic_Ability_Cancelable);
+	BlockAbilitiesWithTag.AddTag(AuraGameplayTags::Generic_Ability_Blockable);
 }

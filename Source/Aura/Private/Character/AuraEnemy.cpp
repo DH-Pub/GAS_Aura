@@ -5,7 +5,7 @@
 
 #include "AuraGameplayTags.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
-#include "AbilitySystem/AuraAbilitySystemLibrary.h"
+#include "AbilitySystem/AuraLibrary.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "Aura/Aura.h"
 #include "BrainComponent.h"
@@ -18,7 +18,7 @@
 AAuraEnemy::AAuraEnemy()
 {
 	PrimaryActorTick.bCanEverTick = true;
-	
+
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Projectile, ECR_Block);
 
@@ -69,7 +69,7 @@ void AAuraEnemy::BeginPlay()
 	InitAbilityActorInfo();
 	if (HasAuthority())
 	{
-		UAuraAbilitySystemLibrary::GiveStartupAbilities(this, AbilitySystemComponent, CharacterClass);
+		UAuraLibrary::GiveStartupAbilities(this, AbilitySystemComponent, CharacterClass);
 	}
 
 	if (UAuraUserWidget* Widget = Cast<UAuraUserWidget>(HealthBar->GetUserWidgetObject()))
@@ -80,11 +80,22 @@ void AAuraEnemy::BeginPlay()
 		HealthBarController->BroadcastInitialValues();
 	}
 
-	AbilitySystemComponent->RegisterGameplayTagEvent(AuraGameplayTags::Ability_HitReact, EGameplayTagEventType::NewOrRemoved)
+	/*AbilitySystemComponent->RegisterGameplayTagEvent(AuraGameplayTags::Ability_HitReact, EGameplayTagEventType::NewOrRemoved)
 	.AddLambda([this](const FGameplayTag CallbackTag, const int NewCount)
 	{
-		GetCharacterMovement()->MaxWalkSpeed = NewCount > 0 ? 0.f : BaseWalkSpeed;
-	});
+		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Yellow, FString::Printf(TEXT("%d"), NewCount));
+		if (NewCount > 0)
+		{
+			GetCharacterMovement()->StopActiveMovement();
+			GetCharacterMovement()->RotationRate = FRotator();
+			GetCharacterMovement()->MaxWalkSpeed = 0.f;
+		}
+		else
+		{
+			GetCharacterMovement()->RotationRate = BaseRotationRate;
+			GetCharacterMovement()->MaxWalkSpeed = BaseWalkSpeed;
+		}
+	});*/
 }
 
 void AAuraEnemy::InitAbilityActorInfo()
@@ -94,7 +105,7 @@ void AAuraEnemy::InitAbilityActorInfo()
 
 	if (HasAuthority())
 	{
-		UAuraAbilitySystemLibrary::InitializeDefaultAttributes(this, this, CharacterClass, Level, AbilitySystemComponent);
+		UAuraLibrary::InitializeDefaultAttributes(this, this, CharacterClass, Level, AbilitySystemComponent);
 	}
 }
 

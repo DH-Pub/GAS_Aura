@@ -6,7 +6,7 @@
 #include "Components/CapsuleComponent.h"
 #include "AuraGameplayTags.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
-#include "AbilitySystem/AuraAbilitySystemLibrary.h"
+#include "AbilitySystem/AuraLibrary.h"
 #include "Aura/Aura.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
@@ -34,7 +34,6 @@ AAuraCharacterBase::AAuraCharacterBase()
 
 	// GetCharacterMovement()->bUseControllerDesiredRotation = true;
 	GetCharacterMovement()->bOrientRotationToMovement = true;
-	GetCharacterMovement()->RotationRate = FRotator(0., 540., 0.);
 	GetCharacterMovement()->bConstrainToPlane = true;
 	GetCharacterMovement()->bSnapToPlaneAtStart = true;
 	// avoid
@@ -49,7 +48,7 @@ void AAuraCharacterBase::Tick(const float DeltaSeconds)
 	if (CombatTarget) TargetLocation = CombatTarget->GetActorLocation();
 	if (bTracking)
 	{
-		UAuraAbilitySystemLibrary::YawActorToLocation(this, TargetLocation, DeltaSeconds,
+		UAuraLibrary::YawActorToLocation(this, TargetLocation, DeltaSeconds,
 			GetCharacterMovement()->RotationRate.Yaw * 2);
 	}
 }
@@ -67,7 +66,7 @@ void AAuraCharacterBase::GetTaggedMontageByTag(const FGameplayTag& MontageTag, F
 	}
 }
 
-FVector AAuraCharacterBase::GetCombatSocketLocation(const ECombatSocket SocketEnum) const
+FVector AAuraCharacterBase::GetCombatSocketLocation(const ECombatSocket SocketEnum)
 {
 	switch (SocketEnum)
 	{
@@ -138,6 +137,7 @@ void AAuraCharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
 	GetCharacterMovement()->MaxWalkSpeed = BaseWalkSpeed;
+	GetCharacterMovement()->RotationRate = BaseRotationRate;
 }
 
 // Called in PossessedBy, which is called only on server or standalone

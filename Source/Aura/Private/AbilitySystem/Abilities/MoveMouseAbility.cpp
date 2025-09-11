@@ -28,8 +28,7 @@ void UMoveMouseAbility::CancelAbility(const FGameplayAbilitySpecHandle Handle,
 	if (AuraPlayerController) AuraPlayerController->MouseMovementState = Stop;
 }
 
-void UMoveMouseAbility::OnAvatarSet(const FGameplayAbilityActorInfo* ActorInfo,
-                                    const FGameplayAbilitySpec& Spec)
+void UMoveMouseAbility::OnAvatarSet(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec)
 {
 	Super::OnAvatarSet(ActorInfo, Spec);
 	NavSystem = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());

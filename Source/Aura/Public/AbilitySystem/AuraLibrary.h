@@ -6,8 +6,9 @@
 #include "Abilities/AuraGameplayAbility.h"
 #include "Data/CharacterClassDataAsset.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
-#include "AuraAbilitySystemLibrary.generated.h"
+#include "AuraLibrary.generated.h"
 
+struct FAuraAbilityData;
 class UAbilityDataAsset;
 class AAuraHUD;
 class USpellMenuWidgetController;
@@ -21,7 +22,7 @@ class UOverlayWidgetController;
  * For calling static Blueprint Functions
  */
 UCLASS()
-class AURA_API UAuraAbilitySystemLibrary : public UBlueprintFunctionLibrary
+class AURA_API UAuraLibrary : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()
 public:
@@ -62,13 +63,14 @@ public:
 #pragma endregion
 
 
+	static const UAbilityDataAsset* GetAbilityDataAsset(const UObject* WorldContextObject);
+	static const FAuraAbilityData* FindAbilityDataByTag(const UObject* WorldContextObject, const FGameplayTag& AbilityTag);
+	static const FAuraAbilityData* FindAbilityDataByTags(const UObject* WorldContextObject, const FGameplayTagContainer& AssetTags);
 	/**
 	 * Get Server DA_CharacterClass, const can't be changed
 	 * Client can't access GameMode so this will always return nullptr
 	 */
 	static const UCharacterClassDataAsset* GetGameModeCharacterClassDataAsset(const UObject* WorldContextObject);
-	// Client can't get GameMode so this will always return nullptr
-	static const UAbilityDataAsset* GetGameModeAbilityDataAsset(const UObject* WorldContextObject);
 	
 	// return nullptr for non-local or dedicated-server
 	static AAuraHUD* GetAuraHUD(const UObject* WorldContextObject);
@@ -76,24 +78,10 @@ public:
 
 // FAuraGameplayEffectContext ========================================================================================================
 #pragma region Damage
-	UFUNCTION(BlueprintPure, Category="AuraAbilitySystemLibrary|GameplayEffects")
-	static bool IsBlocked(const FGameplayEffectContextHandle& EffectContextHandle);
 	UFUNCTION(BlueprintCallable, Category="AuraAbilitySystemLibrary|GameplayEffects")
-	static void SetIsBlocked(UPARAM(ref) FGameplayEffectContextHandle& EffectContextHandle, bool bInIsBlocked);
-	
-	UFUNCTION(BlueprintPure, Category="AuraAbilitySystemLibrary|GameplayEffects")
-	static bool IsCrit(const FGameplayEffectContextHandle& EffectContextHandle);
+	static void SetIsStaggerDamage(UPARAM(ref) FGameplayEffectContextHandle& EffectContext, bool bValue);
 	UFUNCTION(BlueprintCallable, Category="AuraAbilitySystemLibrary|GameplayEffects")
-	static void SetIsCrit(UPARAM(ref) FGameplayEffectContextHandle& EffectContextHandle, bool bInIsCrit);
-	
-	UFUNCTION(BlueprintPure, Category="AuraAbilitySystemLibrary|GameplayEffects")
-	static bool IsStaggerDamage(const FGameplayEffectContextHandle& EffectContextHandle);
-	UFUNCTION(BlueprintCallable, Category="AuraAbilitySystemLibrary|GameplayEffects")
-	static void SetIsStaggerDamage(UPARAM(ref) FGameplayEffectContextHandle& EffectContext, bool bStagger);
-	UFUNCTION(BlueprintPure, Category="AuraAbilitySystemLibrary|GameplayEffects")
-	static bool IsShowDamageOnTarget(const FGameplayEffectContextHandle& EffectContextHandle);
-	UFUNCTION(BlueprintCallable, Category="AuraAbilitySystemLibrary|GameplayEffects")
-	static void SetIsShowDamageOnTarget(UPARAM(ref) FGameplayEffectContextHandle& EffectContext, bool bShowDamageOnTarget);
+	static void SetIsShowDamageOnTarget(UPARAM(ref) FGameplayEffectContextHandle& EffectContext, bool bValue);
 #pragma endregion
 
 #pragma region InstancedStruct

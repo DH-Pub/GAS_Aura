@@ -3,17 +3,19 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "AuraInputAbility.h"
+#include "AuraGameplayAbility.h"
+#include "Input/AuraInputComponent.h"
 #include "CostCooldownAbility.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class AURA_API UCostCooldownAbility : public UAuraInputAbility
+class AURA_API UCostCooldownAbility : public UAuraGameplayAbility
 {
 	GENERATED_BODY()
 public:
+	UCostCooldownAbility();
 	virtual const FGameplayTagContainer* GetCooldownTags() const override;
 	virtual void ApplyCooldown(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
 		const FGameplayAbilityActivationInfo ActivationInfo) const override;
@@ -27,16 +29,56 @@ public:
 	FScalableFloat CooldownDuration;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Cooldowns|Aura", meta=(GameplayTagFilter="Ability"))
 	FGameplayTagContainer CooldownTags; // If not set, GetCooldownTags() and ApplyCooldown() will use Super::
-	
 	UPROPERTY(Transient)
-	FGameplayTagContainer TempCooldownTags; // Temp container that we will return the (CooldownTags + Cooldown GE's CD Tags) pointer to in GetCooldownTags().
+	FGameplayTagContainer TempCooldownTags; // Temp container that we will return the (CooldownTags + Cooldown GE's CD Tags) pointer
+	
+	void GetCost(FAbilityDetails& Details) const;
+	void GetCooldownAndReduction(FAbilityDetails& Details) const;
+	void GetAbilityDetailsCostCooldown(FAbilityDetails& Details) const;
 
+	
+
+	/*
+	 * Input ==========================================================================================================
+	 */
+#pragma region Input ==============================================
+public:
+	virtual void InputReleased(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
+		const FGameplayAbilityActivationInfo ActivationInfo) override;
+	
+	// This is Added to GetDynamicSpecSourceTags() during AddCharacterAbilities()
+	UPROPERTY(EditDefaultsOnly, Category="Default", meta=(GameplayTagFilter="Input"))
+	FGameplayTag StartupInputTag; //TODO: Remove this or replace with HUD->AbilityData -> Input
+	UPROPERTY()
+	TObjectPtr<UInputAction> InputAction;
+	FInputActionValue GetBoundAuraActionValue() const;
 protected:
-	UFUNCTION(BlueprintCallable)
-	void GetCost(float& Mana, float& Health, const int32 InLevel = 1);
-	UFUNCTION(BlueprintCallable, BlueprintPure=false) // const function automatically become BlueprintPure
-	void GetCostOnLevelChanged(float& Mana, float& ManaChanged, float& Health, float& HealthChanged,
-		const int32 InLevel = 1, const int32 LevelDelta = 0) const;
-	UFUNCTION(BlueprintPure)
-	float GetCooldown(const int32 InLevel = 1);
+	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
+		const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
+
+	UFUNCTION(BlueprintNativeEvent)
+	void StartPressedOngoing(); // Started / Ongoing start
+	UFUNCTION(BlueprintNativeEvent)
+	void StartHoldTriggered(); // Triggered start
+
+	UFUNCTION(BlueprintNativeEvent)
+	void TapReleased(); // Canceled
+	UFUNCTION(BlueprintNativeEvent)
+	void HoldReleased(); // Completed
+	
+	UFUNCTION(BlueprintNativeEvent)
+	void DoubleClick(); // override this
+	UFUNCTION(BlueprintNativeEvent)
+	void TripleClick(); // override this
+private:
+	ETriggerEvent AbilityTriggerEvent = ETriggerEvent::None;
+	bool bStartHold = false;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Default")
+	float RepeatDelayTime = 0.5;
+	FTimerHandle RepeatDelayTimer; // for (RepeatedTap)
+	uint8 ClickNums = 0;
+public:
+	void SetAbilityTriggerEvent(const ETriggerEvent TriggerEvent); // Called in AbilitySystemComponent
+#pragma endregion
 };

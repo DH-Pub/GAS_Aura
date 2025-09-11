@@ -5,57 +5,51 @@
 
 #include "AuraGameplayTags.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
-#include "AbilitySystem/Abilities/AuraInputAbility.h"
+#include "AbilitySystem/AuraLibrary.h"
+#include "AbilitySystem/Abilities/CostCooldownAbility.h"
 #include "AbilitySystem/Data/AbilityDataAsset.h"
 #include "UI/Widget/AuraUserWidget.h"
 #include "UI/WidgetController/AttributeMenuWidgetController.h"
 #include "UI/WidgetController/OverlayWidgetController.h"
 #include "UI/WidgetController/SpellMenuWidgetController.h"
 
-UOverlayWidgetController* AAuraHUD::CreateOrGetOverlayWC(const FWidgetControllerParams& WCParams)
+UOverlayWidgetController* AAuraHUD::CreateOrGetOverlayWC()
 {
+	if (OverlayWidgetController) return OverlayWidgetController;
 	return UAuraWidgetController::CreateOrGetWidgetController<UOverlayWidgetController>(
-		this, OverlayWidgetController, OverlayWidgetControllerClass, WCParams);
+		this, OverlayWidgetController, OverlayWidgetControllerClass, GetHUDControllerParams());
 }
-UAttributeMenuWidgetController* AAuraHUD::CreateOrGetAttributeMenuWC(const FWidgetControllerParams& WCParams)
+UAttributeMenuWidgetController* AAuraHUD::CreateOrGetAttributeMenuWC()
 {
+	if (AttributeMenuWidgetController) return AttributeMenuWidgetController;
 	return UAuraWidgetController::CreateOrGetWidgetController<UAttributeMenuWidgetController>(
-		this, AttributeMenuWidgetController, AttributeMenuWidgetControllerClass, WCParams);
+		this, AttributeMenuWidgetController, AttributeMenuWidgetControllerClass, GetHUDControllerParams());
 }
-USpellMenuWidgetController* AAuraHUD::CreateOrGetSpellMenuWC(const FWidgetControllerParams& WCParams)
+USpellMenuWidgetController* AAuraHUD::CreateOrGetSpellMenuWC()
 {
+	if (SpellMenuWidgetController) return SpellMenuWidgetController;
 	return UAuraWidgetController::CreateOrGetWidgetController<USpellMenuWidgetController>(
-		this, SpellMenuWidgetController, SpellMenuWidgetControllerClass, WCParams);
+		this, SpellMenuWidgetController, SpellMenuWidgetControllerClass, GetHUDControllerParams());
 }
 
 void AAuraHUD::InitAuraHUD(const FWidgetControllerParams& WCParams)
 {
+	PlayerController = WCParams.PlayerController;
+	PlayerState = WCParams.PlayerState;
 	AbilitySystemComponent = WCParams.AbilitySystemComponent;
-	AbilitySystemComponent->OnGiveAbilityDelegate.AddUObject(this, &AAuraHUD::BroadcastGivenAbility);
-	InitOverlay(WCParams);
+	AttributeSet = WCParams.AttributeSet;
+	InitOverlay();
 }
-void AAuraHUD::BroadcastAllActivatableAbilities()
+void AAuraHUD::BroadcastAllActivatableAbilities() const
 {
 	FScopedAbilityListLock AbilityListLock(*AbilitySystemComponent);
-	for (const auto& AbilitySpec : AbilitySystemComponent->GetActivatableAbilities())
+	for (const FGameplayAbilitySpec& AbilitySpec : AbilitySystemComponent->GetActivatableAbilities())
 	{
-		BroadcastGivenAbility(AbilitySpec);
-	}
-}
-void AAuraHUD::BroadcastGivenAbility(const FGameplayAbilitySpec& Spec)
-{
-	if (Spec.Ability->GetAssetTags().HasTag(AuraGameplayTags::Ability))
-	{
-		if (FAuraAbilityData* Data = AbilityData->FindAbilityDataByTags(Spec.Ability->GetAssetTags()))
-		{
-			Data->InputTag = Cast<UAuraInputAbility>(Spec.Ability)->StartupInputTag;
-			Data->StatusTag = AbilitySystemComponent->GetStatusFromSpec(Spec);
-			AbilityDataDelegate.Broadcast(*Data);
-		}
+		AbilitySystemComponent->ClientUpdateAbilityData(AbilitySpec);
 	}
 }
 
-void AAuraHUD::InitOverlay(const FWidgetControllerParams& WCParams)
+void AAuraHUD::InitOverlay()
 {
 	checkf(OverlayWidgetClass, TEXT("Overlay Widget Class uninitialized, please fill out in BP_AuraHUD"));
 
@@ -63,9 +57,14 @@ void AAuraHUD::InitOverlay(const FWidgetControllerParams& WCParams)
 	OverlayWidget = CreateWidget<UAuraUserWidget>(GetWorld(), OverlayWidgetClass);
 	OverlayWidget->AddToViewport();
 
-	 /**
-	  * Create/Get WidgetController, BindCallbacksDependencies()
-	  */
-	OverlayWidget->SetWidgetController(CreateOrGetOverlayWC(WCParams));
+	/**
+	 * Create/Get WidgetController, BindCallbacksDependencies()
+	 */
+	OverlayWidget->SetWidgetController(CreateOrGetOverlayWC());
 	OverlayWidgetController->BroadcastInitialValues();
+}
+
+FWidgetControllerParams AAuraHUD::GetHUDControllerParams() const
+{
+	return FWidgetControllerParams(PlayerController, PlayerState, AbilitySystemComponent, AttributeSet);
 }

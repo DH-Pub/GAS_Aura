@@ -14,29 +14,33 @@ struct FAuraGameplayEffectContext : public FGameplayEffectContext
 {
 	GENERATED_BODY()
 
+	static FAuraGameplayEffectContext* GetAuraContext(FGameplayEffectContextHandle& EffectContextHandle)
+	{return static_cast<FAuraGameplayEffectContext*>(EffectContextHandle.Get());}
+	static FAuraGameplayEffectContext* GetAuraContext(FGameplayEffectContext* EffectContext)
+	{return static_cast<FAuraGameplayEffectContext*>(EffectContext);}
+	
 	bool IsBlocked() const {return bIsBlocked;}
-	void SetIsBlocked(const bool bIn) {bIsBlocked = bIn;}
-	
+	bool SetIsBlocked(const bool bIn) {return bIsBlocked = bIn;}
+
 	bool IsCrit() const {return bIsCrit;}
-	void SetIsCrit(const bool bIn) {bIsCrit = bIn;}
-	
+	bool SetIsCrit(const bool bIn) {return bIsCrit = bIn;}
+
 	bool IsStagger() const {return bStagger;}
-	void SetIsStagger(const bool bIn) {bStagger = bIn;}
+	bool SetIsStagger(const bool bIn) {return bStagger = bIn;}
 
 	FInstancedStruct* GetInstancedStruct() const {return InstancedStruct.Get();}
 	void SetInstancedStruct(const FInstancedStruct& InStruct);
-	
+
 	UPROPERTY()
 	bool bShowDamageOnTarget = false;
 	/*UPROPERTY()
 	TArray<FVector_NetQuantize> CueLocations = TArray<FVector_NetQuantize>(); // DEPRECATED, using InstancedStruct instead*/
-	
+
 	/** Returns the actual struct used for serialization, subclasses must override this! */
 	virtual UScriptStruct* GetScriptStruct() const override
 	{
 		return StaticStruct();
 	}
-	
 	/** Creates a copy of this context, used to duplicate for later modifications */
 	virtual FAuraGameplayEffectContext* Duplicate() const override
 	{
@@ -49,7 +53,6 @@ struct FAuraGameplayEffectContext : public FGameplayEffectContext
 		}
 		return NewContext;
 	}
-	
 	/** Custom serialization, subclasses must override this */
 	virtual bool NetSerialize(FArchive& Ar, class UPackageMap* Map, bool& bOutSuccess) override;
 protected:

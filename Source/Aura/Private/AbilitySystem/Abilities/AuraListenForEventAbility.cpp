@@ -10,12 +10,9 @@ UAuraListenForEventAbility::UAuraListenForEventAbility()
 	NetExecutionPolicy = EGameplayAbilityNetExecutionPolicy::ServerOnly;
 }
 
-void UAuraListenForEventAbility::PreActivate(const FGameplayAbilitySpecHandle Handle,
-                                             const FGameplayAbilityActorInfo* ActorInfo,const FGameplayAbilityActivationInfo ActivationInfo,
-                                             FOnGameplayAbilityEnded::FDelegate* OnGameplayAbilityEndedDelegate, const FGameplayEventData* TriggerEventData)
+void UAuraListenForEventAbility::OnAvatarSet(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec)
 {
-	Super::PreActivate(Handle, ActorInfo, ActivationInfo, OnGameplayAbilityEndedDelegate, TriggerEventData);
-
+	Super::OnAvatarSet(ActorInfo, Spec);
 	for (const FGameplayModifierInfo& Mod : EventBasedEffectClass->GetDefaultObject<UGameplayEffect>()->Modifiers)
 	{
 		ModifiersDataTags.AddTag(Mod.ModifierMagnitude.GetSetByCallerFloat().DataTag);
@@ -26,14 +23,15 @@ void UAuraListenForEventAbility::ApplyEventEffectsToSelf(const FGameplayEventDat
 {
 	// UAuraAbilitySystemComponent* ASC = AuraCharacterFromActorInfo->GetAuraAbilitySystemComponent();
 	UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
-	FGameplayEffectSpecHandle EffectSpecHandle = ASC->MakeOutgoingSpec(EventBasedEffectClass, 1.f, FGameplayEffectContextHandle());
+	const FGameplayEffectSpecHandle EffectSpecHandle = ASC->MakeOutgoingSpec(EventBasedEffectClass, 1.f, FGameplayEffectContextHandle());
 	FGameplayEffectSpec* Spec = EffectSpecHandle.Data.Get();
 	if (Spec == nullptr) return;
 	for (const FGameplayTag& Tag : ModifiersDataTags)
 	{
-		// UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(EffectSpecHandle, Tag, Payload.EventMagnitude)
 		const float Magnitude = Tag.MatchesTagExact(Payload.EventTag) ? Payload.EventMagnitude : 0.f;
-		Spec->SetSetByCallerMagnitude(Tag, Magnitude);
+		// UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(EffectSpecHandle, Tag, Payload.EventMagnitude)
+		// Spec->SetSetByCallerMagnitude(Tag, Magnitude);
+		Spec->SetByCallerTagMagnitudes.FindOrAdd(Tag) = Magnitude;
 	}
 	ASC->ApplyGameplayEffectSpecToSelf(*Spec);
 }

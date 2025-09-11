@@ -1,12 +1,14 @@
 // Copyright Hung
 
 
-#include "AbilitySystem/AuraAbilitySystemLibrary.h"
+#include "AbilitySystem/AuraLibrary.h"
 
 #include "AuraGameplayEffectTypes.h"
+#include "AbilitySystem/Data/AbilityDataAsset.h"
 #include "Components/CanvasPanel.h"
 #include "Components/Overlay.h"
 #include "Game/AuraGameModeBase.h"
+#include "Game/AuraGameStateBase.h"
 #include "Interaction/CombatInterface.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -17,46 +19,37 @@
 #include "UI/WidgetController/AuraWidgetController.h"
 #include "UI/WidgetController/OverlayWidgetController.h"
 
-UOverlayWidgetController* UAuraAbilitySystemLibrary::GetOverlayWidgetController(const UObject* WorldContextObject)
+UOverlayWidgetController* UAuraLibrary::GetOverlayWidgetController(const UObject* WorldContextObject)
 {
 	/*TArray<APlayerController*> PlayerList;
 	GEngine->GetAllLocalPlayerControllers(PlayerList);*/
 	// UGameplayStatics::GetPlayerController(WorldContextObject, 0);
 	// WorldContextObject->GetWorld()->GetFirstPlayerController(); // ??? not consistent if server has no player
-	if (AAuraPlayerController* PC = Cast<AAuraPlayerController>(GEngine->GetFirstLocalPlayerController(WorldContextObject->GetWorld())))
+	if (const AAuraPlayerController* PC = Cast<AAuraPlayerController>(GEngine->GetFirstLocalPlayerController(WorldContextObject->GetWorld())))
 	{
-		if (AAuraHUD* AuraHUD = PC->GetHUD<AAuraHUD>())
-		{
-			return AuraHUD->CreateOrGetOverlayWC(FWidgetControllerParams(PC));
-		}
+		if (AAuraHUD* AuraHUD = PC->GetHUD<AAuraHUD>()) return AuraHUD->CreateOrGetOverlayWC();
 	}
 	return nullptr;
 }
-UAttributeMenuWidgetController* UAuraAbilitySystemLibrary::GetAttributeMenuWidgetController(const UObject* WorldContextObject)
+UAttributeMenuWidgetController* UAuraLibrary::GetAttributeMenuWidgetController(const UObject* WorldContextObject)
 {
-	if (AAuraPlayerController* PC = Cast<AAuraPlayerController>(GEngine->GetFirstLocalPlayerController(WorldContextObject->GetWorld())))
+	if (const AAuraPlayerController* PC = Cast<AAuraPlayerController>(GEngine->GetFirstLocalPlayerController(WorldContextObject->GetWorld())))
 	{
-		if (AAuraHUD* AuraHUD = PC->GetHUD<AAuraHUD>())
-		{
-			return AuraHUD->CreateOrGetAttributeMenuWC(FWidgetControllerParams(PC));
-		}
+		if (AAuraHUD* AuraHUD = PC->GetHUD<AAuraHUD>()) return AuraHUD->CreateOrGetAttributeMenuWC();
 	}
 	return nullptr;
 }
-USpellMenuWidgetController* UAuraAbilitySystemLibrary::GetSpellMenuWidgetController(const UObject* WorldContextObject)
+USpellMenuWidgetController* UAuraLibrary::GetSpellMenuWidgetController(const UObject* WorldContextObject)
 {
 	if (AAuraPlayerController* PC = Cast<AAuraPlayerController>(GEngine->GetFirstLocalPlayerController(WorldContextObject->GetWorld())))
 	{
-		if (AAuraHUD* AuraHUD = PC->GetHUD<AAuraHUD>())
-		{
-			return AuraHUD->CreateOrGetSpellMenuWC(FWidgetControllerParams(PC));
-		}
+		if (AAuraHUD* AuraHUD = PC->GetHUD<AAuraHUD>()) return AuraHUD->CreateOrGetSpellMenuWC();
 	}
 	return nullptr;
 }
 
 /* Make sure to check HasAuthority before calling this */
-void UAuraAbilitySystemLibrary::InitializeDefaultAttributes(const UObject* WorldContextObject, UObject* SourceObject,
+void UAuraLibrary::InitializeDefaultAttributes(const UObject* WorldContextObject, UObject* SourceObject,
 	const ECharacterClass CharacterClass, const float Level, UAbilitySystemComponent* ASC)
 {
 	const UCharacterClassDataAsset* ClassData = GetGameModeCharacterClassDataAsset(WorldContextObject);
@@ -75,7 +68,7 @@ void UAuraAbilitySystemLibrary::InitializeDefaultAttributes(const UObject* World
 }
 
 /* Make sure to check HasAuthority() before calling this */
-void UAuraAbilitySystemLibrary::GiveStartupAbilities(const UObject* WorldContextObject, UAbilitySystemComponent* ASC, const ECharacterClass CharacterClass)
+void UAuraLibrary::GiveStartupAbilities(const UObject* WorldContextObject, UAbilitySystemComponent* ASC, const ECharacterClass CharacterClass)
 {
 	const UCharacterClassDataAsset* ClassData = GetGameModeCharacterClassDataAsset(WorldContextObject);
 	if (ClassData == nullptr) return;
@@ -94,7 +87,7 @@ void UAuraAbilitySystemLibrary::GiveStartupAbilities(const UObject* WorldContext
 		}
 	}
 }
-int32 UAuraAbilitySystemLibrary::GetXPRewardForClassAndLevel(const UObject* WorldContextObject,
+int32 UAuraLibrary::GetXPRewardForClassAndLevel(const UObject* WorldContextObject,
 	const ECharacterClass CharacterClass, const int32 CharacterLevel)
 {
 	const UCharacterClassDataAsset* ClassData = GetGameModeCharacterClassDataAsset(WorldContextObject);
@@ -104,7 +97,7 @@ int32 UAuraAbilitySystemLibrary::GetXPRewardForClassAndLevel(const UObject* Worl
 	return static_cast<int32>(Info->XPReward.GetValueAtLevel(CharacterLevel));
 }
 
-bool UAuraAbilitySystemLibrary::AddWidgetToRootCanvasPanel(const UObject* WorldContextObject, UUserWidget* InNewWidget)
+bool UAuraLibrary::AddWidgetToRootCanvasPanel(const UObject* WorldContextObject, UUserWidget* InNewWidget)
 {
 	if (InNewWidget == nullptr) return false;
 	if (const UOverlayWidgetController* OverlayWC = GetOverlayWidgetController(WorldContextObject))
@@ -118,7 +111,8 @@ bool UAuraAbilitySystemLibrary::AddWidgetToRootCanvasPanel(const UObject* WorldC
 	return false;
 }
 
-bool UAuraAbilitySystemLibrary::YawActorToLocation(AActor* InActor, FVector InLocation, float DeltaTime, float InterpSpeed, float DegreeTolerance)
+bool UAuraLibrary::YawActorToLocation(AActor* InActor, const FVector InLocation, const float DeltaTime,
+	const float InterpSpeed, const float DegreeTolerance)
 {
 	const FRotator CurrentRot = InActor->GetActorRotation();
 	FRotator LookAtRot = UKismetMathLibrary::FindLookAtRotation(InActor->GetActorLocation(), InLocation);
@@ -130,7 +124,7 @@ bool UAuraAbilitySystemLibrary::YawActorToLocation(AActor* InActor, FVector InLo
 	return false;
 }
 
-void UAuraAbilitySystemLibrary::GetLivePlayersInRadius(const UObject* WorldContextObject, TArray<AActor*>& OutActors,
+void UAuraLibrary::GetLivePlayersInRadius(const UObject* WorldContextObject, TArray<AActor*>& OutActors,
 	const TArray<AActor*>& ActorsToIgnore, float Radius, const FVector& Origin, bool bShowDebug)
 {
 	if (const UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull))
@@ -156,7 +150,7 @@ void UAuraAbilitySystemLibrary::GetLivePlayersInRadius(const UObject* WorldConte
 	}
 }
 
-bool UAuraAbilitySystemLibrary::IsNotFriend(const AActor* FirstActor, const AActor* SecondActor)
+bool UAuraLibrary::IsNotFriend(const AActor* FirstActor, const AActor* SecondActor)
 {
 	if (FirstActor == nullptr || SecondActor == nullptr) return false;
 	const bool bBothArePlayers = FirstActor->ActorHasTag(FName("Player")) && SecondActor->ActorHasTag(FName("Player"));
@@ -165,7 +159,40 @@ bool UAuraAbilitySystemLibrary::IsNotFriend(const AActor* FirstActor, const AAct
 }
 
 
-const UCharacterClassDataAsset* UAuraAbilitySystemLibrary::GetGameModeCharacterClassDataAsset(const UObject* WorldContextObject)
+const UAbilityDataAsset* UAuraLibrary::GetAbilityDataAsset(const UObject* WorldContextObject)
+{
+	if (AAuraGameStateBase* GameState = Cast<AAuraGameStateBase>(UGameplayStatics::GetGameState(WorldContextObject)))
+	{
+		return GameState->AbilityData;
+	}
+	return nullptr;
+}
+const FAuraAbilityData* UAuraLibrary::FindAbilityDataByTag(const UObject* WorldContextObject, const FGameplayTag& AbilityTag)
+{
+	if (const AAuraGameStateBase* GameState = Cast<AAuraGameStateBase>(UGameplayStatics::GetGameState(WorldContextObject)))
+	{
+		for (const FAuraAbilityData& Data : GameState->AbilityData->AbilityDataList)
+		{
+			if (AbilityTag.MatchesTagExact(Data.AbilityTag)) return &Data;
+		}
+	}
+	// UE_LOG(LogAura, Error, TEXT("Can't find info for AbilityTag on List [%s]"), *GetNameSafe(this));
+	return nullptr;
+}
+const FAuraAbilityData* UAuraLibrary::FindAbilityDataByTags(const UObject* WorldContextObject,
+	const FGameplayTagContainer& AssetTags)
+{
+	if (const AAuraGameStateBase* GameState = Cast<AAuraGameStateBase>(UGameplayStatics::GetGameState(WorldContextObject)))
+	{
+		for (const FAuraAbilityData& Data : GameState->AbilityData->AbilityDataList)
+		{
+			if (AssetTags.HasTagExact(Data.AbilityTag)) return &Data;
+		}
+	}
+	return nullptr;
+}
+
+const UCharacterClassDataAsset* UAuraLibrary::GetGameModeCharacterClassDataAsset(const UObject* WorldContextObject)
 {
 	if (const AAuraGameModeBase* AuraGameMode = Cast<AAuraGameModeBase>(UGameplayStatics::GetGameMode(WorldContextObject)))
 	{
@@ -173,16 +200,8 @@ const UCharacterClassDataAsset* UAuraAbilitySystemLibrary::GetGameModeCharacterC
 	}
 	return nullptr;
 }
-const UAbilityDataAsset* UAuraAbilitySystemLibrary::GetGameModeAbilityDataAsset(const UObject* WorldContextObject)
-{
-	if (const AAuraGameModeBase* AuraGameMode = Cast<AAuraGameModeBase>(UGameplayStatics::GetGameMode(WorldContextObject)))
-	{
-		return AuraGameMode->AbilityData;
-	}
-	return nullptr;
-}
 
-AAuraHUD* UAuraAbilitySystemLibrary::GetAuraHUD(const UObject* WorldContextObject)
+AAuraHUD* UAuraLibrary::GetAuraHUD(const UObject* WorldContextObject)
 {
 	return GEngine->GetFirstLocalPlayerController(WorldContextObject->GetWorld())->GetHUD<AAuraHUD>();
 }
@@ -191,69 +210,18 @@ AAuraHUD* UAuraAbilitySystemLibrary::GetAuraHUD(const UObject* WorldContextObjec
  * =============== FAuraGameplayEffectContext ========================================================================================================================
  */
 #pragma region Damage
-bool UAuraAbilitySystemLibrary::IsBlocked(const FGameplayEffectContextHandle& EffectContextHandle)
-{
-	if (const FAuraGameplayEffectContext* AuraEffectContext =  static_cast<const FAuraGameplayEffectContext*>(EffectContextHandle.Get()))
-	{
-		return AuraEffectContext->IsBlocked();
-	}
-	return false;
-}
-void UAuraAbilitySystemLibrary::SetIsBlocked(FGameplayEffectContextHandle& EffectContextHandle, const bool bInIsBlocked)
-{
-	if (FAuraGameplayEffectContext* AuraEffectContext =  static_cast<FAuraGameplayEffectContext*>(EffectContextHandle.Get()))
-	{
-		AuraEffectContext->SetIsBlocked(bInIsBlocked);
-	}
-}
-
-bool UAuraAbilitySystemLibrary::IsCrit(const FGameplayEffectContextHandle& EffectContextHandle)
-{
-	if (const FAuraGameplayEffectContext* AuraEffectContext =  static_cast<const FAuraGameplayEffectContext*>(EffectContextHandle.Get()))
-	{
-		return AuraEffectContext->IsCrit();
-	}
-	return false;
-}
-void UAuraAbilitySystemLibrary::SetIsCrit(FGameplayEffectContextHandle& EffectContextHandle, const bool bInIsCrit)
-{
-	if (FAuraGameplayEffectContext* AuraEffectContext =  static_cast<FAuraGameplayEffectContext*>(EffectContextHandle.Get()))
-	{
-		AuraEffectContext->SetIsCrit(bInIsCrit);
-	}
-}
-
-
-bool UAuraAbilitySystemLibrary::IsStaggerDamage(const FGameplayEffectContextHandle& EffectContextHandle)
-{
-	if (const FAuraGameplayEffectContext* AuraEffectContext =  static_cast<const FAuraGameplayEffectContext*>(EffectContextHandle.Get()))
-	{
-		return AuraEffectContext->IsStagger();
-	}
-	return false;
-}
-void UAuraAbilitySystemLibrary::SetIsStaggerDamage(FGameplayEffectContextHandle& EffectContext, bool bStagger)
+void UAuraLibrary::SetIsStaggerDamage(FGameplayEffectContextHandle& EffectContext, const bool bValue)
 {
 	if (FAuraGameplayEffectContext* AuraEffectContext =  static_cast<FAuraGameplayEffectContext*>(EffectContext.Get()))
 	{
-		AuraEffectContext->SetIsStagger(bStagger);
+		AuraEffectContext->SetIsStagger(bValue);
 	}
 }
-
-
-bool UAuraAbilitySystemLibrary::IsShowDamageOnTarget(const FGameplayEffectContextHandle& EffectContextHandle)
-{
-	if (const FAuraGameplayEffectContext* AuraEffectContext =  static_cast<const FAuraGameplayEffectContext*>(EffectContextHandle.Get()))
-	{
-		return AuraEffectContext->bShowDamageOnTarget;
-	}
-	return false;
-}
-void UAuraAbilitySystemLibrary::SetIsShowDamageOnTarget(FGameplayEffectContextHandle& EffectContext, const bool bShowDamageOnTarget)
+void UAuraLibrary::SetIsShowDamageOnTarget(FGameplayEffectContextHandle& EffectContext, const bool bValue)
 {
 	if (FAuraGameplayEffectContext* AuraEffectContext =  static_cast<FAuraGameplayEffectContext*>(EffectContext.Get()))
 	{
-		AuraEffectContext->bShowDamageOnTarget = bShowDamageOnTarget;
+		AuraEffectContext->bShowDamageOnTarget = bValue;
 	}
 }
 #pragma endregion
@@ -263,7 +231,7 @@ void UAuraAbilitySystemLibrary::SetIsShowDamageOnTarget(FGameplayEffectContextHa
  * ==================================================================================================================================
  */
 #pragma region InstancedStruct
-FInstancedStruct* UAuraAbilitySystemLibrary::GetInstancedStructPointer(
+FInstancedStruct* UAuraLibrary::GetInstancedStructPointer(
 	const FGameplayEffectContextHandle& EffectContextHandle)
 {
 	if (const FAuraGameplayEffectContext* AuraEffectContext =  static_cast<const FAuraGameplayEffectContext*>(EffectContextHandle.Get()))
@@ -272,7 +240,7 @@ FInstancedStruct* UAuraAbilitySystemLibrary::GetInstancedStructPointer(
 	}
 	return nullptr;
 }
-void UAuraAbilitySystemLibrary::SetInstancedStruct(FGameplayEffectContextHandle& EffectContextHandle,
+void UAuraLibrary::SetInstancedStruct(FGameplayEffectContextHandle& EffectContextHandle,
 	const FInstancedStruct& InStruct)
 {
 	if (FAuraGameplayEffectContext* AuraEffectContext =  static_cast<FAuraGameplayEffectContext*>(EffectContextHandle.Get()))

@@ -7,7 +7,7 @@
 #include "AuraGameplayEffectTypes.h"
 #include "AuraGameplayTags.h"
 #include "NiagaraFunctionLibrary.h"
-#include "AbilitySystem/AuraAbilitySystemLibrary.h"
+#include "AbilitySystem/AuraLibrary.h"
 #include "Character/AuraCharacterBase.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "StructUtils/InstancedStruct.h"
@@ -56,7 +56,7 @@ void UAuraSummonAbility::SetSpawnLocations()
 	}
 	
 	const FInstancedStruct InstancedStruct = FInstancedStruct::Make(SummonInfo);
-	UAuraAbilitySystemLibrary::SetInstancedStruct(EffectContextHandle, InstancedStruct);
+	UAuraLibrary::SetInstancedStruct(EffectContextHandle, InstancedStruct);
 	InstigatorASC->ExecuteGameplayCue(AuraGameplayTags::GameplayCue_Summon, FGameplayCueParameters(EffectContextHandle));
 }
 
@@ -108,7 +108,7 @@ bool UAuraSummonAbility::SpawnEnemiesByLocations()
 void UAuraSummonAbility::SummonCueFromEffectContext(const UObject* WorldContextObject,
 	const FGameplayEffectContextHandle& EffectContextHandle, UNiagaraSystem* Effect)
 {
-	if (const FInstancedStruct* InstancedStruct = UAuraAbilitySystemLibrary::GetInstancedStructPointer(EffectContextHandle))
+	if (const FInstancedStruct* InstancedStruct = UAuraLibrary::GetInstancedStructPointer(EffectContextHandle))
 	{
 		if (const FSummonCueInfo* SummonInfo = InstancedStruct->GetPtr<FSummonCueInfo>())
 		{

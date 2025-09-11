@@ -4,7 +4,6 @@
 #include "UI/Widget/AuraWorldUserWidget.h"
 
 #include "Blueprint/WidgetLayoutLibrary.h"
-#include "Components/CanvasPanelSlot.h"
 #include "Kismet/GameplayStatics.h"
 
 void UAuraWorldUserWidget::NativeConstruct()
@@ -18,7 +17,6 @@ void UAuraWorldUserWidget::NativeConstruct()
 	}*/
 	// SetAlignmentInViewport(FVector2D(1., .5));
 	SetWorldToScreenTranslation(InitialLocation);
-	if (!IsValid(AttachedActor)) RemoveFromParent();
 }
 
 void UAuraWorldUserWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)

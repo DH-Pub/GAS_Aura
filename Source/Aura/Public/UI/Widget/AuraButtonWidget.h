@@ -29,7 +29,8 @@ public:
 	FButtonStyle InnerStyle = FButtonStyle();
 protected:
 	virtual void NativePreConstruct() override;
-	UPROPERTY(BlueprintReadWrite, meta=(BindWidget))
+	
+	UPROPERTY(BlueprintReadWrite, meta=(BindWidgetOptional)) 
 	TObjectPtr<USizeBox> SizeBox_Root;
 	UPROPERTY(BlueprintReadWrite, meta=(BindWidget))
 	TObjectPtr<UButton> Button;

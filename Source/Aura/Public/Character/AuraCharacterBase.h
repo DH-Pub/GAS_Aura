@@ -8,18 +8,13 @@
 #include "Interaction/CombatInterface.h"
 #include "AuraCharacterBase.generated.h"
 
-class UAuraInputAbility;
+class UCostCooldownAbility;
 class UAuraGameplayAbility;
 enum class ECharacterClass : uint8;
 class UAuraAbilitySystemComponent;
 class UNiagaraSystem;
-class UAuraWorldUserWidget;
-struct FGameplayAttribute;
 class UAuraAttributeSet;
 class UDamageTextComponent;
-class UGameplayAbility;
-class UGameplayEffect;
-class UAbilitySystemComponent;
 
 
 /**
@@ -41,12 +36,14 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Default")
 	float BaseWalkSpeed = 250.f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Default")
+	FRotator BaseRotationRate = FRotator(0., 540., 0.);
 	UPROPERTY(BlueprintReadWrite)
 	FVector AutoMoveDestination = FVector::ZeroVector;
-	
+
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
 	void UpdateFacingTarget(const FVector& InTargetLocation);
-	
+
 	UPROPERTY(EditDefaultsOnly, meta=(ForceInlineRow, TitleProperty="{MontageTag} - {SocketEnum}"), Category="Default|Combat")
 	TArray<FTaggedMontage> AttackMontages;
 	UFUNCTION(BlueprintCallable)
@@ -55,9 +52,9 @@ public:
 	void GetTaggedMontageByTag(const FGameplayTag& MontageTag, FTaggedMontage& TaggedMontage);
 
 	UFUNCTION(BlueprintPure)
-	FVector GetCombatSocketLocation(const ECombatSocket SocketEnum) const;
+	FVector GetCombatSocketLocation(const ECombatSocket SocketEnum);
 	
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Default|Combat")
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="Default|Combat")
 	bool bHitReacting = false;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Default|Combat")
 	TObjectPtr<UAnimMontage> HitReactMontage;
@@ -94,6 +91,8 @@ public:
 
 	UPROPERTY(BlueprintReadWrite)
 	FVector TargetLocation = FVector();
+	/*UPROPERTY(BlueprintReadWrite)
+	FRotator TargetRotation = FRotator(); //TODO: Remove TargetLocation and use this instead*/
 	UPROPERTY(BlueprintReadWrite)
 	bool bTracking = false; // true if Facing Target
 
@@ -143,7 +142,7 @@ protected:
 	TObjectPtr<USoundBase> DeathSound;
 private:
 	UPROPERTY(EditAnywhere, Category="Default|Abilities")
-	TArray<TSubclassOf<UAuraInputAbility>> StartupAbilities;
+	TArray<TSubclassOf<UCostCooldownAbility>> StartupAbilities;
 	UPROPERTY(EditAnywhere, Category="Default|Abilities")
 	TArray<TSubclassOf<UAuraGameplayAbility>> StartupPassives;
 

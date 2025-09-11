@@ -13,22 +13,15 @@ UHitReactAbility::UHitReactAbility()
 	CancelAbilitiesWithTag = FGameplayTagContainer(AuraGameplayTags::Generic_Ability_Cancelable);
 	BlockAbilitiesWithTag = FGameplayTagContainer(AuraGameplayTags::Generic_Ability_Blockable);
 
+	/*
+	 * This will add Ability_HitReact Tag to ASC, which will trigger RegisterGameplayTagEvent() instead of the following
+	 * ActivateAbility: ActiveGameplayEffect = ApplyGameplayEffectToOwner(Handle, ActorInfo, ActivationInfo,
+	 *		HitReactEffectClass->GetDefaultObject<UGameplayEffect>(), 1.f, 1);
+	 *	EndAbility: AuraCharacterFromActorInfo->GetAuraAbilitySystemComponent()->RemoveActiveGameplayEffect(ActiveGameplayEffect, -1);
+	 */
+	ActivationOwnedTags.AddTag(AuraGameplayTags::Ability_HitReact); // DEPRECATED, use bMaxSpeedZeroedOnActivated
+
 	bRetriggerInstancedAbility = true;
-}
-
-void UHitReactAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
-                                       const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo,
-                                       const FGameplayEventData* TriggerEventData)
-{
-	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
-	ActiveGameplayEffect = ApplyGameplayEffectToOwner(Handle, ActorInfo, ActivationInfo,
-		HitReactEffectClass->GetDefaultObject<UGameplayEffect>(), 1.f, 1);
-}
-
-void UHitReactAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
-	const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
-{
-	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
-	if (HasAuthority(&CurrentActivationInfo) == false) return;
-	AuraCharacterFromActorInfo->GetAuraAbilitySystemComponent()->RemoveActiveGameplayEffect(ActiveGameplayEffect, -1);
+	
+	bMaxSpeedZeroedOnActivated = true;
 }

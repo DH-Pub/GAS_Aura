@@ -4,7 +4,7 @@
 #include "Character/AuraCharacter.h"
 
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
-#include "AbilitySystem/AuraAbilitySystemLibrary.h"
+#include "AbilitySystem/AuraLibrary.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -29,7 +29,7 @@ AAuraCharacter::AAuraCharacter()
 	SpringArm->CameraLagSpeed = 25.f;
 	SpringArm->bInheritPitch = SpringArm->bInheritRoll = SpringArm->bInheritYaw = false;
 	SpringArm->bDoCollisionTest = false;
-	
+
 	Camera = CreateDefaultSubobject<UCameraComponent>("Camera");
 	Camera->SetupAttachment(SpringArm, USpringArmComponent::SocketName);
 	Camera->bUsePawnControlRotation = false;
@@ -37,9 +37,10 @@ AAuraCharacter::AAuraCharacter()
 	CameraCapsule = CreateDefaultSubobject<UCapsuleComponent>("CameraCapsule");
 	CameraCapsule->SetupAttachment(Camera);
 	CameraCapsule->SetRelativeLocationAndRotation(FVector(370., 0., 0.), FRotator(90., 0., 0.));
+	CameraCapsule->SetCapsuleHalfHeight(350.f);
 	CameraCapsule->SetCollisionResponseToAllChannels(ECR_Ignore);
 	CameraCapsule->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Overlap);
-	
+
 	LevelUpNiagaraComponent = CreateDefaultSubobject<UNiagaraComponent>("LevelUpNiagara");
 	LevelUpNiagaraComponent->SetupAttachment(GetRootComponent());
 	LevelUpNiagaraComponent->bAutoActivate = false;
@@ -87,8 +88,7 @@ void AAuraCharacter::BeginPlay()
 	if (UAuraUserWidget* LevelUpWidget = Cast<UAuraUserWidget>(LevelUpWidgetComponent->GetUserWidgetObject()))
 	{
 		UAuraWidgetController::CreateOrGetWidgetController(this, CharacterWC, CharacterWidgetClass,
-			FWidgetControllerParams(
-				Cast<AAuraPlayerController>(GetController()), GetPlayerState<AAuraPlayerState>(),
+			FWidgetControllerParams(Cast<AAuraPlayerController>(GetController()), GetPlayerState<AAuraPlayerState>(),
 				AbilitySystemComponent, AttributeSet));
 		LevelUpWidget->SetWidgetController(CharacterWC);
 	}
@@ -115,6 +115,6 @@ void AAuraCharacter::InitAbilityActorInfo()
 	constexpr float Level = 1.f;
 	if (HasAuthority())
 	{
-		UAuraAbilitySystemLibrary::InitializeDefaultAttributes(this, this, CharacterClass, Level, AbilitySystemComponent);
+		UAuraLibrary::InitializeDefaultAttributes(this, this, CharacterClass, Level, AbilitySystemComponent);
 	}
 }
