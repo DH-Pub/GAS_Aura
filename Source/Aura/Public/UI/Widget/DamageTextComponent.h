@@ -7,11 +7,19 @@
 #include "DamageTextComponent.generated.h"
 
 class UAuraAttributeSet;
-/**
- * DEPRECATED
- */
+
+// Added to AAuraCharacterBase
+/*if (DamageTextComponentClass)
+	{
+		UDamageTextComponent* DmgTxt = NewObject<UDamageTextComponent>(this, DamageTextComponentClass);
+		DmgTxt->RegisterComponent();
+		// DmgTxt->AttachToComponent(TargetCharacter->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform); // to set location
+		// DmgTxt->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform); // to not when character move
+		DmgTxt->SetWorldLocation(GetActorLocation());
+		DmgTxt->BP_SetDamageText(Damage);
+	}*/
 UCLASS()
-class AURA_API UDamageTextComponent : public UWidgetComponent
+class UE_DEPRECATED(5.4, "Use AuraWorldUserWidget") AURA_API UDamageTextComponent : public UWidgetComponent
 {
 	GENERATED_BODY()
 public:

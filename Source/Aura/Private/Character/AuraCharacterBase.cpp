@@ -3,10 +3,14 @@
 
 #include "Character/AuraCharacterBase.h"
 
+#include "AbilitySystemBlueprintLibrary.h"
 #include "Components/CapsuleComponent.h"
+#include "AuraAbilityLibrary.h"
+#include "AuraEffectTypes.h"
 #include "AuraGameplayTags.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
-#include "AbilitySystem/AuraLibrary.h"
+#include "AbilitySystem/Ability/DamageAbility.h"
+#include "AbilitySystem/Debuff/DebuffNiagaraComponent.h"
 #include "Aura/Aura.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
@@ -25,12 +29,6 @@ AAuraCharacterBase::AAuraCharacterBase()
 	// Dedicated servers don't render the meshes
 	// Skeletal meshes do not update their sockets or bones while not being rendered by default on the server part
 	GetMesh()->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
-	
-	Weapon = CreateDefaultSubobject<USkeletalMeshComponent>("Weapon");
-	Weapon->SetupAttachment(GetMesh(), FName(TEXT("WeaponHandSocket")));
-	Weapon->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	Weapon->SetCollisionObjectType(ECC_PhysicsBody);
-	Weapon->SetCollisionResponseToAllChannels(ECR_Ignore);
 
 	// GetCharacterMovement()->bUseControllerDesiredRotation = true;
 	GetCharacterMovement()->bOrientRotationToMovement = true;
@@ -40,19 +38,28 @@ AAuraCharacterBase::AAuraCharacterBase()
 	// GetCharacterMovement()->bUseRVOAvoidance = true;
 	// GetCharacterMovement()->AvoidanceConsiderationRadius = 100.f;
 	bUseControllerRotationPitch = bUseControllerRotationRoll = bUseControllerRotationYaw = false;
+
+	Weapon = CreateDefaultSubobject<USkeletalMeshComponent>("Weapon");
+	Weapon->SetupAttachment(GetMesh(), FName(TEXT("WeaponHandSocket")));
+	Weapon->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Weapon->SetCollisionObjectType(ECC_PhysicsBody);
+	Weapon->SetCollisionResponseToAllChannels(ECR_Ignore);
+
+	BurnDebuffComponent = CreateDefaultSubobject<UDebuffNiagaraComponent>("BurnDebuff");
+	BurnDebuffComponent->SetupAttachment(GetRootComponent());
+	BurnDebuffComponent->DebuffTag = AuraGameplayTags::Debuff_Type_Burn;
 }
 
 void AAuraCharacterBase::Tick(const float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-	if (CombatTarget) TargetLocation = CombatTarget->GetActorLocation();
+	if (CombatTarget) AimDirection = CombatTarget->GetActorLocation() - GetActorLocation();
 	if (bTracking)
 	{
-		UAuraLibrary::YawActorToLocation(this, TargetLocation, DeltaSeconds,
+		UAuraAbilityLibrary::YawActorToRotation(this, AimDirection, DeltaSeconds,
 			GetCharacterMovement()->RotationRate.Yaw * 2);
 	}
 }
-
 
 void AAuraCharacterBase::GetRandomAttackMontage(FTaggedMontage& TaggedMontage)
 {
@@ -62,7 +69,7 @@ void AAuraCharacterBase::GetTaggedMontageByTag(const FGameplayTag& MontageTag, F
 {
 	for (const FTaggedMontage& Montage : AttackMontages)
 	{
-		if (Montage.MontageTag == MontageTag) TaggedMontage = Montage; return;
+		if (Montage.MontageTag == MontageTag) {TaggedMontage = Montage; return;}
 	}
 }
 
@@ -78,30 +85,21 @@ FVector AAuraCharacterBase::GetCombatSocketLocation(const ECombatSocket SocketEn
 	}
 }
 
-UAbilitySystemComponent* AAuraCharacterBase::GetAbilitySystemComponent() const
-{
-	// Define in .cpp or we need to #include "AbilitySystem/AuraAbilitySystemComponent.h" in header
-	return AbilitySystemComponent;
-}
+// Define in .cpp or we need to #include "AbilitySystem/AuraAbilitySystemComponent.h" in header
+UAbilitySystemComponent* AAuraCharacterBase::GetAbilitySystemComponent() const {return AbilitySystemComponent;}
 
-void AAuraCharacterBase::Die()
-{
-	if (AAuraCharacterBase* AuraInstigator = Cast<AAuraCharacterBase>(GetInstigator()))
-	{
-		AuraInstigator->Summons.RemoveSingleSwap(this);
-	}
-	MulticastHandleDeath();
-}
-void AAuraCharacterBase::MulticastHandleDeath_Implementation()
+int32 AAuraCharacterBase::GetCharacterLevel_Implementation() const {return 1;}
+
+void AAuraCharacterBase::MulticastHandleDeath_Implementation(const FVector& HitImpulse)
 {
 	if (Weapon->GetSkeletalMeshAsset())
-	{
+	{	// Drop Weapon
 		Weapon->DetachFromComponent(FDetachmentTransformRules(EDetachmentRule::KeepWorld, true));
 		Weapon->SetSimulatePhysics(true);
 		Weapon->SetEnableGravity(true);
 		Weapon->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
 		Weapon->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
-	}
+	} // Enable Ragdoll
 	GetMesh()->SetSimulatePhysics(true);
 	GetMesh()->SetEnableGravity(true);
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
@@ -109,28 +107,19 @@ void AAuraCharacterBase::MulticastHandleDeath_Implementation()
 	GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECR_Ignore);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
 
-	bIsDead = true;
+	if (!HitImpulse.IsNearlyZero())
+	{
+		if (Weapon->GetSkeletalMeshAsset()) Weapon->AddImpulseToAllBodiesBelow(HitImpulse, NAME_None, true);
+		GetMesh()->AddImpulseToAllBodiesBelow(HitImpulse, NAME_None, true);
+	}
 	Dissolve();
 	UGameplayStatics::PlaySoundAtLocation(this, DeathSound, GetActorLocation(), GetActorRotation());
+	BurnDebuffComponent->DisableNiagara(AbilitySystemComponent);
 }
 
-void AAuraCharacterBase::ShowDamageNumber_Implementation(const AController* SourceController, const FVector& HitLocation,
-	const float Damage, const bool bBlocked, const bool bCrit)
+bool AAuraCharacterBase::IsDead_Implementation() const
 {
-	/*if (DamageTextComponentClass)
-	{
-		UDamageTextComponent* DmgTxt = NewObject<UDamageTextComponent>(this, DamageTextComponentClass);
-		DmgTxt->RegisterComponent();
-		// DmgTxt->AttachToComponent(TargetCharacter->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform); // to set location
-		// DmgTxt->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform); // to not when character move
-		DmgTxt->SetWorldLocation(GetActorLocation());
-		DmgTxt->BP_SetDamageText(Damage);
-	}*/
-	/*const APlayerController* LocalPlayerController = GEngine->GetFirstLocalPlayerController(GetWorld());
-	if (LocalPlayerController && LocalPlayerController == SourceController)// check if damage dealer is the local player*/
-	{
-		BP_ShowDamageNumber(HitLocation, Damage, bBlocked, bCrit);
-	}
+	return GetAbilitySystemComponent()->HasMatchingGameplayTag(AuraGameplayTags::Character_State_Death);
 }
 
 void AAuraCharacterBase::BeginPlay()
@@ -143,10 +132,8 @@ void AAuraCharacterBase::BeginPlay()
 // Called in PossessedBy, which is called only on server or standalone
 void AAuraCharacterBase::AddCharacterStartupAbilities() const
 {
-	if (!HasAuthority()) return;
-	// Grant ability from server
+	if (!HasAuthority()) return; // Grant ability from server
 	AbilitySystemComponent->AddCharacterAbilities(StartupAbilities);
-	AbilitySystemComponent->AddCharacterPassives(StartupPassives);
 }
 
 void AAuraCharacterBase::Dissolve()

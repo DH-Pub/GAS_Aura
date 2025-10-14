@@ -6,8 +6,9 @@
 #include "GameFramework/GameStateBase.h"
 #include "AuraGameStateBase.generated.h"
 
+class UAbilityDataAsset;
 /**
- * 
+ * Client have access to this
  */
 UCLASS()
 class AURA_API AAuraGameStateBase : public AGameStateBase
@@ -15,5 +16,5 @@ class AURA_API AAuraGameStateBase : public AGameStateBase
 	GENERATED_BODY()
 public:
 	UPROPERTY(EditDefaultsOnly, Category="Default")
-	TObjectPtr<class UAbilityDataAsset> AbilityData;
+	TObjectPtr<UAbilityDataAsset> AbilityDataAsset;
 };

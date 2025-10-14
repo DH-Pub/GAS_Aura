@@ -8,16 +8,12 @@
 #include "AuraPlayerState.generated.h"
 
 class UAuraAbilitySystemComponent;
-struct FAuraLevelUpData;
 class UAuraAttributeSet;
 class ULevelUpDataAsset;
 class UAbilitySystemComponent;
-class UAttributeSet;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnPlayerStatChanged, int32 /*Static value*/)
-DECLARE_MULTICAST_DELEGATE(FOnApplyingStatFinished)
 // (Level, CurrentLevelXp, DeltaLevelReq)
-DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnXPChanged, int32 /*XP*/, int32 /*Level*/, ULevelUpDataAsset* /*Level Up Data Asset*/);
 
 /**
  * AuraAbilitySystemComponent and AuraAttributeSet is created in here
@@ -33,35 +29,32 @@ public:
 	UAuraAttributeSet* GetAuraAttributeSet() const { return AttributeSet; }
 
 	// Interfaces ======================================================================================================
-#pragma region Interfaces
-	// IAbilitySystemInterface
-	// Define in .cpp or we need to #include "AbilitySystem/AuraAbilitySystemComponent.h" in this file
+	/* IAbilitySystemInterface
+	 * Define in .cpp or we need to #include "AbilitySystem/AuraAbilitySystemComponent.h" in this file*/
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
-#pragma endregion
 	// End Interface ===================================================================================================
-	
+
 	UPROPERTY(EditDefaultsOnly, Category="Default")
 	TObjectPtr<ULevelUpDataAsset> LevelUpDataAsset;
-	
-	FOnPlayerStatChanged OnLevelChangedDelegate; //TODO: Find some use for this (currently not being used)
-	FOnXPChanged OnXPChangedDelegate;
-	
+
+	FOnPlayerStatChanged OnLevelChangedDelegate;
+	FOnPlayerStatChanged OnXPChangedDelegate;
+
 	FOnPlayerStatChanged OnAttributePointsChangedDelegate;
 	FOnPlayerStatChanged OnSpellPointsChangedDelegate;
-	FOnApplyingStatFinished OnApplyingStatFinishedDelegate; // for Attribute/Spell Points Finished Applying
-	
+
 	FORCEINLINE int32 GetPlayerLevel() const {return Level;}
 	void SetLevel(const int32 NewLevel) {Level = NewLevel; OnLevelChangedDelegate.Broadcast(Level);}
 	void AddLevel(const int32 PlusLevel) {SetLevel(Level + PlusLevel);}
-	
+
 	FORCEINLINE int32 GetPlayerXP() const {return XP;}
 	void SetXP(const int32 NewXP);
 	void AddToXP(const int32 PlusXP) {SetXP(XP + PlusXP);}
-	
+
 	FORCEINLINE int32 GetAttributePoints() const {return AttributePoints;}
 	void SetAttributePoints(const int32 NewPoints) {AttributePoints = NewPoints; OnAttributePointsChangedDelegate.Broadcast(AttributePoints);}
 	void AddToAttributePoints(const int32 InPoints) {SetAttributePoints(AttributePoints + InPoints);}
-	
+
 	FORCEINLINE int32 GetSpellPoints() const {return SpellPoints;}
 	void SetSpellPoints(const int32 NewPoints) {SpellPoints = NewPoints; OnSpellPointsChangedDelegate.Broadcast(SpellPoints);}
 	void AddToSpellPoints(const int32 InPoints) {SetSpellPoints(SpellPoints + InPoints);}
@@ -70,23 +63,23 @@ protected:
 	TObjectPtr<UAuraAbilitySystemComponent> AbilitySystemComponent;
 	UPROPERTY()
 	TObjectPtr<UAuraAttributeSet> AttributeSet;
-	
+
 private:
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_Level, Category="Default")
 	int32 Level = 1;
 	UFUNCTION()
 	void OnRep_Level(const int32 OldLevel) const {if (Level != OldLevel) OnLevelChangedDelegate.Broadcast(Level);}
-	
+
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_XP, Category="Default")
 	int32 XP = 0;
 	UFUNCTION()
-	void OnRep_XP(const int32 OldXP) const {OnXPChangedDelegate.Broadcast(XP, Level, LevelUpDataAsset);}
-	
+	void OnRep_XP(const int32 OldXP) const {OnXPChangedDelegate.Broadcast(XP);}
+
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_AttributePoints, Category="Default")
 	int32 AttributePoints = 0;
 	UFUNCTION()
 	void OnRep_AttributePoints(int32 OldAttributePoints) const {OnAttributePointsChangedDelegate.Broadcast(AttributePoints);}
-	
+
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_SpellPoints, Category="Default")
 	int32 SpellPoints = 0;
 	UFUNCTION()

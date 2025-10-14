@@ -3,23 +3,18 @@
 
 #include "UI/WidgetController/AuraWidgetController.h"
 
+#include "Character/AuraCharacterBase.h"
 #include "Player/AuraPlayerController.h"
 #include "Player/AuraPlayerState.h"
 #include "UI/HUD/AuraHUD.h"
 
-FWidgetControllerParams::FWidgetControllerParams(AAuraPlayerController* PC)
-{
-	PlayerController = PC;
-	PlayerState = PlayerController->GetPlayerState<AAuraPlayerState>();
-	AbilitySystemComponent = PlayerState->GetAuraAbilitySystemComponent();
-	AttributeSet = PlayerState->GetAuraAttributeSet();
-}
+AController* UAuraWidgetController::GetPlayerController() const {return Character->GetController();}
+AAuraPlayerState* UAuraWidgetController::GetPlayerState() const {return Character->GetPlayerState<AAuraPlayerState>();}
+UAuraAbilitySystemComponent* UAuraWidgetController::GetASC() const {return Character->GetAuraAbilitySystemComponent();}
+UAuraAttributeSet* UAuraWidgetController::GetAttributeSet() const {return Character->GetAttributeSet();}
 
-void UAuraWidgetController::SetWidgetControllerParams(const FWidgetControllerParams& WCParams)
+void UAuraWidgetController::SetCharacter(AAuraCharacterBase* InCharacter)
 {
-	PlayerController = WCParams.PlayerController;
-	PlayerState = WCParams.PlayerState;
-	AbilitySystemComponent = WCParams.AbilitySystemComponent;
-	AttributeSet = WCParams.AttributeSet;
-	if (PlayerController) AuraHUD = PlayerController->GetHUD<AAuraHUD>();
+	Character = InCharacter;
+	if (const AAuraPlayerController* PC = Character->GetController<AAuraPlayerController>()) {AuraHUD = PC->GetHUD<AAuraHUD>();}
 }

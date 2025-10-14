@@ -7,9 +7,7 @@
 #include "OverlayWidgetController.generated.h"
 
 class UMessageInfo;
-class UAuraUserWidget;
 class UOverlay;
-class ULevelUpDataAsset;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMessageTableSignature, const FMessageRow&, Data);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMessageWidgetInfoSignature, const FAuraMessageInfo&, Info);
@@ -23,8 +21,8 @@ class AURA_API UOverlayWidgetController : public UAuraWidgetController
 	GENERATED_BODY()
 public:
 	virtual void BindCallbacksDependencies() override;
-	virtual void BroadcastInitialValues() override; // Initial HP, MP, XP, Abilities, ...
-	
+	virtual void BroadcastInitialValues() override;
+
 	UPROPERTY(BlueprintAssignable, Category = "GAS|Attributes")
 	FOnVitalAttributeChanged OnHealthChanged;
 	UPROPERTY(BlueprintAssignable, Category = "GAS|Attributes")
@@ -50,10 +48,9 @@ protected:
 	TObjectPtr<UDataTable> MessageDataTable;
 
 	UFUNCTION()
-	void BroadcastXPToUI(int32 XP, int32 Level, ULevelUpDataAsset* LevelUpDA) const;
+	void BroadcastXPToUI(int32 XP = 0) const;
 private:
-	// DEPRECATED
-	template<typename T = FTableRowBase>
+	template<typename T = FTableRowBase> UE_DEPRECATED(all, "just loop through Data Table")
 	static T* GetDataTableRowByTag(UDataTable* DataTable, const FGameplayTag& Tag)
 	{
 		return DataTable->FindRow<T>(Tag.GetTagName(), TEXT("")); // Find by RowName

@@ -20,14 +20,12 @@ struct FMessageRow : public FTableRowBase // FAuraMessageInfo
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TSubclassOf<UAuraUserWidget> MessageWidget;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(MultiLine))
-	FText Message = FText();
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	UTexture2D* Image = nullptr;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(MultiLine))
+	FText Message = FText();
 };
-
 USTRUCT(BlueprintType)
 struct FAuraMessageInfo // Use this or FMessageRow (FTableRowBase)
 {
@@ -36,12 +34,14 @@ struct FAuraMessageInfo // Use this or FMessageRow (FTableRowBase)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TSubclassOf<UAuraUserWidget> MessageWidget;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<UTexture2D> Image = nullptr;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(MultiLine))
 	FText Message = FText();
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	UTexture2D* Image = nullptr;
 };
+/*
+ * 
+ */
 UCLASS()
 class AURA_API UMessageInfo : public UDataAsset
 {

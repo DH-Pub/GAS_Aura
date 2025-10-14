@@ -33,6 +33,7 @@ public:
 	int32 FindLevelForXP(int32 XP) const;
 	int32 GetMaxLevel() const {return LevelUpDataList.Num() - 1;}
 
+
 #if WITH_EDITOR
 	virtual EDataValidationResult IsDataValid(FDataValidationContext& Context) const override;
 #endif

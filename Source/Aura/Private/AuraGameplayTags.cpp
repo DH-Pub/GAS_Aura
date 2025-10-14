@@ -7,6 +7,7 @@
 namespace AuraGameplayTags
 {
 #pragma region Attributes
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes,"Attributes","==PARENT==")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Primary_Strength,"Attributes.Primary.Strength","Increases physical damage")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Primary_Intelligence,"Attributes.Primary.Intelligence","Increases magical damage")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Primary_Resilience,"Attributes.Primary.Resilience","Increases armor and armor penetration")
@@ -49,6 +50,7 @@ namespace AuraGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_Combat_Ability_5, "Input.Combat.Ability.5", "")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_Combat_Ability_6, "Input.Combat.Ability.6", "")
 
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_Combat_Passive, "Input.Combat.Passive", "PARENT Tag to check with bActivateAbilityOnGranted")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_Combat_Passive_1, "Input.Combat.Passive.1", "")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_Combat_Passive_2, "Input.Combat.Passive.2", "")
 #pragma endregion
@@ -57,43 +59,47 @@ namespace AuraGameplayTags
 #pragma region Ability
 	// Abilities
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability, "Ability", "Parent Tag") // ==PARENT==
-	
+
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Move, "Ability.Move", "CharacterMovement Ability parent")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Move_Directional, "Ability.Move.Directional", "CharacterMovement Ability using keyboard, gamepad")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Move_Mouse, "Ability.Move.Mouse", "CharacterMovement Ability using mouse")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Move_Auto, "Ability.Move.Auto", "For AI, on player, Mouse will activate this")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_HitReact, "Ability.HitReact", "")
-	
+
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Attack, "Ability.Attack", "")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Summon, "Ability.Summon", "")
-	
+
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Cooldown_Reduce, "Ability.Cooldown.Reduce", "")
-	
+
 	// Abilities with Cooldown ============================================================================================
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Fire_FireBolt, "Ability.Fire.FireBolt", "FireBolt Gameplay Ability")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Fire_FireBolt_Cooldown, "Ability.Fire.FireBolt.Cooldown", "FireBolt Cooldown")
-	
+
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Lightning_Electrocute, "Ability.Lightning.Electrocute", "")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Lightning_Electrocute_Cooldown, "Ability.Lightning.Electrocute.Cooldown", "")
 	// =======================================================================================================================
-	
+
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Status, "Ability.Status", "")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Status_Locked, "Ability.Status.Locked", "")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Status_Eligible, "Ability.Status.Eligible", "Reached Level Requirement to unlock this Ability")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Status_Unlocked, "Ability.Status.Unlocked", "")
-	
+
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Type_Activatable, "Ability.Type.Activatable", "")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Type_Passive, "Ability.Type.Passive", "")
 #pragma endregion
 
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Generic_Ability, "Generic.Ability", "")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Generic_Ability_Cancelable, "Generic.Ability.Cancelable",
-		"Genric Tag for Ability that can be canceled"
-		"Ability can be canceled when another is triggered (Dash to cancel attack, ...), before EndAbility")
+		"Genric Tag for Ability that can be canceled when another is triggered (Dash to cancel attack, ...), before EndAbility")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Generic_Ability_Blockable, "Generic.Ability.Blockable",
 		"Genric Tag for Ability that can't be activated when others are actives. (ex: HitReact, ...)"
-		"For bRetriggeredInstancedAbility=true, it can block itself from being retrigger until EndAbility/CancelAbility")
+		"For bRetriggerInstancedAbility=true, it can block itself from being retrigger until EndAbility/CancelAbility")
 
+#pragma region CharacterState
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Character_State_Ability, "Character.State.Ability",
+		"Block other Abilities, ... Added in ActivationOwnedTags(To Block others including self) and ActivationBlockedTags(To be Blocked)")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Character_State_HitReact, "Character.State.HitReact", "")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Character_State_Death, "Character.State.Death", "")
+#pragma endregion
 
 #pragma region Combat
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Damage, "Damage", "Incoming Damage pass from UAuraGameplayAbility (UAuraProjectileAbility,...) to GE_Damage: ExecCalc_Damage")
@@ -103,10 +109,11 @@ namespace AuraGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Damage_Physical, "Damage.Physical", "Physical type damage")
 
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Debuff, "Debuff","")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Debuff_Burn, "Debuff_Burn", "Fire type Debuff")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Debuff_Stun, "Debuff_Stun", "Lightning type debuff")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Debuff_Arcane, "Debuff_Arcane", "Arcane type debuff")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Debuff_Physical, "Debuff_Physical", "Physical type debuff")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Debuff_Type, "Debuff.Type", "PARENT")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Debuff_Type_Burn, "Debuff.Type.Burn", "Fire type Debuff")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Debuff_Type_Stun, "Debuff.Type.Stun", "Lightning type debuff")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Debuff_Type_Arcane, "Debuff.Type.Arcane", "Arcane type debuff")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Debuff_Type_Physical, "Debuff.Type.Physical", "Physical type debuff")
 
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Montage_Attack_1, "Montage.Attack.1", "Attack 1")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Montage_Attack_2, "Montage.Attack.2", "Attack 2")
@@ -117,6 +124,7 @@ namespace AuraGameplayTags
 
 #pragma region Gameplay Cue
 	// UE_DEFINE_GAMEPLAY_TAG_COMMENT(GameplayCue_FireBolt_Impact, "GameplayCue.FireBolt.Impact", "Fire Bolt explode on impact")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(GameplayCue_Damage, "GameplayCue.Damage", "Gameplay cue executed for GE_Damage")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(GameplayCue_Impact_Melee, "GameplayCue.Impact.Melee", "Impact Melee")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(GameplayCue_Impact_Projectile, "GameplayCue.Impact.Projectile", "Impact Projectile")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(GameplayCue_Summon, "GameplayCue.Summon", "Summon Cue")

@@ -7,12 +7,12 @@
 
 void UEnemyWidgetController::BindCallbacksDependencies()
 {
-	BindGameplayAttributeToBroadcast(AttributeSet->GetHealthAttribute(), OnHealthChanged);
-	BindGameplayAttributeToBroadcast(AttributeSet->GetMaxHealthAttribute(), OnMaxHealthChanged);
+	BindGameplayAttributeToBroadcast(GetAttributeSet()->GetHealthAttribute(), OnHealthChanged);
+	BindGameplayAttributeToBroadcast(GetAttributeSet()->GetMaxHealthAttribute(), OnMaxHealthChanged);
 }
 
 void UEnemyWidgetController::BroadcastInitialValues()
 {
-	OnHealthChanged.Broadcast(AttributeSet->GetHealth());
-	OnMaxHealthChanged.Broadcast(AttributeSet->GetMaxHealth());
+	OnHealthChanged.Broadcast(GetAttributeSet()->GetHealth());
+	OnMaxHealthChanged.Broadcast(GetAttributeSet()->GetMaxHealth());
 }

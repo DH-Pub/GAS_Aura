@@ -19,9 +19,6 @@ struct FAuraAttributeData
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(MultiLine))
 	FText AttributeDescription = FText();
 
-	UPROPERTY(BlueprintReadOnly)
-	float AttributeValue = 0.f;
-
 	UPROPERTY(EditDefaultsOnly)
 	FGameplayAttribute GameplayAttribute;
 };
@@ -40,7 +37,8 @@ public:
 	/**
 	 * Future note: make this a TArray
 	 */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(TitleProperty="{AttributeName} - {GameplayAttribute}", ForceInlineRow, GameplayTagFilter="Attributes"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(TitleProperty="{AttributeName} - {GameplayAttribute}",
+		ForceInlineRow, GameplayTagFilter="Attributes"))
 	TMap<FGameplayTag, FAuraAttributeData> AttributeDataList;
 	
 	/**

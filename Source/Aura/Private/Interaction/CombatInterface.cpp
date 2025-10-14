@@ -1,6 +1,6 @@
 // Copyright Hung
 
 
-#include "Interaction/CombatInterface.h"
+#include "Interface/CombatInterface.h"
 
 // Add default functionality here for any ICombatInterface functions that are not pure virtual.

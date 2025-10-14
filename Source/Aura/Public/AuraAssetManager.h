@@ -7,9 +7,6 @@
 #include "AuraAssetManager.generated.h"
 
 /**
- * //TODO: Delete this
- * =====DEPRECATED========
- *
  * This is to load old AuraGameplayTags from the course inside StartInitialLoading()
  * 
  * Project Settings -> Engine -> General -> Default Classes -> Advanced -> Asset Manager Class
@@ -19,7 +16,7 @@
  * AssetManagerClassName=/Script/Aura.AuraAssetManager
  */
 UCLASS()
-class AURA_API UAuraAssetManager : public UAssetManager
+class UE_DEPRECATED(5.4, "No use for this") AURA_API UAuraAssetManager : public UAssetManager
 {
 	GENERATED_BODY()
 public:

@@ -40,8 +40,6 @@ protected:
 	UPROPERTY(BlueprintReadWrite, meta=(BindWidget))
 	TObjectPtr<UImage> Image_SpellIcon; // Icon of spell
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Default|GlobeProperties")
-	FSlateBrush WheelBrush; // Cooldown Wheel
 	UPROPERTY(BlueprintReadWrite, meta=(BindWidget))
 	TObjectPtr<UImage> Image_WheelProgress;
 	UPROPERTY(BlueprintReadWrite)

@@ -6,14 +6,11 @@
 #include "GameFramework/HUD.h"
 #include "AuraHUD.generated.h"
 
-struct FPlayerAbilityData;
-struct FGameplayAbilitySpec;
 class USpellMenuWidgetController;
 class UAttributeMenuWidgetController;
 class UAuraUserWidget;
 class UOverlayWidgetController;
 
-struct FWidgetControllerParams;
 
 /**
  * 
@@ -24,15 +21,11 @@ class AURA_API AAuraHUD : public AHUD
 	GENERATED_BODY()
 public:
 	/** Bind callbacks if not yet and return controller */
-	UOverlayWidgetController* CreateOrGetOverlayWC();
-	UAttributeMenuWidgetController* CreateOrGetAttributeMenuWC();
-	USpellMenuWidgetController* CreateOrGetSpellMenuWC();
-
-	void InitAuraHUD(const FWidgetControllerParams& WCParams);
+	void InitAuraHUD(class AAuraPlayerController* PC, class AAuraPlayerState* PS, class AAuraCharacterBase* Character);
 	UPROPERTY(BlueprintReadOnly)
-	TObjectPtr<class AAuraPlayerController> PlayerController;
+	TObjectPtr<AAuraPlayerController> PlayerController;
 	UPROPERTY(BlueprintReadOnly)
-	TObjectPtr<class AAuraPlayerState> PlayerState;
+	TObjectPtr<AAuraPlayerState> PlayerState;
 	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<class UAuraAbilitySystemComponent> AbilitySystemComponent;
 	UPROPERTY(BlueprintReadOnly)
@@ -40,22 +33,46 @@ public:
 
 	void BroadcastAllActivatableAbilities() const;
 
-	void InitOverlay(); // Create and Set Overlay's WidgetController, then broadcast initial values
 	UPROPERTY()
 	TObjectPtr<UAuraUserWidget> OverlayWidget;
 
-	UPROPERTY()
-	TObjectPtr<UOverlayWidgetController> OverlayWidgetController;
-	UPROPERTY()
-	TObjectPtr<UAttributeMenuWidgetController> AttributeMenuWidgetController; // Widget created in OverlayWidget BP
-	UPROPERTY()
-	TObjectPtr<USpellMenuWidgetController> SpellMenuWidgetController;
+	UPROPERTY() // Overlay is always available with this
+	TObjectPtr<UOverlayWidgetController> OverlayController;
+	UPROPERTY(BlueprintReadOnly)
+	TObjectPtr<UAttributeMenuWidgetController> AttributeMenuController; // Widget created in OverlayWidget BP
+	UPROPERTY(BlueprintReadOnly)
+	TObjectPtr<USpellMenuWidgetController> SpellMenuController;
 
 	UPROPERTY(EditDefaultsOnly, Category="Default")
 	TObjectPtr<class UAttributeDataAsset> AttributeData;
+	const TMap<struct FGameplayTag, struct FAuraAttributeData>& GetAttributeDataList() const;
 
 	UFUNCTION(BlueprintImplementableEvent)
 	FText GetLockedDescription(const int32 LevelRequirement);
+
+
+#pragma region UIFunctions
+	// HUD exist on local only so this return nullptr others
+	static AAuraHUD* GetAuraHUD(const UObject* WorldContextObject);
+	UFUNCTION(BlueprintPure, meta=(DefaultToSelf="WorldContextObject", HidePin="WorldContextObject", CompactNodeTitle="AttributeWC"))
+	static UAttributeMenuWidgetController* GetAttributeMenuController(const UObject* WorldContextObject)
+	{
+		if (AAuraHUD* HUD = GetAuraHUD(WorldContextObject)) return HUD->AttributeMenuController;
+		return nullptr;
+	}
+	UFUNCTION(BlueprintPure, meta=(DefaultToSelf="WorldContextObject", HidePin="WorldContextObject", CompactNodeTitle="SpellWC"))
+	static USpellMenuWidgetController* GetSpellMenuController(const UObject* WorldContextObject)
+	{
+		if (AAuraHUD* HUD = GetAuraHUD(WorldContextObject)) return HUD->SpellMenuController;
+		return nullptr;
+	}
+
+	// Add widget to OverlayWidget -> Canvas -> Overlay_Screen
+	UFUNCTION(BlueprintCallable, meta=(DefaultToSelf="WorldContextObject", ExpandBoolAsExecs="ReturnValue"), Category="AuraLibrary|UI")
+	static bool AddWidgetToRootCanvasPanel(UUserWidget* InNewWidget);
+#pragma endregion
+
+
 private:
 	UPROPERTY(EditDefaultsOnly, Category="Default")
 	TSubclassOf<UAuraUserWidget> OverlayWidgetClass; // For WBP_Overlay
@@ -65,6 +82,4 @@ private:
 	TSubclassOf<UAttributeMenuWidgetController> AttributeMenuWidgetControllerClass;
 	UPROPERTY(EditDefaultsOnly, Category="Default")
 	TSubclassOf<USpellMenuWidgetController> SpellMenuWidgetControllerClass;
-
-	FWidgetControllerParams GetHUDControllerParams() const;
 };

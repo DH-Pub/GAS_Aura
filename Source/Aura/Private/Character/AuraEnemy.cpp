@@ -3,17 +3,16 @@
 
 #include "Character/AuraEnemy.h"
 
-#include "AuraGameplayTags.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
-#include "AbilitySystem/AuraLibrary.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "Aura/Aura.h"
 #include "BrainComponent.h"
+#include "AbilitySystem/Data/CharacterClassDataAsset.h"
 #include "AI/AuraAIController.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/WidgetComponent.h"
-#include "GameFramework/CharacterMovementComponent.h"
 #include "UI/Widget/AuraUserWidget.h"
+#include "UI/WidgetController/EnemyWidgetController.h"
 
 AAuraEnemy::AAuraEnemy()
 {
@@ -42,10 +41,6 @@ void AAuraEnemy::PossessedBy(AController* NewController)
 	if (HasAuthority())
 	{
 		AuraAIController = Cast<AAuraAIController>(NewController);
-		/*AuraAIController->GetBlackboardComponent()->InitializeBlackboard(*BehaviorTree->BlackboardAsset);
-		AuraAIController->RunBehaviorTree(BehaviorTree);
-		AuraAIController->GetBlackboardComponent()->SetValueAsBool(FName("HitReacting"), false);
-		AuraAIController->GetBlackboardComponent()->SetValueAsBool(FName("RangedAttacker"), CharacterClass != ECharacterClass::Warrior);*/
 	}
 }
 
@@ -63,66 +58,30 @@ void AAuraEnemy::UnHighlightActor()
 	Weapon->SetRenderCustomDepth(false);
 }
 
+void AAuraEnemy::MulticastHandleDeath_Implementation(const FVector& HitImpulse)
+{
+	Super::MulticastHandleDeath_Implementation(HitImpulse);
+	HealthBar->DetachFromComponent(FDetachmentTransformRules(EDetachmentRule::KeepWorld, true));
+	// HealthBar->SetVisibility(false);
+}
+
 void AAuraEnemy::BeginPlay()
 {
 	Super::BeginPlay();
-	InitAbilityActorInfo();
-	if (HasAuthority())
-	{
-		UAuraLibrary::GiveStartupAbilities(this, AbilitySystemComponent, CharacterClass);
-	}
+	InitAuraCharacter();
 
-	if (UAuraUserWidget* Widget = Cast<UAuraUserWidget>(HealthBar->GetUserWidgetObject()))
-	{
-		const FWidgetControllerParams WCParams(nullptr, nullptr, AbilitySystemComponent, AttributeSet);
-		UAuraWidgetController::CreateOrGetWidgetController(this, HealthBarController, HealthBarControllerClass, WCParams);
-		Widget->SetWidgetController(HealthBarController);
-		HealthBarController->BroadcastInitialValues();
-	}
-
-	/*AbilitySystemComponent->RegisterGameplayTagEvent(AuraGameplayTags::Ability_HitReact, EGameplayTagEventType::NewOrRemoved)
-	.AddLambda([this](const FGameplayTag CallbackTag, const int NewCount)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Yellow, FString::Printf(TEXT("%d"), NewCount));
-		if (NewCount > 0)
-		{
-			GetCharacterMovement()->StopActiveMovement();
-			GetCharacterMovement()->RotationRate = FRotator();
-			GetCharacterMovement()->MaxWalkSpeed = 0.f;
-		}
-		else
-		{
-			GetCharacterMovement()->RotationRate = BaseRotationRate;
-			GetCharacterMovement()->MaxWalkSpeed = BaseWalkSpeed;
-		}
-	});*/
+	UAuraUserWidget* Widget = Cast<UAuraUserWidget>(HealthBar->GetUserWidgetObject());
+	UAuraWidgetController::CreateOrGetWidgetController(this, this, HealthBarController, HealthBarControllerClass);
+	Widget->SetWidgetController(HealthBarController);
 }
 
-void AAuraEnemy::InitAbilityActorInfo()
+void AAuraEnemy::InitAuraCharacter()
 {
-	AbilitySystemComponent->InitAbilityActorInfo(this, this);
-	AbilitySystemComponent->AbilityActorInfoSet();
+	AbilitySystemComponent->InitAuraASC(this, this);
 
-	if (HasAuthority())
+	if (const UCharacterClassDataAsset* ClassData = UCharacterClassDataAsset::GetFromGameMode(this))
 	{
-		UAuraLibrary::InitializeDefaultAttributes(this, this, CharacterClass, Level, AbilitySystemComponent);
+		ClassData->InitializeDefaultAttributes(CharacterClass, Level, AbilitySystemComponent);
+		ClassData->GiveStartupAbilities(this);
 	}
-}
-
-void AAuraEnemy::Die()
-{
-	Super::Die();
-	SetLifeSpan(LifeSpan);
-	if (HasAuthority())
-	{
-		// Disable StateTree on death
-		AuraAIController->GetBrainComponent()->StopLogic(TEXT("Death"));
-	} 
-}
-
-void AAuraEnemy::MulticastHandleDeath_Implementation()
-{
-	Super::MulticastHandleDeath_Implementation();
-	HealthBar->DetachFromComponent(FDetachmentTransformRules(EDetachmentRule::KeepWorld, true));
-	// HealthBar->SetVisibility(false);
 }

@@ -3,7 +3,8 @@
 
 #include "AI/StateTree/Task/StateTreeAttackTasks.h"
 
-#include "AbilitySystemBlueprintLibrary.h"
+#include "AbilitySystemComponent.h"
+#include "AbilitySystemGlobals.h"
 #include "StateTreeExecutionContext.h"
 #include "AI/AuraAIController.h"
 #include "Character/AuraEnemy.h"
@@ -13,7 +14,7 @@ EStateTreeRunStatus FStateTree_Attack::EnterState(FStateTreeExecutionContext& Co
 {
 	auto& [AIController, Actor, AttackTag] = Context.GetInstanceData(*this);
 	AIController->StopMovement();
-	UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Actor);
+	UAbilitySystemComponent* ASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(Actor);
 	ASC->TryActivateAbilitiesByTag(FGameplayTagContainer(AttackTag));
 	return EStateTreeRunStatus::Succeeded;
 }
@@ -25,7 +26,7 @@ EStateTreeRunStatus FStateTree_Attack_Elementalist::EnterState(FStateTreeExecuti
 {
 	auto& [AIController, Actor, AttackTag, SummonTag] = Context.GetInstanceData(*this);
 	AIController->StopMovement();
-	UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Actor);
+	UAbilitySystemComponent* ASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(Actor);
 	if (!ASC->TryActivateAbilitiesByTag(FGameplayTagContainer(SummonTag))) // if Summon CanActivateAbility returns false
 	{
 		ASC->TryActivateAbilitiesByTag(FGameplayTagContainer(AttackTag));

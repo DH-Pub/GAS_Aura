@@ -6,7 +6,6 @@
 #include "UI/WidgetController/AuraWidgetController.h"
 #include "SpellMenuWidgetController.generated.h"
 
-struct FAuraAbilityData;
 class USpellGlobeButtonWidget;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSpellPointsChanged, int32, NewValue);
@@ -45,6 +44,10 @@ public:
 
 	UFUNCTION(BlueprintCallable, meta=(ReturnDisplayName="IsPassive"))
 	bool EquipAbility();
+	/**
+	 * @param NewSlotTag: Can be !IsValid() for when you want to clear ability from input
+	 */
 	UFUNCTION(BlueprintCallable)
-	void ChangeSpellInputSlot(const FGameplayTag& SlotTag, const FGameplayTag& AbilityTag, const bool bIsPassive);
+	void ChangeSpellInputSlot(const FGameplayTag& AbilityTag, const FGameplayTag NewSlotTag = FGameplayTag(),
+		const bool bIsPassive = false);
 };

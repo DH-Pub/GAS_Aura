@@ -27,12 +27,8 @@ struct FAuraInputAction
 
 	UPROPERTY(EditDefaultsOnly, meta=(GameplayTagFilter="Input"))
 	FGameplayTag InputTag = FGameplayTag();
-	
 	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<UInputAction> InputAction = nullptr;
-	
-	UPROPERTY(EditDefaultsOnly, meta=(ForceInlineRow))
-	TMap<TEnumAsByte<EAuraTriggerType>, TObjectPtr<UInputAction>> OtherTrigger;
 };
 /**
  * 
@@ -49,10 +45,9 @@ public:
 	virtual EDataValidationResult IsDataValid(FDataValidationContext& Context) const override
 	{
 		EDataValidationResult Result = CombineDataValidationResults(Super::IsDataValid(Context), EDataValidationResult::Valid);
-		unsigned int i = 0;
-		for (const auto& AbilityInput : AbilityInputActions)
+		for (const auto& [InputTag, InputAction] : AbilityInputActions)
 		{
-			if (AbilityInput.InputAction == nullptr || !AbilityInput.InputTag.IsValid())
+			if (InputAction == nullptr || !InputTag.IsValid())
 			{
 				Result = EDataValidationResult::Invalid;
 				const FText ErrorMsg = FText::FromString("Tag and Input are required!!!");

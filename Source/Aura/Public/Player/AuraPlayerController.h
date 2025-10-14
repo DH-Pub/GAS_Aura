@@ -7,8 +7,8 @@
 #include "GameFramework/PlayerController.h"
 #include "AuraPlayerController.generated.h"
 
+class AAuraCharacterBase;
 enum class ETriggerEvent : uint8;
-class UAuraAbilitySystemComponent;
 class UInputAction;
 class IEnemyInterface;
 class UInputMappingContext;
@@ -45,8 +45,6 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category="Default|Input")
 	TObjectPtr<class UAuraInputConfig> InputConfig;
 
-	UAuraAbilitySystemComponent* GetAuraASC();
-
 	UFUNCTION(BlueprintGetter)
 	FORCEINLINE FHitResult& GetCursorHitResult() { return CursorHitResult; }
 
@@ -57,6 +55,8 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(AllowPrivateAccess), Category = "Default|Input")
 	float AutoRunAcceptanceRadius = 25.f;
 
+	UPROPERTY()
+	TObjectPtr<AAuraCharacterBase> AuraPawn;
 protected:
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
@@ -98,8 +98,5 @@ private:
 	UPROPERTY(BlueprintReadWrite, meta=(AllowPrivateAccess))
 	TScriptInterface<IEnemyInterface> CurrentCursorHitActor;
 
-	void ControllerInputTrigger(const ETriggerEvent TriggerEvent, const FGameplayTag* InputTag, TObjectPtr<UInputAction> InputAction);
-
-	UPROPERTY()
-	TObjectPtr<UAuraAbilitySystemComponent> AbilitySystemComponent;
+	void ControllerInputTrigger(const ETriggerEvent TriggerEvent, const FGameplayTag* InputTag, UInputAction* InputAction);
 };

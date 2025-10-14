@@ -3,10 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Engine/DataAsset.h"
 #include "ScalableFloat.h"
+#include "Engine/DataAsset.h"
 #include "CharacterClassDataAsset.generated.h"
 
+class AAuraCharacterBase;
+class UAbilitySystemComponent;
 class UGameplayAbility;
 class UGameplayEffect;
 
@@ -32,7 +34,7 @@ struct FCharacterClassDefaultInfo
 	TArray<TSubclassOf<UGameplayAbility>> ClassAbilities;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "ClassDefaults")
-	FScalableFloat XPReward = FScalableFloat();
+	FScalableFloat XPReward = 0.f;
 };
 
 /**
@@ -43,7 +45,7 @@ class AURA_API UCharacterClassDataAsset : public UDataAsset
 {
 	GENERATED_BODY()
 public:
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(TitleProperty="{PrimaryAttributes}"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(TitleProperty="{PrimaryAttributes}", ForceInlineRow))
 	TMap<ECharacterClass, FCharacterClassDefaultInfo> CharacterClassInformation;
 
 	// Attributes shared for all classes (all will have the same because they are based on PrimaryAttributes)
@@ -54,13 +56,22 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category = "CommonClassDefaults")
 	TArray<TSubclassOf<UGameplayAbility>> CommonAbilities;
-	
+
 	UPROPERTY(EditDefaultsOnly, Category = "CommonClassDefaults|Damage")
 	TObjectPtr<UCurveTable> DamageCalculationCoefficients; 
-	
-	FORCEINLINE const FCharacterClassDefaultInfo* GetClassDefaultInfo(const ECharacterClass CharacterClass) const
-	{
-		//TODO: return ptr
-		return CharacterClassInformation.Find(CharacterClass);
-	}
+
+	/**
+	 * Get Server DA_CharacterClass, can't be changed -> const
+	 * Client can't access GameMode so this will always return nullptr
+	 */
+	static const UCharacterClassDataAsset* GetFromGameMode(const UObject* WorldContextObject);
+
+	void InitializeDefaultAttributes(const ECharacterClass CharacterClass, const float Level,
+		UAbilitySystemComponent* ASC) const;
+	void GiveStartupAbilities(const AAuraCharacterBase* AuraCharacter) const;
+	void SendXPToDeathCauser(AActor* Causer, const AAuraCharacterBase* DeadCharacter) const;
+
+protected:
+	const FCharacterClassDefaultInfo* GetClassDefaultInfo(const ECharacterClass CharacterClass) const
+	{return CharacterClassInformation.Find(CharacterClass);}
 };

@@ -10,7 +10,7 @@ class UOverlayWidgetController;
 class UAttributeDataAsset;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnAttriubtePointsChanged, int32, NewValue, int32, PointsAllocating);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FAttributeInfoSignature, const FGameplayTag&, Tag, const FAuraAttributeData&, Info);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FAttributeInfoSignature, const FGameplayTag&, Tag, float, NewValue, const FAuraAttributeData&, Info);
 /**
  * Constructed in AuraHUD like OverlayWidgetController
  */
@@ -35,7 +35,7 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 	int32 AttributePoints = 0; // AttributePoints stored in AuraPlayerSate that will only change once apply
 	UPROPERTY(BlueprintReadOnly)
-	bool bIsApplying = false;
+	bool bIsApplying = false; // Grey out buttons until Server send update
 	UPROPERTY(BlueprintAssignable, Category="GAS|Attributes")
 	FOnAttriubtePointsChanged AttributePointsToUIDelegate;
 	UFUNCTION(BlueprintCallable)

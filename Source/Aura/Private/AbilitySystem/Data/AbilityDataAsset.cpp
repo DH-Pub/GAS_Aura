@@ -4,8 +4,37 @@
 #include "AbilitySystem/Data/AbilityDataAsset.h"
 
 #include "AuraGameplayTags.h"
-#include "AbilitySystem/Abilities/AuraGameplayAbility.h"
+#include "AbilitySystem/Ability/AuraGameplayAbility.h"
+#include "Game/AuraGameStateBase.h"
+#include "Kismet/GameplayStatics.h"
 #include "Misc/DataValidation.h"
+
+const UAbilityDataAsset* UAbilityDataAsset::GetFromGameState(const UObject* WorldContextObject)
+{
+	if (AAuraGameStateBase* GameState = Cast<AAuraGameStateBase>(UGameplayStatics::GetGameState(WorldContextObject)))
+	{
+		return GameState->AbilityDataAsset;
+	}
+	return nullptr;
+}
+
+const FAuraAbilityData* UAbilityDataAsset::GetAbilityFromGameState(const UObject* WorldContextObject, const FGameplayTag& Tag)
+{
+	if (const UAbilityDataAsset* DA = GetFromGameState(WorldContextObject))
+	{
+		for (const FAuraAbilityData& Data : DA->AbilityDataList) if (Tag.MatchesTagExact(Data.AbilityTag)) return &Data;
+	}
+	return nullptr;
+}
+const FAuraAbilityData* UAbilityDataAsset::GetAbilityFromGameState(const UObject* WorldContextObject,
+	const FGameplayTagContainer& Tags)
+{
+	if (const UAbilityDataAsset* DA = GetFromGameState(WorldContextObject))
+	{
+		for (const FAuraAbilityData& Data : DA->AbilityDataList) {if (Tags.HasTagExact(Data.AbilityTag)) return &Data;}
+	}
+	return nullptr;
+}
 
 #if WITH_EDITOR
 EDataValidationResult UAbilityDataAsset::IsDataValid(FDataValidationContext& Context) const
@@ -17,15 +46,13 @@ EDataValidationResult UAbilityDataAsset::IsDataValid(FDataValidationContext& Con
 		if (!AbilityData.AbilityTag.IsValid())
 		{
 			Result = EDataValidationResult::Invalid;
-			const FText ErrorMsg = FText::FromString("Tags are required!!!");
-			Context.AddError(ErrorMsg);
+			Context.AddError(FText::FromString("Tags are required!!!"));
 		}
 		if (AbilityData.Icon == nullptr || AbilityData.BackgroundMaterial == nullptr
 			|| AbilityData.LevelRequirement <= 0 || AbilityData.AbilityClass == nullptr)
 		{
 			Result = EDataValidationResult::Invalid;
-			const FText ErrorMsg = FText::FromString("Tags are required!!!");
-			Context.AddError(ErrorMsg);
+			Context.AddError(FText::FromString("Tags are required!!!"));
 		}
 	}
 	return Result;

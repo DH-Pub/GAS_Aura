@@ -4,11 +4,8 @@
 #include "UI/WidgetController/SpellMenuWidgetController.h"
 
 #include "AuraGameplayTags.h"
-#include "AbilitySystem/AuraLibrary.h"
-#include "AbilitySystem/Abilities/CostCooldownAbility.h"
+#include "AbilitySystem/Ability/CostCooldownAbility.h"
 #include "AbilitySystem/Data/AbilityDataAsset.h"
-#include "Components/Image.h"
-#include "Components/RichTextBlock.h"
 #include "Player/AuraPlayerState.h"
 #include "UI/HUD/AuraHUD.h"
 #include "UI/Widget/SpellGlobeButtonWidget.h"
@@ -16,7 +13,8 @@
 
 void USpellMenuWidgetController::BindCallbacksDependencies()
 {
-	PlayerState->OnSpellPointsChangedDelegate.AddLambda([this](const int32 Points)
+	GetPlayerState()->OnSpellPointsChangedDelegate.RemoveAll(this);
+	GetPlayerState()->OnSpellPointsChangedDelegate.AddLambda([&](const int32 Points)
 	{
 		SpellPoints = Points;
 		SpellPointsToUIDelegate.Broadcast(SpellPoints);
@@ -27,7 +25,7 @@ void USpellMenuWidgetController::BindCallbacksDependencies()
 void USpellMenuWidgetController::BroadcastInitialValues()
 {
 	AuraHUD->BroadcastAllActivatableAbilities();
-	SpellPointsToUIDelegate.Broadcast(PlayerState->GetSpellPoints());
+	SpellPointsToUIDelegate.Broadcast(GetPlayerState()->GetSpellPoints());
 }
 
 void USpellMenuWidgetController::ClearSelected()
@@ -43,7 +41,7 @@ void USpellMenuWidgetController::UpdateButtonsAndDescriptions(const int32 Points
 
 	FText Description;
 	FText NextLvDescription;
-	if (const FGameplayAbilitySpec* Spec = AbilitySystemComponent->GetSpecFromAssetTag(AbilityTag))
+	if (const FGameplayAbilitySpec* Spec = GetASC()->GetSpecFromAssetTag(AbilityTag))
 	{
 		// Spec->GetAbilityInstances(); Spec->GetPrimaryInstance();
 		if (const UCostCooldownAbility* AuraAbility = Cast<UCostCooldownAbility>(Spec->NonReplicatedInstances[0]))
@@ -59,38 +57,42 @@ void USpellMenuWidgetController::UpdateButtonsAndDescriptions(const int32 Points
 	}
 	else if (AbilityTag.IsValid()) // Has no Activatable Ability with Tag
 	{
-		const FAuraAbilityData* Data = UAuraLibrary::FindAbilityDataByTag(this, AbilityTag);
-		// Description = UAuraGameplayAbility::GetLockedDescription(Data->LevelRequirement);
-		Description = AuraHUD->GetLockedDescription(Data->LevelRequirement);
+		if (const FAuraAbilityData* Data = UAbilityDataAsset::GetAbilityFromGameState(this, AbilityTag))
+		{	// Description = UAuraGameplayAbility::GetLockedDescription(Data->LevelRequirement);
+			Description = AuraHUD->GetLockedDescription(Data->LevelRequirement);
+		}
 	}
-	SpellButtonFocusDelegate.Broadcast(bSpendEnabled, bEquipEnabled, Description, NextLvDescription, bClick);
+	SpellButtonFocusDelegate.Broadcast(bSpendEnabled, bEquipEnabled,
+		Description, NextLvDescription, bClick);
 }
 
 void USpellMenuWidgetController::SpendPoint()
 {
-	if (SelectedSpellGlobe) AbilitySystemComponent->ServerSpendSpellPoints(SelectedSpellGlobe->AbilityTag, PlayerState);
+	if (SelectedSpellGlobe) GetASC()->ServerSpendSpellPoints(SelectedSpellGlobe->AbilityTag);
 }
 
 bool USpellMenuWidgetController::EquipAbility()
 {
 	if (SelectedSpellGlobe && SelectedSpellGlobe->AbilityTag.IsValid())
 	{
-		if (const FAuraAbilityData* Data = UAuraLibrary::FindAbilityDataByTag(this ,SelectedSpellGlobe->AbilityTag))
+		if (const FAuraAbilityData* Data = UAbilityDataAsset::GetAbilityFromGameState(
+			this, SelectedSpellGlobe->AbilityTag))
 		{
 			UpdateButtonsAndDescriptions(SpellPoints, SelectedSpellGlobe->AbilityTag, SelectedSpellGlobe->StatusTag, true);
-			return Data->bIsPassive;
+			return Data->AbilityClass->GetDefaultObject<UAuraGameplayAbility>()->bActivateAbilityOnGranted;
 		}
 	}
 	return false;
 }
 
-void USpellMenuWidgetController::ChangeSpellInputSlot(const FGameplayTag& SlotTag, const FGameplayTag& AbilityTag,
+void USpellMenuWidgetController::ChangeSpellInputSlot(const FGameplayTag& AbilityTag, const FGameplayTag NewSlotTag,
 	const bool bIsPassive)
 {
-	if (const FAuraAbilityData* Data = UAuraLibrary::FindAbilityDataByTag(this, AbilityTag))
+	if (const FAuraAbilityData* Data = UAbilityDataAsset::GetAbilityFromGameState(this, AbilityTag))
 	{
-		if (bIsPassive != Data->bIsPassive) return;
+		// Check Wrong type (Active != Passive Slots)
+		if (bIsPassive != Data->AbilityClass->GetDefaultObject<UAuraGameplayAbility>()->bActivateAbilityOnGranted) return;
 		ClearSelected();
-		AbilitySystemComponent->ServerChangeAbilitySlot(Data->AbilityTag, SlotTag);
+		GetASC()->ServerChangeAbilitySlot(AbilityTag, NewSlotTag);
 	}
 }

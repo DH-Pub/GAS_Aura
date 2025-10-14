@@ -14,30 +14,26 @@
 
 void UOverlayWidgetController::BindCallbacksDependencies()
 {
-	BindGameplayAttributeToBroadcast(AttributeSet->GetHealthAttribute(), OnHealthChanged);
-	BindGameplayAttributeToBroadcast(AttributeSet->GetMaxHealthAttribute(), OnMaxHealthChanged);
-	BindGameplayAttributeToBroadcast(AttributeSet->GetManaAttribute(), OnManaChanged);
-	BindGameplayAttributeToBroadcast(AttributeSet->GetMaxManaAttribute(), OnMaxManaChanged);
+	BindGameplayAttributeToBroadcast(GetAttributeSet()->GetHealthAttribute(), OnHealthChanged);
+	BindGameplayAttributeToBroadcast(GetAttributeSet()->GetMaxHealthAttribute(), OnMaxHealthChanged);
+	BindGameplayAttributeToBroadcast(GetAttributeSet()->GetManaAttribute(), OnManaChanged);
+	BindGameplayAttributeToBroadcast(GetAttributeSet()->GetMaxManaAttribute(), OnMaxManaChanged);
 
-	PlayerState->OnXPChangedDelegate.AddUObject(this, &UOverlayWidgetController::BroadcastXPToUI);
+	GetPlayerState()->OnXPChangedDelegate.RemoveAll(this);
+	GetPlayerState()->OnXPChangedDelegate.AddUObject(this, &UOverlayWidgetController::BroadcastXPToUI);
 	// Receive broadcast from AuraAbilitySystemComponent
-	AbilitySystemComponent->EffectAssetTags.AddLambda([this](const FGameplayTagContainer& AssetTags)
+	GetASC()->EffectAssetTags.RemoveAll(this);
+	GetASC()->EffectAssetTags.AddLambda([&](const FGameplayTagContainer& AssetTags)
 	{
 		for (const FGameplayTag& Tag : AssetTags)
 		{
-			// "A.1".MatchesTag("A") return True, "A".MatchesTag("A.1") return False
-			// if (Tag.MatchesTag(FGameplayTag::RequestGameplayTag(FName("Message"))))
-			if (Tag.MatchesTag(MessageTags::Message))
+			if (!Tag.MatchesTag(MessageTags::Message)) continue;
+			// MessageTableDelegate.Broadcast(*GetDataTableRowByTag<FMessageRow>(MessageDataTable, Tag));
+			TArray<FMessageRow*> RowArray;
+			MessageDataTable->GetAllRows(TEXT("AbilitySystemComponent->EffectAssetTags"), RowArray);
+			for (const FMessageRow* Row : RowArray)
 			{
-				// MessageWidgetInfoDelegate.Broadcast(*MessageInfo->FindMessageInfoForTag(Tag));
-				TArray<FMessageRow*> RowArray;
-				MessageDataTable->GetAllRows(TEXT(""), RowArray);
-				for (const FMessageRow* Row : RowArray)
-				{
-					if (Row->MessageTag.MatchesTagExact(Tag)) MessageTableDelegate.Broadcast(*Row);
-				}
-				// MessageTableDelegate.Broadcast(*GetDataTableRowByTag<FMessageRow>(MessageDataTable, Tag));
-				return;
+				if (Row->MessageTag.MatchesTagExact(Tag)) {MessageTableDelegate.Broadcast(*Row); return;}
 			}
 		}
 	});
@@ -45,22 +41,23 @@ void UOverlayWidgetController::BindCallbacksDependencies()
 
 void UOverlayWidgetController::BroadcastInitialValues()
 {
-	OnHealthChanged.Broadcast(AttributeSet->GetHealth());
-	OnMaxHealthChanged.Broadcast(AttributeSet->GetMaxHealth());
-	OnManaChanged.Broadcast(AttributeSet->GetMana());
-	OnMaxManaChanged.Broadcast(AttributeSet->GetMaxMana());
+	OnHealthChanged.Broadcast(GetAttributeSet()->GetHealth());
+	OnMaxHealthChanged.Broadcast(GetAttributeSet()->GetMaxHealth());
+	OnManaChanged.Broadcast(GetAttributeSet()->GetMana());
+	OnMaxManaChanged.Broadcast(GetAttributeSet()->GetMaxMana());
 
-	// if AddCharacterStartupAbilities is called on the server before InitAbilityActorInfo on client
-	AuraHUD->BroadcastAllActivatableAbilities();
-	BroadcastXPToUI(PlayerState->GetPlayerXP(), PlayerState->GetPlayerLevel(), PlayerState->LevelUpDataAsset);
+	// if AddCharacterStartupAbilities is called on the server before Client InitAuraCharacter()->InitAuraHUD
+	AuraHUD->BroadcastAllActivatableAbilities(); // Make sure Ability Icons on UI receive their data
+	BroadcastXPToUI();
 }
 
-void UOverlayWidgetController::BroadcastXPToUI(const int32 XP, const int32 Level, ULevelUpDataAsset* LevelUpDA) const
+void UOverlayWidgetController::BroadcastXPToUI(int32 XP) const
 {
-	const int32 PreLevelUpReq = LevelUpDA->LevelUpDataList[Level - 1].LevelUpRequirement;
-	const int32 LevelUpReq = LevelUpDA->LevelUpDataList[Level].LevelUpRequirement;
-	const float CurrentLevelXP = XP - PreLevelUpReq;
-	const float DeltaLevelReq = LevelUpReq - PreLevelUpReq;
-	const float CurrentLevelXPPercent = CurrentLevelXP / DeltaLevelReq;
+	if (XP == 0) XP = GetPlayerState()->GetPlayerXP();
+	const int32 Level = GetPlayerState()->GetPlayerLevel();
+	const int32 PrevLevelUpReq = GetPlayerState()->LevelUpDataAsset->LevelUpDataList[Level - 1].LevelUpRequirement;
+	const float NextLevelUpReq = GetPlayerState()->LevelUpDataAsset->LevelUpDataList[Level].LevelUpRequirement;
+	// have 1 float (NextLevelUpReq) for "/" to return float
+	const float CurrentLevelXPPercent = (XP - PrevLevelUpReq) / (NextLevelUpReq - PrevLevelUpReq);
 	OnXPPercentChangedDelegate.Broadcast(Level, CurrentLevelXPPercent);
 }

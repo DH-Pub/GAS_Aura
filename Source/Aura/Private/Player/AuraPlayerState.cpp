@@ -6,7 +6,7 @@
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "AbilitySystem/Data/LevelUpDataAsset.h"
-#include "Character/AuraCharacter.h"
+#include "Character/AuraPlayer.h"
 #include "Net/UnrealNetwork.h"
 
 AAuraPlayerState::AAuraPlayerState()
@@ -16,7 +16,7 @@ AAuraPlayerState::AAuraPlayerState()
 	AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Mixed);
 
 	AttributeSet = CreateDefaultSubobject<UAuraAttributeSet>("AttributeSet");
-	
+
 	SetNetUpdateFrequency(120.f); // Update per second
 }
 
@@ -34,24 +34,25 @@ UAbilitySystemComponent* AAuraPlayerState::GetAbilitySystemComponent() const {re
 
 void AAuraPlayerState::SetXP(const int32 NewXP)
 {
-	checkf(LevelUpDataAsset, TEXT("Unable to find LevelUpData. Please fill out AuraPlayerState"));
-	const int32 NewLevel = LevelUpDataAsset->FindLevelForXP(NewXP);
-	if (Level != NewLevel)
-	{
-		AbilitySystemComponent->UnlockAbilityByLevel(NewLevel);
-		
-		if (AAuraCharacter* Character = Cast<AAuraCharacter>(GetPawn()))
-		{
-			Character->MulticastLevelUpEffects(NewLevel);
-		}
-	}
-	while (Level < NewLevel)
-	{
-		Level++;
-		const FAuraLevelUpData& LevelUpData = LevelUpDataAsset->LevelUpDataList[Level];
-		AddToAttributePoints(LevelUpData.AttributePointsGain);
-		AddToSpellPoints(LevelUpData.SpellPointsGain);
-	}
+	GetPlayerController();
 	XP = NewXP;
-	OnXPChangedDelegate.Broadcast(XP, Level, LevelUpDataAsset);
+	int32 i = GetPlayerLevel();
+	const int32 NewXPLevel = LevelUpDataAsset->FindLevelForXP(XP);
+	if (i != NewXPLevel)
+	{
+		int32 AttributePointsToAdd = 0;
+		int32 SpellPointsToAdd = 0;
+		while (i < NewXPLevel)
+		{
+			const FAuraLevelUpData& LevelUpData = LevelUpDataAsset->LevelUpDataList[++i];
+			AttributePointsToAdd += LevelUpData.AttributePointsGain;
+			SpellPointsToAdd += LevelUpData.SpellPointsGain;
+		}
+		AddToAttributePoints(AttributePointsToAdd);
+		AddToSpellPoints(SpellPointsToAdd);
+		SetLevel(i);
+		AbilitySystemComponent->UnlockAbilityByLevel(Level);
+		if (AAuraPlayer* Character = Cast<AAuraPlayer>(GetPawn())) Character->MulticastLevelUpEffects(Level);
+	}
+	OnXPChangedDelegate.Broadcast(XP);
 }

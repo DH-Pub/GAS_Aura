@@ -7,10 +7,6 @@
 #include "Engine/DataAsset.h"
 #include "AbilityDataAsset.generated.h"
 
-struct FGameplayAbilitySpec;
-class UAuraAbilitySystemComponent;
-class UAuraGameplayAbility;
-
 USTRUCT(BlueprintType)
 struct FAuraAbilityData
 {
@@ -18,8 +14,6 @@ struct FAuraAbilityData
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(GameplayTagFilter="Ability"))
 	FGameplayTag AbilityTag = FGameplayTag();
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	bool bIsPassive = false;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<UTexture2D> Icon = nullptr;
@@ -30,7 +24,7 @@ struct FAuraAbilityData
 	int32 LevelRequirement = 1;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	TSubclassOf<UAuraGameplayAbility> AbilityClass = nullptr;
+	TSubclassOf<class UAuraGameplayAbility> AbilityClass = nullptr;
 };
 //Data Asset is shared among players, this is created to send current player's ability data
 USTRUCT(BlueprintType)
@@ -52,8 +46,13 @@ class AURA_API UAbilityDataAsset : public UDataAsset
 	GENERATED_BODY()
 public:
 	/** Data Asset list of all abilities with icons, ... */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(TitleProperty="{AbilityTag} - {Icon}"), Category="AbilityInformation")
+	UPROPERTY(EditDefaultsOnly, meta=(TitleProperty="{AbilityTag} - {Icon}"), Category="AbilityInformation")
 	TArray<FAuraAbilityData> AbilityDataList;
+
+	static const UAbilityDataAsset* GetFromGameState(const UObject* WorldContextObject);
+	static const FAuraAbilityData* GetAbilityFromGameState(const UObject* WorldContextObject, const FGameplayTag& Tag);
+	static const FAuraAbilityData* GetAbilityFromGameState(const UObject* WorldContextObject, const FGameplayTagContainer& Tags);
+
 
 #if WITH_EDITOR
 	virtual EDataValidationResult IsDataValid(FDataValidationContext& Context) const override;

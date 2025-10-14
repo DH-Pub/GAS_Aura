@@ -21,6 +21,8 @@ int32 ULevelUpDataAsset::FindLevelForXP(const int32 XP) const
 	return Left; // Left == Right
 }
 
+
+#if WITH_EDITOR
 EDataValidationResult ULevelUpDataAsset::IsDataValid(FDataValidationContext& Context) const
 {
 	EDataValidationResult Result = CombineDataValidationResults(Super::IsDataValid(Context), EDataValidationResult::Valid);
@@ -45,5 +47,6 @@ EDataValidationResult ULevelUpDataAsset::IsDataValid(FDataValidationContext& Con
 	}
 	return Result;
 }
+#endif
 
 #undef LOCTEXT_NAMESPACE

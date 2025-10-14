@@ -4,77 +4,69 @@
 #include "AbilitySystem/ExecCalc/ExecCalc_Damage.h"
 
 #include "AbilitySystemComponent.h"
-#include "AuraGameplayEffectTypes.h"
 #include "AuraGameplayTags.h"
-#include "AbilitySystem/AuraLibrary.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "AbilitySystem/Data/CharacterClassDataAsset.h"
-#include "Interaction/CombatInterface.h"
+// #include "GameplayEffectComponents/TargetTagsGameplayEffectComponent.h"
+#include "AuraEffectTypes.h"
+#include "AbilitySystem/Ability/DamageAbility.h"
+#include "Character/AuraCharacterBase.h"
 
 struct AuraDamageStatics
 {
-	DECLARE_ATTRIBUTE_CAPTUREDEF(CriticalHitChance); // Create CriticalHitChanceDef
-	DECLARE_ATTRIBUTE_CAPTUREDEF(CriticalHitDamage);
+	DECLARE_ATTRIBUTE_CAPTUREDEF(CriticalHitChance); 
+	FGameplayEffectAttributeCaptureDefinition SourceCritDamageDef; // Alternative Way
 	DECLARE_ATTRIBUTE_CAPTUREDEF(ArmorPenetration);
-	
-	DECLARE_ATTRIBUTE_CAPTUREDEF(Armor); // Create ArmorDef
+
+	DECLARE_ATTRIBUTE_CAPTUREDEF(Armor); // Create ArmorDef and ArmorProperty
 	DECLARE_ATTRIBUTE_CAPTUREDEF(BlockChance);
 	DECLARE_ATTRIBUTE_CAPTUREDEF(CriticalHitResistance);
-	
+
 	DECLARE_ATTRIBUTE_CAPTUREDEF(FireResistance);
 	DECLARE_ATTRIBUTE_CAPTUREDEF(LightningResistance);
 	DECLARE_ATTRIBUTE_CAPTUREDEF(ArcaneResistance);
 	DECLARE_ATTRIBUTE_CAPTUREDEF(PhysicalResistance);
-	
+
 	AuraDamageStatics()
 	{
 		DEFINE_ATTRIBUTE_CAPTUREDEF(UAuraAttributeSet, CriticalHitChance, Source, false);
-		DEFINE_ATTRIBUTE_CAPTUREDEF(UAuraAttributeSet, CriticalHitDamage, Source, false);
+		AURA_DEFINE_CAPTURE_DEF(SourceCritDamageDef, GetCriticalHitDamageAttribute(), Source, false);
 		DEFINE_ATTRIBUTE_CAPTUREDEF(UAuraAttributeSet, ArmorPenetration, Source, false);
-		
+
 		DEFINE_ATTRIBUTE_CAPTUREDEF(UAuraAttributeSet, Armor, Target, false);
 		DEFINE_ATTRIBUTE_CAPTUREDEF(UAuraAttributeSet, BlockChance, Target, false);
 		DEFINE_ATTRIBUTE_CAPTUREDEF(UAuraAttributeSet, CriticalHitResistance, Target, false);
-		
+
 		DEFINE_ATTRIBUTE_CAPTUREDEF(UAuraAttributeSet, FireResistance, Target, false);
 		DEFINE_ATTRIBUTE_CAPTUREDEF(UAuraAttributeSet, LightningResistance, Target, false);
 		DEFINE_ATTRIBUTE_CAPTUREDEF(UAuraAttributeSet, ArcaneResistance, Target, false);
 		DEFINE_ATTRIBUTE_CAPTUREDEF(UAuraAttributeSet, PhysicalResistance, Target, false);
 	}
 };
-static const AuraDamageStatics& DamageStatics()
-{
-	static AuraDamageStatics DStatics;
-	return DStatics;
-}
-
+static const AuraDamageStatics& DamageStatics() {static AuraDamageStatics S;return S;}
 UExecCalc_Damage::UExecCalc_Damage()
 {
 	RelevantAttributesToCapture.Add(DamageStatics().CriticalHitChanceDef);
-	RelevantAttributesToCapture.Add(DamageStatics().CriticalHitDamageDef);
+	RelevantAttributesToCapture.Add(DamageStatics().SourceCritDamageDef);
 	RelevantAttributesToCapture.Add(DamageStatics().ArmorPenetrationDef);
-	
+
 	RelevantAttributesToCapture.Add(DamageStatics().ArmorDef);
 	RelevantAttributesToCapture.Add(DamageStatics().BlockChanceDef);
 	RelevantAttributesToCapture.Add(DamageStatics().CriticalHitResistanceDef);
-	
+
 	RelevantAttributesToCapture.Add(DamageStatics().FireResistanceDef);
 	RelevantAttributesToCapture.Add(DamageStatics().LightningResistanceDef);
 	RelevantAttributesToCapture.Add(DamageStatics().ArcaneResistanceDef);
 	RelevantAttributesToCapture.Add(DamageStatics().PhysicalResistanceDef);
-	
-	/*// Testing
-	IncomingDamageDef = FGameplayEffectAttributeCaptureDefinition(UAuraAttributeSet::GetIncomingDamageAttribute(),
-		EGameplayEffectAttributeCaptureSource::Target, false); // Testing
-	RelevantAttributesToCapture.Add(IncomingDamageDef); // Testing*/
 }
 
+// CDO->Execute(
 void UExecCalc_Damage::Execute_Implementation(const FGameplayEffectCustomExecutionParameters& ExecutionParams,
                                               FGameplayEffectCustomExecutionOutput& OutExecutionOutput) const
 {
-	/* Boilerplate */
-	const UAbilitySystemComponent* SourceASC = ExecutionParams.GetSourceAbilitySystemComponent();
-	const UAbilitySystemComponent* TargetASC = ExecutionParams.GetTargetAbilitySystemComponent();
+	/* Boilerplate ~ */
+	const UAbilitySystemComponent* SourceASC = ExecutionParams.GetSourceAbilitySystemComponent(); // Get Form ExecutionParams.Spec
+	UAbilitySystemComponent* TargetASC = ExecutionParams.GetTargetAbilitySystemComponent();
 	AActor* SourceAvatar = SourceASC ? SourceASC->GetAvatarActor() : nullptr;
 	AActor* TargetAvatar = TargetASC ? TargetASC->GetAvatarActor() : nullptr;
 
@@ -82,55 +74,55 @@ void UExecCalc_Damage::Execute_Implementation(const FGameplayEffectCustomExecuti
 	FAggregatorEvaluateParameters EvaluateParameters;
 	EvaluateParameters.SourceTags = Spec.CapturedSourceTags.GetAggregatedTags();
 	EvaluateParameters.TargetTags = Spec.CapturedTargetTags.GetAggregatedTags();
-	/* End Boilerplate */
+	/* ~ End Boilerplate */
 
-	int32 SourcePlayerLevel = 1;
-	if (SourceAvatar->Implements<UCombatInterface>())
-	{
-		SourcePlayerLevel = ICombatInterface::Execute_GetCharacterLevel(SourceAvatar);
-	}
-	int32 TargetPlayerLevel = 1;
-	if (TargetAvatar->Implements<UCombatInterface>())
-	{
-		TargetPlayerLevel = ICombatInterface::Execute_GetCharacterLevel(TargetAvatar);
-	}
+	FDamageEffectContext& DamageContext = FAuraEffectContext::GetOrMakeContextStructRef<FDamageEffectContext>(Spec.GetContext().Get());
+	DamageContext.TargetActor = TargetAvatar;
+	const int32 SourcePlayerLevel = SourceAvatar ? Cast<AAuraCharacterBase>(SourceAvatar)->GetCharacterLevel() : 1;
+	const int32 TargetPlayerLevel = TargetAvatar ? Cast<AAuraCharacterBase>(TargetAvatar)->GetCharacterLevel() : 1;
 
 	// Get Damage Set by caller Magnitude
 	float Damage = 0.f;
-	auto DmgAfterResistance = [&Spec, &ExecutionParams, &EvaluateParameters, &Damage](const FGameplayTag& DamageTypeTag,
-		const FGameplayEffectAttributeCaptureDefinition& CaptureDef)
+	auto DmgDebuffCalc = [&Spec, &ExecutionParams, &EvaluateParameters, &Damage]
+		(const FGameplayTag& DamageType, const FGameplayEffectAttributeCaptureDefinition& ResistanceDef)
 	{
-		const float DamageTypeValue = Spec.GetSetByCallerMagnitude(DamageTypeTag, false);
-		if (DamageTypeValue == 0.f) return;
-		float Resistance = 0.f;
-		ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(CaptureDef, EvaluateParameters, Resistance);
-		Damage += DamageTypeValue * (100.f - Resistance) / 100.f;
-	};
-	DmgAfterResistance(AuraGameplayTags::Damage_Fire, DamageStatics().FireResistanceDef);
-	DmgAfterResistance(AuraGameplayTags::Damage_Lightning, DamageStatics().LightningResistanceDef);
-	DmgAfterResistance(AuraGameplayTags::Damage_Arcane, DamageStatics().ArcaneResistanceDef);
-	DmgAfterResistance(AuraGameplayTags::Damage_Physical, DamageStatics().PhysicalResistanceDef);
+		const float TypeDamage = Spec.GetSetByCallerMagnitude(DamageType, false);
+		if (TypeDamage < UE_KINDA_SMALL_NUMBER) return false;
+		float Resistance = 0.f; ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(ResistanceDef, EvaluateParameters, Resistance);
+		const float ResistedMultiplier = (100.f - Resistance) / 100.f;
+		Damage += TypeDamage * ResistedMultiplier;
 
-	float Magnitude = 0.f; // for GetAttributeMagnitudeClamped return
-	auto GetAttributeMagnitudeClamped = [&ExecutionParams, &EvaluateParameters, &Magnitude] (const FGameplayEffectAttributeCaptureDefinition& CaptureDef)
+		/*// Debuff
+		const UDamageAbility* DamageAbility = Cast<UDamageAbility>(Spec.GetContext().GetAbility());
+		const float SourceDebuffChance = DamageAbility->DebuffChance.GetValueAtLevel(Spec.GetLevel());
+		DamageContext.SetDebuffSuccess(FMath::RandRange(0.f, 1.f) < SourceDebuffChance * ResistedMultiplier);*/
+		return true;
+	};
+	DmgDebuffCalc(AuraGameplayTags::Damage_Fire, DamageStatics().FireResistanceDef) ?
+	true : DmgDebuffCalc(AuraGameplayTags::Damage_Lightning, DamageStatics().LightningResistanceDef) ?
+	true : DmgDebuffCalc(AuraGameplayTags::Damage_Arcane, DamageStatics().ArcaneResistanceDef) ?
+	true : DmgDebuffCalc(AuraGameplayTags::Damage_Physical, DamageStatics().PhysicalResistanceDef);
+
+
+	auto GetAttributeMagnitudeClamped = [&ExecutionParams, &EvaluateParameters]
+		(const FGameplayEffectAttributeCaptureDefinition& Def)
 	{
-		ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(CaptureDef, EvaluateParameters, Magnitude);
-		return FMath::Max<float>(0.f, Magnitude);
+		float Result = 0.f; ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(Def, EvaluateParameters, Result);
+		return FMath::Max<float>(0.f, Result);
 	};
 	// Capture BlockChance and determine if there was a successful block
 	const float TargetBlockChance = GetAttributeMagnitudeClamped(DamageStatics().BlockChanceDef);
-	FAuraGameplayEffectContext* AuraContext = FAuraGameplayEffectContext::GetAuraContext(Spec.GetContext().Get());
-	// Spec (ExecutionParams.GetOwningSpec()) remains for Period HasDuration GE, so it needs to be reset or changed to current
-	if (AuraContext->SetIsBlocked(FMath::FRandRange(UE_KINDA_SMALL_NUMBER, 100.f) <= TargetBlockChance))
-	{
-		Damage *= .5f;
-	}
+	/*//IMPORTANT: Spec remains for Period HasDuration GE, so Context needs to be reset or changed to current
+	FAuraEffectContext* AuraContext = FAuraEffectContext::GetAuraContext(Spec.GetContext().Get());
+	AuraContext.SetIsBlocked(FMath::FRandRange(0.f, 100.f) < TargetBlockChance));*/
+	if (DamageContext.SetIsBlocked(FMath::FRandRange(0.f, 100.f) < TargetBlockChance)) Damage *= .5f;
 
 	const float TargetArmor = GetAttributeMagnitudeClamped(DamageStatics().ArmorDef);
 	const float SourceArmorPenetration = GetAttributeMagnitudeClamped(DamageStatics().ArmorPenetrationDef);
 
 	// Get Graph
-	const UCurveTable* DamageCalculationCurveTable = UAuraLibrary::GetGameModeCharacterClassDataAsset(SourceAvatar)->DamageCalculationCoefficients;
+	const UCurveTable* DamageCalculationCurveTable = UCharacterClassDataAsset::GetFromGameMode(SourceAvatar)
+		->DamageCalculationCoefficients;
 	const FRealCurve* ArmorPenetrationCurve = DamageCalculationCurveTable->FindCurve(FName("ArmorPenetration"), FString());
 	const float ArmorPenetrationCoefficient = ArmorPenetrationCurve->Eval(SourcePlayerLevel);
 	const FRealCurve* EffectiveArmorCurve = DamageCalculationCurveTable->FindCurve(FName("EffectiveArmor"), FString());
@@ -149,18 +141,19 @@ void UExecCalc_Damage::Execute_Implementation(const FGameplayEffectCustomExecuti
 	const float EffectiveCritResCoefficient = EffectiveCritResCurve->Eval(TargetPlayerLevel);
 
 	const float EffectiveCritChance = SourceCritChance - TargetCritRes * EffectiveCritResCoefficient;
-	if (AuraContext->SetIsCrit(FMath::RandRange(UE_KINDA_SMALL_NUMBER, 100.f) <= EffectiveCritChance))
+	if (DamageContext.SetIsCrit(FMath::RandRange(0.f, 100.f) <= EffectiveCritChance))
 	{
-		const float SourceCritDamage = GetAttributeMagnitudeClamped(DamageStatics().CriticalHitDamageDef);
-		Damage *= (1 + SourceCritDamage);
+		Damage *= (1 + GetAttributeMagnitudeClamped(DamageStatics().SourceCritDamageDef));
 	}
 
-	// const float PrevIncomingDmg = GetAttributeMagnitudeClamped(IncomingDamageDef); // Testing
-	
 	// DamageStatics().ArmorProperty FProperty* used to briefly hold the attribute
 	// This will override previous IncomingDamage
-	OutExecutionOutput.AddOutputModifier(FGameplayModifierEvaluatedData(UAuraAttributeSet::GetIncomingDamageAttribute(), EGameplayModOp::Override, Damage));
+	/*OutExecutionOutput.AddOutputModifier(FGameplayModifierEvaluatedData(
+		DamageStatics().IncomingDamageProperty, EGameplayModOp::Override, Damage)); // if IncomingDamage is added*/
+	/*OutExecutionOutput.AddOutputModifier(FGameplayModifierEvaluatedData(
+		UAuraAttributeSet::GetIncomingDamageAttribute(), EGameplayModOp::Override, Damage));*/
+	AURA_ADD_OUTPUT_MODIFIER(GetIncomingDamageAttribute(), Override, Damage)
 
 	// Educational Purpose
-	OutExecutionOutput.AddOutputModifier(FGameplayModifierEvaluatedData(UAuraAttributeSet::GetManaAttribute(), EGameplayModOp::Additive, -2.f));
+	AURA_ADD_OUTPUT_MODIFIER(GetManaAttribute(), Additive, -2.f)
 }

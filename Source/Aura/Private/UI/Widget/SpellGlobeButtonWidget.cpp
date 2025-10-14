@@ -16,7 +16,7 @@
 void USpellGlobeButtonWidget::SetWidgetController(UAuraWidgetController* InWidgetController)
 {
 	SpellMenuWC = Cast<USpellMenuWidgetController>(InWidgetController);
-	SpellMenuWC->AbilitySystemComponent->AbilityDataDelegate.AddDynamic(this, &USpellGlobeButtonWidget::ReceiveAbilityData);
+	SpellMenuWC->GetASC()->AbilityDataDelegate.AddDynamic(this, &USpellGlobeButtonWidget::ReceiveAbilityData);
 	Super::SetWidgetController(InWidgetController);
 }
 
@@ -69,7 +69,7 @@ void USpellGlobeButtonWidget::NativePreConstruct()
 void USpellGlobeButtonWidget::NativeDestruct()
 {
 	Super::NativeDestruct();
-	if (SpellMenuWC) SpellMenuWC->AbilitySystemComponent->AbilityDataDelegate.RemoveAll(this);
+	if (SpellMenuWC) SpellMenuWC->GetASC()->AbilityDataDelegate.RemoveAll(this);
 }
 
 

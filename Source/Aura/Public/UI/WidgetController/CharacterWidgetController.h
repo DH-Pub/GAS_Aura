@@ -12,7 +12,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnLevelUpSignature, int32, Level);
  * 
  */
 UCLASS()
-class AURA_API UCharacterWidgetController : public UAuraWidgetController
+class UCharacterWidgetController : public UAuraWidgetController
 {
 	GENERATED_BODY()
 public:

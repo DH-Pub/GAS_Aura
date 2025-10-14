@@ -4,7 +4,6 @@
 #include "UI/WidgetController/AttributeMenuWidgetController.h"
 
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
-#include "AbilitySystem/AuraLibrary.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "AbilitySystem/Data/AttributeDataAsset.h"
 #include "Player/AuraPlayerState.h"
@@ -12,37 +11,34 @@
 
 void UAttributeMenuWidgetController::BindCallbacksDependencies()
 {
-	for (TTuple<FGameplayTag, FAuraAttributeData>& Pair : AuraHUD->AttributeData->AttributeDataList)
+	GetPlayerState()->OnAttributePointsChangedDelegate.RemoveAll(this);
+	GetPlayerState()->OnAttributePointsChangedDelegate.AddLambda([&](const int32 Points)
+	{AttributePointsToUIDelegate.Broadcast(AttributePoints = Points, GetTotalPointsAllocating());});
+
+	for (const TTuple<FGameplayTag, FAuraAttributeData>& Pair : AuraHUD->GetAttributeDataList())
 	{
-		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(Pair.Value.GameplayAttribute).AddLambda(
-			[this, &Pair](const FOnAttributeChangeData& Data)
-			{
-				Pair.Value.AttributeValue = Pair.Value.GameplayAttribute.GetNumericValue(AttributeSet);
-				AttributeInfoDelegate.Broadcast(Pair.Key, Pair.Value);
-			}
-		);
+		GetASC()->GetGameplayAttributeValueChangeDelegate(Pair.Value.GameplayAttribute).RemoveAll(this);
+		GetASC()->GetGameplayAttributeValueChangeDelegate(Pair.Value.GameplayAttribute).AddLambda(
+		[&](const FOnAttributeChangeData& Data)
+		{
+			if (Data.NewValue == Data.OldValue) return;
+			AttributeInfoDelegate.Broadcast(Pair.Key, Data.NewValue, Pair.Value);
+		});
 	}
-	PlayerState->OnAttributePointsChangedDelegate.AddLambda([this](const int32 Points)
-	{
-		AttributePoints = Points;
-		AttributePointsToUIDelegate.Broadcast(AttributePoints, GetTotalPointsAllocating());
-	});
-	PlayerState->OnApplyingStatFinishedDelegate.AddLambda([this]()
-	{
-		bIsApplying = false;
-		BroadcastInitialValues();
-	});
+	GetASC()->OnApplyingStatFinishedDelegate.RemoveAll(this);
+	GetASC()->OnApplyingStatFinishedDelegate.AddUObject(this, &UAttributeMenuWidgetController::BroadcastInitialValues);
 }
 
 void UAttributeMenuWidgetController::BroadcastInitialValues()
 {
-	for (TTuple<FGameplayTag, FAuraAttributeData>& Pair : AuraHUD->AttributeData->AttributeDataList)
+	bIsApplying = false;
+	for (const TTuple<FGameplayTag, FAuraAttributeData>& Pair : AuraHUD->GetAttributeDataList())
 	{
-		Pair.Value.AttributeValue = Pair.Value.GameplayAttribute.GetNumericValue(AttributeSet);
-		AttributeInfoDelegate.Broadcast(Pair.Key, Pair.Value);
+		const float AttributeValue = Pair.Value.GameplayAttribute.GetNumericValue(GetAttributeSet());
+		AttributeInfoDelegate.Broadcast(Pair.Key, AttributeValue, Pair.Value);
 	}
-	
-	AttributePoints = PlayerState->GetAttributePoints();
+
+	AttributePoints = GetPlayerState()->GetAttributePoints();
 	PointAllocationList.Empty();
 	AttributePointsToUIDelegate.Broadcast(AttributePoints, 0);
 }
@@ -73,8 +69,8 @@ int32 UAttributeMenuWidgetController::GetTotalPointsAllocating()
 
 void UAttributeMenuWidgetController::ApplyUpgrades()
 {
-	bIsApplying = true;
-	AbilitySystemComponent->ServerUpgradeAttribute(PointAllocationList, PlayerState);
+	bIsApplying = false;
+	GetASC()->ServerUpgradeAttribute(PointAllocationList);
 	PointAllocationList.Empty();
 }
 

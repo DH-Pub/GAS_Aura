@@ -10,6 +10,7 @@ namespace AuraGameplayTags
 {
 	// Automatically add to Gameplay Tag List
 #pragma region Attributes
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Attributes)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Attributes_Primary_Strength)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Attributes_Primary_Intelligence)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Attributes_Primary_Resilience)
@@ -52,6 +53,7 @@ namespace AuraGameplayTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Combat_Ability_5)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Combat_Ability_6)
 
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Combat_Passive)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Combat_Passive_1)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Combat_Passive_2)
 #pragma endregion 
@@ -65,7 +67,6 @@ namespace AuraGameplayTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Move_Directional)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Move_Mouse)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Move_Auto)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_HitReact)
 
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Attack)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Summon)
@@ -91,9 +92,15 @@ namespace AuraGameplayTags
 
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Generic_Ability)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Generic_Ability_Cancelable)
+	UE_DEPRECATED(all, "using Character_State_Ability so AssetTags has less")
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Generic_Ability_Blockable)
 
-
+#pragma region CharacterState
+	// ActivationOwnedTags(Block others including self) and ActivationBlockedTags(Be Blocked)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_State_Ability)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_State_HitReact)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_State_Death)
+#pragma endregion
 
 #pragma region Combat
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Damage)
@@ -108,10 +115,11 @@ namespace AuraGameplayTags
 		{Damage_Physical, Attributes_Resistance_Physical},
 	};*/
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Debuff)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Debuff_Burn)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Debuff_Stun)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Debuff_Arcane)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Debuff_Physical)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Debuff_Type)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Debuff_Type_Burn)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Debuff_Type_Stun)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Debuff_Type_Arcane)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Debuff_Type_Physical)
 
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Montage_Attack_1)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Montage_Attack_2)
@@ -122,6 +130,7 @@ namespace AuraGameplayTags
 
 #pragma region GameplayCue
 	// UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_FireBolt_Impact)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Damage)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Impact_Melee)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Impact_Projectile)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Summon)
