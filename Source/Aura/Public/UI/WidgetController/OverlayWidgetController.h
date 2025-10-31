@@ -49,10 +49,4 @@ protected:
 
 	UFUNCTION()
 	void BroadcastXPToUI(int32 XP = 0) const;
-private:
-	template<typename T = FTableRowBase> UE_DEPRECATED(all, "just loop through Data Table")
-	static T* GetDataTableRowByTag(UDataTable* DataTable, const FGameplayTag& Tag)
-	{
-		return DataTable->FindRow<T>(Tag.GetTagName(), TEXT("")); // Find by RowName
-	}
 };

@@ -15,14 +15,14 @@ void UAttributeMenuWidgetController::BindCallbacksDependencies()
 	GetPlayerState()->OnAttributePointsChangedDelegate.AddLambda([&](const int32 Points)
 	{AttributePointsToUIDelegate.Broadcast(AttributePoints = Points, GetTotalPointsAllocating());});
 
-	for (const TTuple<FGameplayTag, FAuraAttributeData>& Pair : AuraHUD->GetAttributeDataList())
+	for (const auto& [Tag, AttributeData] : AuraHUD->GetAttributeDataList())
 	{
-		GetASC()->GetGameplayAttributeValueChangeDelegate(Pair.Value.GameplayAttribute).RemoveAll(this);
-		GetASC()->GetGameplayAttributeValueChangeDelegate(Pair.Value.GameplayAttribute).AddLambda(
+		GetASC()->GetGameplayAttributeValueChangeDelegate(AttributeData.GameplayAttribute).RemoveAll(this);
+		GetASC()->GetGameplayAttributeValueChangeDelegate(AttributeData.GameplayAttribute).AddLambda(
 		[&](const FOnAttributeChangeData& Data)
 		{
 			if (Data.NewValue == Data.OldValue) return;
-			AttributeInfoDelegate.Broadcast(Pair.Key, Data.NewValue, Pair.Value);
+			AttributeInfoDelegate.Broadcast(Tag, Data.NewValue, AttributeData);
 		});
 	}
 	GetASC()->OnApplyingStatFinishedDelegate.RemoveAll(this);
@@ -32,10 +32,10 @@ void UAttributeMenuWidgetController::BindCallbacksDependencies()
 void UAttributeMenuWidgetController::BroadcastInitialValues()
 {
 	bIsApplying = false;
-	for (const TTuple<FGameplayTag, FAuraAttributeData>& Pair : AuraHUD->GetAttributeDataList())
+	for (const auto& [Tag, AttributeData] : AuraHUD->GetAttributeDataList())
 	{
-		const float AttributeValue = Pair.Value.GameplayAttribute.GetNumericValue(GetAttributeSet());
-		AttributeInfoDelegate.Broadcast(Pair.Key, AttributeValue, Pair.Value);
+		const float AttributeValue = AttributeData.GameplayAttribute.GetNumericValue(GetAttributeSet());
+		AttributeInfoDelegate.Broadcast(Tag, AttributeValue, AttributeData);
 	}
 
 	AttributePoints = GetPlayerState()->GetAttributePoints();

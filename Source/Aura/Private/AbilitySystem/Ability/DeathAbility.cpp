@@ -18,7 +18,7 @@ UDeathAbility::UDeathAbility()
 	CancelAbilitiesWithTag = FGameplayTagContainer(AuraGameplayTags::Generic_Ability_Cancelable);
 	CancelAbilitiesWithTag.AddTag(AuraGameplayTags::Character_State_HitReact);
 
-	ActivationOwnedTags.AddTag(AuraGameplayTags::Character_State_Death); // DEPRECATED, use bStopRotation, bStopMovement
+	ActivationOwnedTags.AddTag(AuraGameplayTags::Character_State_Death); // Adds Tag to ASC on Activation 
 
 	NetExecutionPolicy = EGameplayAbilityNetExecutionPolicy::ServerInitiated;
 	NetSecurityPolicy = EGameplayAbilityNetSecurityPolicy::ServerOnly;
@@ -48,7 +48,7 @@ void UDeathAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, con
 	if (!HasAuthority(&GetCurrentActivationInfoRef())) return;
 	// Send XP To Source on death =====================================================================================
 	const UCharacterClassDataAsset* ClassDataAsset = UCharacterClassDataAsset::GetFromGameMode(this);
-	AActor* Causer = TriggerEventData->ContextHandle.GetEffectCauser();
+	AActor* Causer = TriggerEventData->ContextHandle.GetInstigatorAbilitySystemComponent()->GetAvatarActor();
 	if (Causer != AuraCharacter) ClassDataAsset->SendXPToDeathCauser(Causer, AuraCharacter); // cause is not itself
 	if (AAuraEnemy* Enemy = Cast<AAuraEnemy>(AuraCharacter))
 	{

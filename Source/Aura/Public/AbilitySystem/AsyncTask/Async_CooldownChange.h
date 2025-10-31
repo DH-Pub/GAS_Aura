@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "ActiveGameplayEffectHandle.h"
 #include "GameplayTagContainer.h"
 #include "Kismet/BlueprintAsyncActionBase.h"
 #include "Async_CooldownChange.generated.h"
@@ -29,7 +30,7 @@ public:
 	FCooldownEnd CooldownEnd;
 
 	UFUNCTION(BlueprintCallable, meta=(BlueprintInternalUseOnly="true"))
-	static UAsync_CooldownChange* WaitForCooldownChange(UAbilitySystemComponent* AbilitySystemComponent,
+	static UAsync_CooldownChange* WaitForCooldownChange(UAbilitySystemComponent* InASC,
 		const FGameplayTagContainer& InCooldownTags, bool InUseServerCooldown = false);
 
 	UFUNCTION(BlueprintCallable)
@@ -48,5 +49,9 @@ private:
 
 	void OnActiveEffectAdded(UAbilitySystemComponent* TargetASC, const FGameplayEffectSpec& SpecApplied, FActiveGameplayEffectHandle ActiveEffectHandle);
 	void OnGameplayEffectRemoved(const FActiveGameplayEffect& ActiveEffect);
-	void CooldownTagChanged(const FGameplayTag InCooldownTag, int32 NewCount);
+	// void CooldownTagChanged(const FGameplayTag InCooldownTag, int32 NewCount);
+
+	FActiveGameplayEffectHandle EffectHandle;
+	FDelegateHandle OnEffectRemovedDelegate;
+	void OnEffectRemoved(const struct FGameplayEffectRemovalInfo& Info);
 };

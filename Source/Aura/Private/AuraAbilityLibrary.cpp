@@ -3,19 +3,21 @@
 
 #include "AuraAbilityLibrary.h"
 
-#include "Interface/CombatInterface.h"
+#include "Character/AuraCharacterBase.h"
 #include "Kismet/GameplayStatics.h"
+#include "Player/AuraPlayerController.h"
 
 bool UAuraAbilityLibrary::YawActorToRotation(AActor* InActor, const FVector InAimDirection, const float DeltaTime,
-	const float InterpSpeed)
+                                             const float InterpSpeed)
 {
-	const FRotator CurrentRot = InActor->GetActorRotation();
-	FRotator TargetRot = InAimDirection.Rotation();
+	FRotator CurrentRot = InActor->GetActorRotation();
+	FRotator TargetRot = InAimDirection.ToOrientationRotator();
 	TargetRot.Pitch = TargetRot.Roll = 0.f;
 	if (FMath::Abs(TargetRot.Yaw - CurrentRot.Yaw) < UE_SMALL_NUMBER) return true; // if rotation is within Tolerance
 
 	const FRotator InterpToRot = FMath::RInterpConstantTo(CurrentRot, TargetRot, DeltaTime, InterpSpeed);
-	InActor->GetRootComponent()->SetWorldRotation(FRotator(CurrentRot.Pitch, InterpToRot.Yaw, CurrentRot.Roll));
+	CurrentRot.Yaw = InterpToRot.Yaw; // For up view
+	InActor->GetRootComponent()->SetWorldRotation(CurrentRot);
 	return false;
 }
 

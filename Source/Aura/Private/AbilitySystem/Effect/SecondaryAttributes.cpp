@@ -13,8 +13,8 @@ UMMC_MaxHealth::UMMC_MaxHealth()
 		UAuraAttributeSet::GetVigorAttribute(), EGameplayEffectAttributeCaptureSource::Target, false);
 	// AURA_DEFINE_CAPTURE_DEF(VigorDef, GetVigorAttribute(), Target, false);
 	// RelevantAttributesToCapture.Add(VigorDef);
-	AURA_DEFINE_CAPTURE_DEF(StrengthDef, GetStrengthAttribute(), Target, false);
 	RelevantAttributesToCapture.Add(VigorDef);
+	AURA_DEFINE_CAPTURE_DEF(StrengthDef, GetStrengthAttribute(), Target, false);
 	RelevantAttributesToCapture.Add(StrengthDef);
 }
 float UMMC_MaxHealth::CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const
@@ -29,7 +29,8 @@ float UMMC_MaxHealth::CalculateBaseMagnitude_Implementation(const FGameplayEffec
 	float Strength = 0.f; GetCapturedAttributeMagnitude(StrengthDef, Spec, EvaluateParameters, Strength);
 	Strength = FMath::Max(Strength, 0.f);
 
-	const AAuraCharacterBase* CharacterBase = Cast<AAuraCharacterBase>(Spec.GetEffectContext().GetEffectCauser());
+	const AAuraCharacterBase* CharacterBase = Cast<AAuraCharacterBase>(
+		Spec.GetEffectContext().GetInstigatorAbilitySystemComponent()->GetAvatarActor());
 	const int32 CharacterLevel = CharacterBase ? CharacterBase->GetCharacterLevel() : 1;
 	return (Vigor * 2.5f) + (Strength * .5f) + 10.f * CharacterLevel;
 }
@@ -50,7 +51,8 @@ float UMMC_MaxMana::CalculateBaseMagnitude_Implementation(const FGameplayEffectS
 	float Intelligent = 0.f; GetCapturedAttributeMagnitude(IntelligenceDef, Spec, EvaluateParameters, Intelligent);
 	Intelligent = FMath::Max<float>(Intelligent, 0.f);
 
-	const AAuraCharacterBase* CharacterBase = Cast<AAuraCharacterBase>(Spec.GetEffectContext().GetEffectCauser());
+	const AAuraCharacterBase* CharacterBase = Cast<AAuraCharacterBase>(
+		Spec.GetEffectContext().GetInstigatorAbilitySystemComponent()->GetAvatarActor());
 	const int32 CharacterLevel = CharacterBase ? CharacterBase->GetCharacterLevel() : 1;
 	return 20.f + 2.5f * Intelligent + 15.f * CharacterLevel;
 }

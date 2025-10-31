@@ -32,17 +32,5 @@ void UDebuffComponent::OnActiveGameplayEffectRemoved(const FGameplayEffectRemova
 	const UDamageAbility* DamageAbility = Cast<UDamageAbility>(Spec.GetEffectContext().GetAbilityInstance_NotReplicated());
 	 const float SourceDebuffChance = DamageAbility->DebuffChance.GetValueAtLevel(Spec.GetLevel());
 	if (FMath::RandRange(0.f, 1.f) > SourceDebuffChance) return;
-	if (const UGameplayEffect* CurExpiryCDO = DamageAbility->DebuffEffectClass.GetDefaultObject())
-	{
-		FDamageEffectContext& DamageContext = FAuraEffectContext
-			::GetOrMakeContextStructRef<FDamageEffectContext>(Spec.GetContext().Get()); // Reset Context for debuff
-		DamageContext.DamageDirection = FVector::ZeroVector;
-		FGameplayEffectSpec NewSpec;
-		NewSpec.DynamicGrantedTags.AddTag(DamageAbility->DebuffType);
-		NewSpec.SetDuration(DamageAbility->DebuffDuration.GetValueAtLevel(Spec.GetLevel()), true);
-		NewSpec.InitializeFromLinkedSpec(CurExpiryCDO, Spec);
-		NewSpec.Period = DamageAbility->DebuffPeriod.GetValueAtLevel(DamageAbility->GetAbilityLevel());
-
-		ActiveGEContainer->Owner->ApplyGameplayEffectSpecToSelf(NewSpec);
-	}
+	DamageAbility->ApplyDebuffToTarget(ActiveGEContainer->Owner);
 }

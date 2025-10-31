@@ -43,18 +43,17 @@ void USummonAbility::SetSpawnLocations()
 		FHitResult Hit; FCollisionObjectQueryParams Params(ECC_WorldStatic);
 		GetWorld()->LineTraceSingleByObjectType(Hit, ChosenSpawnLocation + FVector(0.f, 0.f, 500.f),
 			ChosenSpawnLocation - FVector(0.f, 0.f, 400.f), Params);
-		if (Hit.Distance > UE_KINDA_SMALL_NUMBER) ChosenSpawnLocation = Hit.ImpactPoint; // Cue locations
-		else continue; // Hit nothing (No ground) => No spawn
-
-		SummonInfo.Locations.Add(ChosenSpawnLocation); // GameplayCue by defaults only send 2 RPCs per frame, use context
+		if (Hit.Distance > UE_KINDA_SMALL_NUMBER)
+		{
+			ChosenSpawnLocation = Hit.ImpactPoint;
+			SummonInfo.Locations.Add(ChosenSpawnLocation); // GC defaults only send 2 RPCs per frame, use context
+		} // else Hit nothing (No ground) => No spawn
 	}
 
-	FGameplayEffectContextHandle EffectContextHandle = MakeEffectContext(GetCurrentAbilitySpecHandle(), GetCurrentActorInfo());
-	FAuraEffectContext::MakeStructAndAddToContext(EffectContextHandle.Get(), SummonInfo);
+	const FGameplayEffectContextHandle EffectContextHandle = MakeEffectContext(GetCurrentAbilitySpecHandle(), GetCurrentActorInfo());
+	FAuraEffectContext::ExtractAuraContext(EffectContextHandle)->SetInstancedStruct(FInstancedStruct::Make(SummonInfo));
 	UAbilitySystemComponent* InstigatorASC = GetAbilitySystemComponentFromActorInfo();
-	/*FGameplayCueParameters CueParams;
-	CueParams.Instigator = InstigatorASC;*/
-	InstigatorASC->ExecuteGameplayCue(AuraGameplayTags::GameplayCue_Summon, FGameplayCueParameters(EffectContextHandle));
+	InstigatorASC->ExecuteGameplayCue(AuraGameplayTags::GameplayCue_Summon, EffectContextHandle);
 }
 
 void USummonAbility::PreActivate(const FGameplayAbilitySpecHandle Handle,
@@ -62,9 +61,8 @@ void USummonAbility::PreActivate(const FGameplayAbilitySpecHandle Handle,
 	FOnGameplayAbilityEnded::FDelegate* OnGameplayAbilityEndedDelegate, const FGameplayEventData* TriggerEventData)
 {
 	Super::PreActivate(Handle, ActorInfo, ActivationInfo, OnGameplayAbilityEndedDelegate, TriggerEventData);
-	
+
 	SetSpawnLocations();
-	
 	// Shuffle Locations
 	const int32 LastIndex = SummonInfo.Locations.Num() - 1;
 	for (int32 i = 0; i <= LastIndex; ++i)
@@ -79,7 +77,7 @@ void USummonAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, const F
 {
 	SummonInfo.Locations.Empty();
 	SpawnLocationIndex = 0;
-	
+
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }
 

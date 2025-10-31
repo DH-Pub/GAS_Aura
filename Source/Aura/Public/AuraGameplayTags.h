@@ -92,8 +92,7 @@ namespace AuraGameplayTags
 
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Generic_Ability)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Generic_Ability_Cancelable)
-	UE_DEPRECATED(all, "using Character_State_Ability so AssetTags has less")
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Generic_Ability_Blockable)
+	// UE_DECLARE_GAMEPLAY_TAG_EXTERN(Generic_Ability_Blockable)
 
 #pragma region CharacterState
 	// ActivationOwnedTags(Block others including self) and ActivationBlockedTags(Be Blocked)

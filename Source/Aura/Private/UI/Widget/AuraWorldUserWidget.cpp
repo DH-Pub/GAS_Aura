@@ -19,29 +19,23 @@ void UAuraWorldUserWidget::NativeConstruct()
 	SetWorldToScreenTranslation(InitialLocation);
 }
 
-void UAuraWorldUserWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+void UAuraWorldUserWidget::NativeTick(const FGeometry& MyGeometry, const float InDeltaTime)
 {
+	if (!IsValid(AttachedActor)) {RemoveFromParent(); return;}
 	Super::NativeTick(MyGeometry, InDeltaTime);
-	if (!IsValid(AttachedActor))
-	{
-		RemoveFromParent();
-		return;
-	}
-	
-	if (bFollow)
-	{
-		SetWorldToScreenTranslation(AttachedActor->GetActorLocation());
-	}
-	else
-	{
-		SetWorldToScreenTranslation(InitialLocation);
-	}
+
+	if (bFollow) SetWorldToScreenTranslation(AttachedActor->GetActorLocation());
+	else SetWorldToScreenTranslation(InitialLocation);
 }
 
 void UAuraWorldUserWidget::SetWorldToScreenTranslation(const FVector& WorldLocation)
 {
+	const APlayerController* PlayerController = GetOwningPlayer();
 	FVector2D ScreenPosition;
-	const bool bIsOnScreen = UGameplayStatics::ProjectWorldToScreen(GetOwningPlayer(), WorldLocation, ScreenPosition, true);
+	bool bIsOnScreen = UGameplayStatics::ProjectWorldToScreen(PlayerController, WorldLocation, ScreenPosition, true);
+	int32 ViewportX = 0, ViewportY = 0; PlayerController->GetViewportSize(ViewportX, ViewportY);
+	bIsOnScreen &= ScreenPosition.X > 0.f && ScreenPosition.X < ViewportX
+		&& ScreenPosition.Y > 0.f && ScreenPosition.Y < ViewportY;
 	if (bIsOnScreen) // check if widget is not outside camera view
 	{
 		const float Scale = UWidgetLayoutLibrary::GetViewportScale(this);
@@ -49,9 +43,8 @@ void UAuraWorldUserWidget::SetWorldToScreenTranslation(const FVector& WorldLocat
 		ScreenPosition -= GetDesiredSize() * .5f + ScreenOffset;
 		SetRenderTranslation(ScreenPosition);
 	}
-	// Avoid unnecessary invalidation is Slate
 	if (bWasOnScreen != bIsOnScreen)
-	{
+	{	// Avoid unnecessary invalidation is Slate
 		SetVisibility(bIsOnScreen ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed);
 		bWasOnScreen = bIsOnScreen;
 	}

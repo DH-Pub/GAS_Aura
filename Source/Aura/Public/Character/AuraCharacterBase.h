@@ -80,7 +80,7 @@ public:
 	TObjectPtr<AActor> CombatTarget;
 	UPROPERTY(BlueprintReadWrite)
 	bool bTracking = false; // true if Facing Target
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(BlueprintReadOnly, Replicated /* Replicated when changed on server */)
 	FVector AimDirection;
 
 	UPROPERTY(EditAnywhere, Category=Parameter, meta=(ClampMin=0, ClampMax=30, UIMin=0, UIMax=30))
@@ -99,6 +99,8 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void PreReplication(IRepChangedPropertyTracker& ChangedPropertyTracker) override;
+	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Default|Combat")
 	TObjectPtr<USkeletalMeshComponent> Weapon;

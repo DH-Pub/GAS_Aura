@@ -8,9 +8,9 @@
 #if WITH_EDITOR
 void UAttributeDataAsset::PopulateDataAsset()
 {
-	for (TTuple<FGameplayTag, FAuraAttributeData>& Info : AttributeDataList)
+	for (auto& [Tag, AttributeData] : AttributeDataList)
 	{
-		const FName TagName = Info.Key.GetTagName();
+		const FName TagName = Tag.GetTagName();
 		FString TagComment;
 		FName TagSource;
 		bool bIsTagExplicit = false;
@@ -18,7 +18,7 @@ void UAttributeDataAsset::PopulateDataAsset()
 		bool bAllowNonRestrictedChildren = false;
 		UGameplayTagsManager::Get().GetTagEditorData(
 			TagName, TagComment, TagSource, bIsTagExplicit, bIsRestrictedTag, bAllowNonRestrictedChildren);
-		Info.Value.AttributeDescription = FText::FromString(TagComment);
+		AttributeData.AttributeDescription = FText::FromString(TagComment);
 	}
 }
 #endif

@@ -7,39 +7,15 @@
 #include "AuraGameplayTags.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 
-UAttributeEventEffect::UAttributeEventEffect()
-{
-	DurationPolicy = EGameplayEffectDurationType::Instant;
-	FSetByCallerFloat SetByCallerFloat;
-	FGameplayModifierInfo Info;
-#define ADD_EFFECT_MODIFIER(Modifiers, Property, Op, Tag)\
-{\
-	Info.Attribute = UAuraAttributeSet::Property;\
-	Info.ModifierOp = EGameplayModOp::Op;\
-	SetByCallerFloat.DataTag = AuraGameplayTags::Tag;\
-	Info.ModifierMagnitude = FGameplayEffectModifierMagnitude(SetByCallerFloat);\
-	Modifiers.Add(Info);\
-}
-	ADD_EFFECT_MODIFIER(Modifiers, GetIncomingXPAttribute(), Override, Attributes_Meta_IncomingXP);
-
-	ADD_EFFECT_MODIFIER(Modifiers, GetStrengthAttribute(), AddBase, Attributes_Primary_Strength);
-	ADD_EFFECT_MODIFIER(Modifiers, GetIntelligenceAttribute(), AddBase, Attributes_Primary_Intelligence);
-	ADD_EFFECT_MODIFIER(Modifiers, GetResilienceAttribute(), AddBase, Attributes_Primary_Resilience);
-	ADD_EFFECT_MODIFIER(Modifiers, GetVigorAttribute(), AddBase, Attributes_Primary_Vigor);
-#undef ADD_EFFECT_MODIFIER
-}
-
-
-
 UAttributesEventAbility::UAttributesEventAbility()
 {
 	NetExecutionPolicy = EGameplayAbilityNetExecutionPolicy::ServerOnly;
 	NetSecurityPolicy = EGameplayAbilityNetSecurityPolicy::ServerOnly;
 	bRetriggerInstancedAbility = true;
 
-	const int32 Idx = AbilityTriggers.Add(FAbilityTriggerData());
-	AbilityTriggers[Idx].TriggerTag = AuraGameplayTags::Attributes;
-	AbilityTriggers[Idx].TriggerSource = EGameplayAbilityTriggerSource::GameplayEvent;
+	const int32 i = AbilityTriggers.Add(FAbilityTriggerData());
+	AbilityTriggers[i].TriggerTag = AuraGameplayTags::Attributes;
+	AbilityTriggers[i].TriggerSource = EGameplayAbilityTriggerSource::GameplayEvent;
 }
 
 void UAttributesEventAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
@@ -71,4 +47,28 @@ void UAttributesEventAbility::ActivateAbility(const FGameplayAbilitySpecHandle H
 		}
 	}
 	GetAbilitySystemComponentFromActorInfo()->ApplyGameplayEffectSpecToSelf(*Spec);
+}
+
+
+// ====================== GE_Attribute ==============================================
+UAttributeEventEffect::UAttributeEventEffect()
+{
+	DurationPolicy = EGameplayEffectDurationType::Instant;
+	FSetByCallerFloat SetByCallerFloat;
+	FGameplayModifierInfo Info;
+#define ADD_EFFECT_MODIFIER(Modifiers, Property, Op, Tag)\
+{\
+Info.Attribute = UAuraAttributeSet::Property;\
+Info.ModifierOp = EGameplayModOp::Op;\
+SetByCallerFloat.DataTag = AuraGameplayTags::Tag;\
+Info.ModifierMagnitude = FGameplayEffectModifierMagnitude(SetByCallerFloat);\
+Modifiers.Add(Info);\
+}
+	ADD_EFFECT_MODIFIER(Modifiers, GetIncomingXPAttribute(), Override, Attributes_Meta_IncomingXP);
+
+	ADD_EFFECT_MODIFIER(Modifiers, GetStrengthAttribute(), AddBase, Attributes_Primary_Strength);
+	ADD_EFFECT_MODIFIER(Modifiers, GetIntelligenceAttribute(), AddBase, Attributes_Primary_Intelligence);
+	ADD_EFFECT_MODIFIER(Modifiers, GetResilienceAttribute(), AddBase, Attributes_Primary_Resilience);
+	ADD_EFFECT_MODIFIER(Modifiers, GetVigorAttribute(), AddBase, Attributes_Primary_Vigor);
+#undef ADD_EFFECT_MODIFIER
 }

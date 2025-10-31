@@ -27,6 +27,14 @@ struct FAbilityDetails
 	float CalculatedCooldown = 0.f;
 };
 
+UENUM(BlueprintType)
+enum class EAuraActivationPolicy : uint8
+{
+	InputStarted,
+	InputActive, // Continually try to activate ability while Input is Active (Ongoing, Triggered)
+	OnSpawn, // Passive, activate in OnAvatarSet 
+};
+
 /**
  * Base GameplayAbility for this project
  * Gameplay Ability is only replicated to the owning player by default
@@ -38,8 +46,11 @@ class AURA_API UAuraGameplayAbility : public UGameplayAbility
 public:
 	UAuraGameplayAbility();
 
-	UPROPERTY(EditDefaultsOnly, Category = "Default")
-	bool bActivateAbilityOnGranted = false; // Activated on GiveAbility() in OnAvatarSet(), for Passives
+	UPROPERTY(BlueprintReadOnly)
+	TObjectPtr<class AAuraCharacterBase> AuraCharacter = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category="Default")
+	EAuraActivationPolicy ActivationPolicy; // Defines how this ability is meant to activate.
 protected:
 	virtual void PreActivate(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
 		const FGameplayAbilityActivationInfo ActivationInfo, FOnGameplayAbilityEnded::FDelegate* OnGameplayAbilityEndedDelegate,
@@ -53,21 +64,17 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Default")
 	FText AbilityName;
 
-	UPROPERTY(BlueprintReadOnly)
-	TObjectPtr<class AAuraCharacterBase> AuraCharacter = nullptr;
-	UPROPERTY(BlueprintReadOnly)
-	TObjectPtr<class AAuraPlayerController> AuraPlayerController = nullptr;
-
 	UFUNCTION(BlueprintCallable)
-	void EnableMovement(); // This can be called before ability end to enable movement early
-	UPROPERTY(EditDefaultsOnly, Category="Default")
+	void EnableMovement(const bool bEnable = true); // This can be called before ability end to enable movement early
+	UPROPERTY(EditDefaultsOnly, Category="Default", meta=(InlineEditConditionToggle))
+	bool bChangeMovementOnActivate = true;
+	UPROPERTY(EditDefaultsOnly, Category="Default", meta=(EditCondition=bChangeMovementOnActivate))
 	bool bStopMovement = false;
-	UPROPERTY(EditDefaultsOnly, Category="Default")
+	UPROPERTY(EditDefaultsOnly, Category="Default", meta=(EditCondition=bChangeMovementOnActivate))
 	bool bStopRotation = false;
 
 	FGameplayTagContainer& AddGenericAssetTags(FGameplayTagContainer& Tags);
 	void SetBaseCancelBlock();
-
 
 
 public:
@@ -78,5 +85,4 @@ public:
 		FText& OutDescription) const;
 	UFUNCTION(BlueprintPure, meta=(CompactNodeTitle="Lv"))
 	static int32 GetLevelFromDetails(const FAbilityDetails& Details) {return Details.Level;}
-
 };

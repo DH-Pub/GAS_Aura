@@ -9,7 +9,6 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "NiagaraComponent.h"
 #include "AbilitySystem/Ability/AttributesEventAbility.h"
-#include "AbilitySystem/Ability/MoveMouseAbility.h"
 #include "AbilitySystem/Data/CharacterClassDataAsset.h"
 #include "Components/WidgetComponent.h"
 #include "Player/AuraPlayerController.h"
@@ -110,8 +109,6 @@ void AAuraPlayer::InitAuraCharacter()
 		ClassData->InitializeDefaultAttributes(CharacterClass, Level, AbilitySystemComponent);
 		ClassData->GiveStartupAbilities(this);
 		FGameplayAbilitySpec Spec(UAttributesEventAbility::StaticClass(), 1);
-		AbilitySystemComponent->GiveAbility(Spec);
-		Spec = FGameplayAbilitySpec(UMoveMouseAbility::StaticClass(), 1);
 		AbilitySystemComponent->GiveAbility(Spec);
 	}
 }

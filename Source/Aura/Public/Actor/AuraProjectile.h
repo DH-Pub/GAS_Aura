@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Interface/ProjectileInterface.h"
 #include "AuraProjectile.generated.h"
 
 class UProjectileAbility;
@@ -12,26 +11,26 @@ class UNiagaraSystem;
 class UProjectileMovementComponent;
 class USphereComponent;
 
+DECLARE_MULTICAST_DELEGATE(FOnImpactSignature)
 /**
  *	The projectile AActor that will have VFX/Mesh/...
  */
 UCLASS()
-class AURA_API AAuraProjectile : public AActor, public IProjectileInterface
+class AURA_API AAuraProjectile : public AActor
 {
 	GENERATED_BODY()
 public:
 	AAuraProjectile();
-	UPROPERTY(BlueprintReadOnly, meta=(ExposeOnSpawn))
-	TObjectPtr<UProjectileAbility> SpawnedFromAbility;
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UProjectileMovementComponent> ProjectileMovement;
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastSetHomingTarget(USceneComponent* Comp, const float AccelerationMagnitude);
 
-	// Pitch when projectile is spawned
+	UPROPERTY()
+	TObjectPtr<UProjectileAbility> SpawnedFromAbility;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Default")
-	float StartPitch = 0.f;
-
-	virtual void GetImpactCue_Implementation(UNiagaraSystem*& CueEffect, USoundBase*& CueSound) override
-	{CueEffect = ImpactEffect; CueSound = ImpactSound;}
+	float StartPitch = 0.f; // Pitch when projectile is spawned
 protected:
 	virtual void BeginPlay() override;
 
@@ -51,4 +50,8 @@ private:
 	TObjectPtr<USoundBase> ImpactSound;
 	UPROPERTY(EditAnywhere, Category="Default")
 	TObjectPtr<UNiagaraSystem> ImpactEffect;
+
+public:
+	UFUNCTION(BlueprintCallable)
+	static void ExecuteProjectileImpactCue(const struct FGameplayCueParameters& Params);
 };

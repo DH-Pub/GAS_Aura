@@ -99,4 +99,12 @@ public:
 	void ServerSpendSpellPoints(const FGameplayTag& AbilityTag);
 	UFUNCTION(Server, Reliable)
 	void ServerChangeAbilitySlot(const FGameplayTag& AbilityTag, const FGameplayTag& SlotTag = FGameplayTag::EmptyTag);
+
+public:
+	virtual void NetMulticast_InvokeGameplayCueExecuted_WithParams_Implementation(const FGameplayTag GameplayCueTag,
+		FPredictionKey PredictionKey, FGameplayCueParameters GameplayCueParameters) override;
+
+	UE_DEPRECATED(5.6, "No use for this")
+	UFUNCTION()
+	void ExecuteGameplayCueNextTick(const FGameplayTag& Tag, const FGameplayCueParameters& Params);
 };

@@ -17,4 +17,6 @@ class AURA_API UAuraAbilitySystemGlobals : public UAbilitySystemGlobals
 	// virtual FGameplayAbilityActorInfo* AllocAbilityActorInfo() const override;
 
 	virtual FGameplayEffectContext* AllocGameplayEffectContext() const override; //REQUIRED: for FAuraEffectContext
+
+	virtual UGameplayCueManager* GetGameplayCueManager() override; //REQUIRED: for UAuraCueManager
 };

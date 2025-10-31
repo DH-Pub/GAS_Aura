@@ -50,7 +50,7 @@ namespace AuraGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_Combat_Ability_5, "Input.Combat.Ability.5", "")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_Combat_Ability_6, "Input.Combat.Ability.6", "")
 
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_Combat_Passive, "Input.Combat.Passive", "PARENT Tag to check with bActivateAbilityOnGranted")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_Combat_Passive, "Input.Combat.Passive", "PARENT Tag to check with ActivationPolicy = OnSpawn")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_Combat_Passive_1, "Input.Combat.Passive.1", "")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_Combat_Passive_2, "Input.Combat.Passive.2", "")
 #pragma endregion
@@ -90,9 +90,9 @@ namespace AuraGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Generic_Ability, "Generic.Ability", "")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Generic_Ability_Cancelable, "Generic.Ability.Cancelable",
 		"Genric Tag for Ability that can be canceled when another is triggered (Dash to cancel attack, ...), before EndAbility")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Generic_Ability_Blockable, "Generic.Ability.Blockable",
+	/*UE_DEFINE_GAMEPLAY_TAG_COMMENT(Generic_Ability_Blockable, "Generic.Ability.Blockable",
 		"Genric Tag for Ability that can't be activated when others are actives. (ex: HitReact, ...)"
-		"For bRetriggerInstancedAbility=true, it can block itself from being retrigger until EndAbility/CancelAbility")
+		"For bRetriggerInstancedAbility=true, it can block itself from being retrigger until EndAbility/CancelAbility")*/
 
 #pragma region CharacterState
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Character_State_Ability, "Character.State.Ability",

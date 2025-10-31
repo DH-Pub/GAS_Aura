@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
-#include "AuraGameModeBase.generated.h"
+#include "AuraGameMode.generated.h"
 
 class AAuraPlayerController;
 class UCharacterClassDataAsset;
@@ -12,7 +12,7 @@ class UCharacterClassDataAsset;
  * Only Server have access to this
  */
 UCLASS()
-class AURA_API AAuraGameModeBase : public AGameModeBase
+class AURA_API AAuraGameMode : public AGameModeBase
 {
 	GENERATED_BODY()
 public:

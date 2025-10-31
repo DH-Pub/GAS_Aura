@@ -43,17 +43,6 @@ struct TStructOpsTypeTraits<FGameplayAbilityTargetData_AttributeData> : public T
 	};
 };
 
-
-/**
- * Increase/Decrease Attributes
- */
-UCLASS()
-class AURA_API UAttributeEventEffect : public UGameplayEffect
-{
-	GENERATED_BODY()
-public:
-	UAttributeEventEffect();
-};
 /**
  * - Receive event to upgrade Attributes (XP, Strength, ...)
  * - UAbilitySystemBlueprintLibrary::SendGameplayEventToActor with tag Attributes to activate this ability
@@ -68,4 +57,16 @@ public:
 protected:
 	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
 		const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
+};
+
+
+/**
+ * Increase/Decrease Attributes
+ */
+UCLASS()
+class AURA_API UAttributeEventEffect : public UGameplayEffect
+{
+	GENERATED_BODY()
+public:
+	UAttributeEventEffect();
 };

@@ -75,11 +75,11 @@ bool USpellMenuWidgetController::EquipAbility()
 {
 	if (SelectedSpellGlobe && SelectedSpellGlobe->AbilityTag.IsValid())
 	{
-		if (const FAuraAbilityData* Data = UAbilityDataAsset::GetAbilityFromGameState(
-			this, SelectedSpellGlobe->AbilityTag))
+		if (const FAuraAbilityData* Data = UAbilityDataAsset::GetAbilityFromGameState(this,
+			SelectedSpellGlobe->AbilityTag))
 		{
 			UpdateButtonsAndDescriptions(SpellPoints, SelectedSpellGlobe->AbilityTag, SelectedSpellGlobe->StatusTag, true);
-			return Data->AbilityClass->GetDefaultObject<UAuraGameplayAbility>()->bActivateAbilityOnGranted;
+			return Data->AbilityClass->GetDefaultObject<UAuraGameplayAbility>()->ActivationPolicy == EAuraActivationPolicy::OnSpawn;
 		}
 	}
 	return false;
@@ -89,9 +89,9 @@ void USpellMenuWidgetController::ChangeSpellInputSlot(const FGameplayTag& Abilit
 	const bool bIsPassive)
 {
 	if (const FAuraAbilityData* Data = UAbilityDataAsset::GetAbilityFromGameState(this, AbilityTag))
-	{
-		// Check Wrong type (Active != Passive Slots)
-		if (bIsPassive != Data->AbilityClass->GetDefaultObject<UAuraGameplayAbility>()->bActivateAbilityOnGranted) return;
+	{	// Check Wrong type (Active != Passive Slots)
+		if (const UAuraGameplayAbility* AuraAbility = Data->AbilityClass->GetDefaultObject<UAuraGameplayAbility>();
+			bIsPassive != (AuraAbility->ActivationPolicy == EAuraActivationPolicy::OnSpawn)) return;
 		ClearSelected();
 		GetASC()->ServerChangeAbilitySlot(AbilityTag, NewSlotTag);
 	}

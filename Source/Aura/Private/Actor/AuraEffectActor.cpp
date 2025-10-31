@@ -20,14 +20,14 @@ void AAuraEffectActor::ApplyEffectToTarget(AActor* TargetActor, const FEffectTyp
 	if (UAbilitySystemComponent* TargetASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(TargetActor))
 	{
 		check(EffectType.GameplayEffectClass);
-		FGameplayEffectContextHandle EffectContextHandle = TargetASC->MakeEffectContext();
-		EffectContextHandle.AddSourceObject(this);
-		EffectContextHandle.AddOrigin(TargetActor->GetActorLocation());
-		FAuraEffectContext::SetIsShowDamageOnTarget(EffectContextHandle.Get(), true);
-		const FGameplayEffectSpecHandle EffectSpecHandle = TargetASC->MakeOutgoingSpec(EffectType.GameplayEffectClass, ActorLevel, EffectContextHandle);
-		TargetASC->ApplyGameplayEffectSpecToSelf(*EffectSpecHandle.Data);
+		const FGameplayEffectSpecHandle SpecHandle = TargetASC->MakeOutgoingSpec(EffectType.GameplayEffectClass, ActorLevel,
+			FGameplayEffectContextHandle());
+		FGameplayEffectContext* Context = SpecHandle.Data->GetContext().Get();
+		Context->SetEffectCauser(this);
+		FAuraEffectContext::SetIsShowDamageOnTarget(Context, true);
+		TargetASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data);
 
-		if (bDestroyOnEffectApplication) { Destroy(); }
+		if (bDestroyOnEffectApplication) Destroy();
 	}
 }
 

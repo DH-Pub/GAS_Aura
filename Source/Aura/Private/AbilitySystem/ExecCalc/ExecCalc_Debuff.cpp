@@ -26,16 +26,12 @@ void UExecCalc_Debuff::Execute_Implementation(const FGameplayEffectCustomExecuti
 	EvaluateParameters.TargetTags = Spec.CapturedTargetTags.GetAggregatedTags();
 	/* ~ End Boilerplate */
 
-	FDamageEffectContext& DamageContext = FAuraEffectContext::GetOrMakeContextStructRef<FDamageEffectContext>(Spec.GetContext().Get());
-	// Non-Instant Effect will use the same Spec.GetContext(), so reset is needed for every execute()
-	DamageContext.ResetForDebuff();
-	DamageContext.TargetActor = TargetAvatar;
 	if (const UDamageAbility* DamageAbility = Cast<UDamageAbility>(Spec.GetEffectContext().GetAbilityInstance_NotReplicated()))
 	{
 		Spec.GetContext().AddOrigin(TargetAvatar->GetActorLocation());
-		const float DebuffDamage = DamageAbility->DebuffDamage.GetValueAtLevel(DamageAbility->GetAbilityLevel());
 		OutExecutionOutput.AddOutputModifier(FGameplayModifierEvaluatedData(
-			UAuraAttributeSet::GetIncomingDamageAttribute(), EGameplayModOp::Override, DebuffDamage));
+			UAuraAttributeSet::GetIncomingDamageAttribute(), EGameplayModOp::Override,
+			DamageAbility->DebuffDamage.GetValueAtLevel(DamageAbility->GetAbilityLevel())));
 	}
 }
 

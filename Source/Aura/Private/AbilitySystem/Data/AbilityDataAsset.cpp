@@ -5,13 +5,13 @@
 
 #include "AuraGameplayTags.h"
 #include "AbilitySystem/Ability/AuraGameplayAbility.h"
-#include "Game/AuraGameStateBase.h"
+#include "Game/AuraGameState.h"
 #include "Kismet/GameplayStatics.h"
 #include "Misc/DataValidation.h"
 
 const UAbilityDataAsset* UAbilityDataAsset::GetFromGameState(const UObject* WorldContextObject)
 {
-	if (AAuraGameStateBase* GameState = Cast<AAuraGameStateBase>(UGameplayStatics::GetGameState(WorldContextObject)))
+	if (AAuraGameState* GameState = Cast<AAuraGameState>(UGameplayStatics::GetGameState(WorldContextObject)))
 	{
 		return GameState->AbilityDataAsset;
 	}

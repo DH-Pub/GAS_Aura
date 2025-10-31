@@ -4,14 +4,14 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameStateBase.h"
-#include "AuraGameStateBase.generated.h"
+#include "AuraGameState.generated.h"
 
 class UAbilityDataAsset;
 /**
- * Client have access to this
+ * All (Server and Client) has access to this
  */
 UCLASS()
-class AURA_API AAuraGameStateBase : public AGameStateBase
+class AURA_API AAuraGameState : public AGameStateBase
 {
 	GENERATED_BODY()
 public:

@@ -24,7 +24,7 @@ struct FCameraOccludedStaticMesh
 	FCameraOccludedStaticMesh(){}
 };
 
-enum EMouseMovementState : uint8
+enum EMovementState : uint8
 {
 	Stop, AutoMove, HoldMove
 };
@@ -40,31 +40,29 @@ public:
 	virtual void PlayerTick(float DeltaTime) override; // Processes player input
 	virtual void SetPawn(APawn* InPawn) override;
 
-	UPROPERTY()
-	TObjectPtr<class UAuraInputComponent> AuraInputComponent;
 	UPROPERTY(EditDefaultsOnly, Category="Default|Input")
 	TObjectPtr<class UAuraInputConfig> InputConfig;
 
 	UFUNCTION(BlueprintGetter)
 	FORCEINLINE FHitResult& GetCursorHitResult() { return CursorHitResult; }
 
-	EMouseMovementState MouseMovementState = Stop;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	TObjectPtr<class USplineComponent> Spline;
-	FVector AutoMoveDestination = FVector::ZeroVector;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(AllowPrivateAccess), Category = "Default|Input")
 	float AutoRunAcceptanceRadius = 25.f;
 
 	UPROPERTY()
 	TObjectPtr<AAuraCharacterBase> AuraPawn;
+
+	UPROPERTY()
+	TObjectPtr<class AAuraEnemy> CursorHitEnemy;
 protected:
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
 
-// =========================================================================================================================================
+
+// ==========================================================================================================
 #pragma region Occlusion
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	TObjectPtr<APlayerCameraManager> CameraManager;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<class UCapsuleComponent> CameraCapsule;
 
@@ -86,17 +84,38 @@ protected:
 
 
 private:
-	UPROPERTY(EditDefaultsOnly, Category = "Default|Input")
+	UPROPERTY(EditDefaultsOnly, Category="Default|Input")
 	TObjectPtr<UInputMappingContext> InputMappingContext;
-	UPROPERTY(EditDefaultsOnly, Category = "Default|Input")
+
+	UPROPERTY(EditDefaultsOnly, Category="Default|Input")
 	TObjectPtr<UInputAction> MoveAction;
 	void Move(const FInputActionValue& InputActionValue);
 
+#pragma region Click Movement Nav ===============================================================================
+	UPROPERTY(EditDefaultsOnly, Category="Default|Input")
+	TObjectPtr<UInputAction> MoveMouseAction;
+	EMovementState MovementState = Stop;
+	float MoveHoldTime = 0.f;
+	float HoldTimeThreshold = .4f;
+	UPROPERTY()
+	TObjectPtr<class UNavigationSystemV1> NavSystem;
+	void MoveMouseTriggered(const FInputActionValue& InputActionValue);
+	void MoveMouseReleased(const FInputActionValue& InputActionValue);
+	UPROPERTY(EditDefaultsOnly, Category="Default|Mouse")
+	bool bDrawNavBox = false;
+	UPROPERTY(EditDefaultsOnly, Category="Default|Mouse")
+	FVector NavExtent = FVector(300.f, 300.f, 600.f);
+#pragma endregion
+
+	UPROPERTY(EditDefaultsOnly, Category="Default|Click")
+	TObjectPtr<class UNiagaraSystem> ClickNiagara;
+
 	UPROPERTY(BlueprintGetter=GetCursorHitResult, meta=(AllowPrivateAccess))
 	FHitResult CursorHitResult;
-	void CursorTrace();
-	UPROPERTY(BlueprintReadWrite, meta=(AllowPrivateAccess))
-	TScriptInterface<IEnemyInterface> CurrentCursorHitActor;
+	void CursorTick(); // Cursor HitResult
 
 	void ControllerInputTrigger(const ETriggerEvent TriggerEvent, const FGameplayTag* InputTag, UInputAction* InputAction);
+
+	UFUNCTION(Server, Reliable)
+	void ServerSetCharacterAimDirection(const FVector& Aim);
 };

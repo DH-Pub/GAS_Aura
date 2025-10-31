@@ -6,14 +6,13 @@
 #include "AbilitySystemBlueprintLibrary.h"
 #include "Components/CapsuleComponent.h"
 #include "AuraAbilityLibrary.h"
-#include "AuraEffectTypes.h"
 #include "AuraGameplayTags.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
-#include "AbilitySystem/Ability/DamageAbility.h"
 #include "AbilitySystem/Debuff/DebuffNiagaraComponent.h"
 #include "Aura/Aura.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Net/UnrealNetwork.h"
 
 AAuraCharacterBase::AAuraCharacterBase()
 {
@@ -127,6 +126,18 @@ void AAuraCharacterBase::BeginPlay()
 	Super::BeginPlay();
 	GetCharacterMovement()->MaxWalkSpeed = BaseWalkSpeed;
 	GetCharacterMovement()->RotationRate = BaseRotationRate;
+}
+
+void AAuraCharacterBase::PreReplication(IRepChangedPropertyTracker& ChangedPropertyTracker)
+{
+	Super::PreReplication(ChangedPropertyTracker);
+	DOREPLIFETIME_ACTIVE_OVERRIDE_FAST(AAuraCharacterBase, AimDirection, IsPlayerControlled())
+	// DOREPLIFETIME_ACTIVE_OVERRIDE(AAuraCharacterBase, AimDirection, IsPlayerControlled()) // Only replicates for player
+}
+void AAuraCharacterBase::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME_CONDITION_NOTIFY(AAuraCharacterBase, AimDirection, COND_SkipOwner, REPNOTIFY_Always)
 }
 
 // Called in PossessedBy, which is called only on server or standalone

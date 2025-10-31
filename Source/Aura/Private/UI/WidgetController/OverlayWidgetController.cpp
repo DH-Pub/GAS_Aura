@@ -12,6 +12,11 @@
 #include "UI/Data/TextDataAsset.h"
 #include "UI/HUD/AuraHUD.h"
 
+template<typename T = FTableRowBase> UE_DEPRECATED(all, "just loop through Data Table")
+static T* GetDataTableRowByTag(UDataTable* DataTable, const FGameplayTag& Tag)
+{
+	return DataTable->FindRow<T>(Tag.GetTagName(), TEXT("")); // Find by RowName
+}
 void UOverlayWidgetController::BindCallbacksDependencies()
 {
 	BindGameplayAttributeToBroadcast(GetAttributeSet()->GetHealthAttribute(), OnHealthChanged);
@@ -30,7 +35,7 @@ void UOverlayWidgetController::BindCallbacksDependencies()
 			if (!Tag.MatchesTag(MessageTags::Message)) continue;
 			// MessageTableDelegate.Broadcast(*GetDataTableRowByTag<FMessageRow>(MessageDataTable, Tag));
 			TArray<FMessageRow*> RowArray;
-			MessageDataTable->GetAllRows(TEXT("AbilitySystemComponent->EffectAssetTags"), RowArray);
+			MessageDataTable->GetAllRows(/*This is whatever*/TEXT("AbilitySystemComponent->EffectAssetTags"), RowArray);
 			for (const FMessageRow* Row : RowArray)
 			{
 				if (Row->MessageTag.MatchesTagExact(Tag)) {MessageTableDelegate.Broadcast(*Row); return;}

@@ -20,34 +20,43 @@ void UAuraGameplayAbility::PreActivate(const FGameplayAbilitySpecHandle Handle,
 	FOnGameplayAbilityEnded::FDelegate* OnGameplayAbilityEndedDelegate, const FGameplayEventData* TriggerEventData)
 {
 	Super::PreActivate(Handle, ActorInfo, ActivationInfo, OnGameplayAbilityEndedDelegate, TriggerEventData);
-	if (bStopMovement)
-	{
-		AuraCharacter->GetCharacterMovement()->StopMovementImmediately();
-		AuraCharacter->GetCharacterMovement()->MaxWalkSpeed = 0.f;
-	}
-	if (bStopRotation)	AuraCharacter->GetCharacterMovement()->RotationRate = FRotator();
+	if (bChangeMovementOnActivate) EnableMovement(false); // Change movement here because C++ ActivateAbility() runs after BP
 }
+
 void UAuraGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
-	const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
+                                      const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
 {
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
-	EnableMovement();
+	if (bChangeMovementOnActivate) EnableMovement(true);
 }
 
 void UAuraGameplayAbility::OnAvatarSet(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec)
-{
+{	// "BeginPlay" logic
 	Super::OnAvatarSet(ActorInfo, Spec);
 
-	// "BeginPlay" logic
 	AuraCharacter = Cast<AAuraCharacterBase>(ActorInfo->AvatarActor);
-	AuraPlayerController = Cast<AAuraPlayerController>(AuraCharacter->GetController());
-	if (bActivateAbilityOnGranted) ActorInfo->AbilitySystemComponent->TryActivateAbility(Spec.Handle, false);
+	if (ActivationPolicy == EAuraActivationPolicy::OnSpawn)
+	{
+		ActorInfo->AbilitySystemComponent->TryActivateAbility(Spec.Handle, false);
+	}
 }
 
-void UAuraGameplayAbility::EnableMovement()
+void UAuraGameplayAbility::EnableMovement(const bool bEnable)
 {
-	if (bStopMovement) AuraCharacter->GetCharacterMovement()->MaxWalkSpeed = AuraCharacter->BaseWalkSpeed;
-	if (bStopRotation) AuraCharacter->GetCharacterMovement()->RotationRate = AuraCharacter->BaseRotationRate;
+	if (bEnable)
+	{
+		if (bStopMovement) AuraCharacter->GetCharacterMovement()->MaxWalkSpeed = AuraCharacter->BaseWalkSpeed;
+		if (bStopRotation) AuraCharacter->GetCharacterMovement()->RotationRate = AuraCharacter->BaseRotationRate;
+	}
+	else
+	{
+		if (bStopMovement)
+		{
+			AuraCharacter->GetCharacterMovement()->StopMovementImmediately();
+			AuraCharacter->GetCharacterMovement()->MaxWalkSpeed = 0.f;
+		}
+		if (bStopRotation)	AuraCharacter->GetCharacterMovement()->RotationRate = FRotator();
+	}
 }
 
 FGameplayTagContainer& UAuraGameplayAbility::AddGenericAssetTags(FGameplayTagContainer& Tags)

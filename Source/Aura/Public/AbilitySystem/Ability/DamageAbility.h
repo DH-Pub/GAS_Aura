@@ -12,16 +12,10 @@ struct FDamageEffectContext
 	GENERATED_BODY()
 
 	FDamageEffectContext() {}
-	explicit FDamageEffectContext(AActor* TargetActor) : TargetActor(TargetActor) {}
 
 	UPROPERTY(/* Need this to replicate data to client */)
-	FVector_NetQuantize DamageDirection = FVector::ZeroVector;
+	FVector_NetQuantizeNormal DamageDirection = FVector::ZeroVector;
 
-	void ResetForDebuff()
-	{
-		bIsBlocked = bIsCrit = false;
-		TargetActor = nullptr;
-	}
 	UPROPERTY(BlueprintReadOnly)
 	bool bIsBlocked = false; bool SetIsBlocked(const bool bIn) {return bIsBlocked = bIn;}
 	UPROPERTY(BlueprintReadOnly)
@@ -50,13 +44,15 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category="Default|Damage")
 	bool bStagger = false;
 
+	FGameplayEffectSpecHandle MakeDamageSpecHandle() const;
+	FActiveGameplayEffectHandle ApplyDebuffToTarget(UAbilitySystemComponent* TargetASC) const;
+
 	UPROPERTY(EditDefaultsOnly, Category="Default|Damage")
 	TSubclassOf<UGameplayEffect> DamageEffectClass;
 	UPROPERTY(EditDefaultsOnly, Category="Default|Damage", meta=(ForceInlineRow, GameplayTagFilter="Damage"))
 	FGameplayTag DamageType;
 	UPROPERTY(EditDefaultsOnly, Category="Default|Damage")
 	FScalableFloat DamageValue;
-	FGameplayEffectSpecHandle MakeDamageSpecHandle() const;
 
 	UPROPERTY(EditDefaultsOnly, Category="Default|Damage", meta=(UIMin=0.01, UIMax=10.0, Delta=0.01))
 	float DebuffDelay = 0.2; // Delay until debuff activates

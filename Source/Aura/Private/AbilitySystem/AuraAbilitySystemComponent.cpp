@@ -4,6 +4,8 @@
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 
 #include "AbilitySystemBlueprintLibrary.h"
+#include "AbilitySystemGlobals.h"
+#include "AuraEffectTypes.h"
 #include "AuraGameplayTags.h"
 #include "AbilitySystem/Ability/AttributesEventAbility.h"
 #include "AbilitySystem/Ability/CostCooldownAbility.h"
@@ -11,6 +13,7 @@
 #include "AbilitySystem/Debuff/DebuffNiagaraComponent.h"
 #include "Character/AuraPlayer.h"
 #include "Player/AuraPlayerState.h"
+#include "GameplayCueManager.h"
 
 void UAuraAbilitySystemComponent::InitAuraASC(AActor* InOwnerActor, AAuraCharacterBase* AuraCharacter)
 {
@@ -59,26 +62,39 @@ void UAuraAbilitySystemComponent::AbilityInputTagTrigger(const ETriggerEvent Tri
 	for (FGameplayAbilitySpec& AbilitySpec : GetActivatableAbilities())
 	{
 		if (!AbilitySpec.GetDynamicSpecSourceTags().HasTagExact(InputTag)) continue;
-		if (UCostCooldownAbility* InputAbility = Cast<UCostCooldownAbility>(AbilitySpec.NonReplicatedInstances[0]))
-		{
-			InputAbility->InputAction = InputAction;
-			InputAbility->SetAbilityTriggerEvent(TriggerEvent);
-		}
+		const UAuraGameplayAbility* InputAbility = Cast<UAuraGameplayAbility>(AbilitySpec.Ability);
 		switch (TriggerEvent)
 		{
 		case ETriggerEvent::Started:
-		case ETriggerEvent::Ongoing:
-		case ETriggerEvent::Triggered:
-			TryActivateAbility(AbilitySpec.Handle);
+			if (InputAbility->ActivationPolicy == EAuraActivationPolicy::InputStarted)
+			{
+				if (AbilitySpec.IsActive())
+				{
+					if (AbilitySpec.Ability->bReplicateInputDirectly && IsOwnerActorAuthoritative() == false)
+					{
+						ServerSetInputPressed(AbilitySpec.Handle);
+					}
+					AbilitySpecInputPressed(AbilitySpec);
+				}
+				TryActivateAbility(AbilitySpec.Handle);
+			}
 			break;
-			
-		case ETriggerEvent::Canceled:
+		case ETriggerEvent::Triggered:
+			if (InputAbility->ActivationPolicy == EAuraActivationPolicy::InputActive)
+			{
+				TryActivateAbility(AbilitySpec.Handle);
+			}
+			break;
 		case ETriggerEvent::Completed:
+			if (!AbilitySpec.IsActive()) break;
+			if (AbilitySpec.Ability->bReplicateInputDirectly && IsOwnerActorAuthoritative() == false)
+			{
+				ServerSetInputReleased(AbilitySpec.Handle);
+			}
 			AbilitySpecInputReleased(AbilitySpec); // only called if Spec.IsActive() same as AbilitySpecInputPressed
 			MarkAbilitySpecDirty(AbilitySpec);
 			break;
-		
-		case ETriggerEvent::None: break;
+		default: break;
 		}
 	}
 }
@@ -114,13 +130,13 @@ void UAuraAbilitySystemComponent::ReduceCooldownByTag(const FGameplayTagContaine
 	{
 		FActiveGameplayEffect* ActiveEffect = ActiveGameplayEffects.GetActiveGameplayEffect(Handle);
 		if (ActiveEffect == nullptr) continue;
-		const float CurrentWorldTime = GetWorld()->GetTimeSeconds();
-		const float TimeRemaining = ActiveEffect->GetTimeRemaining(CurrentWorldTime);
-		float NewTime = FMath::Max(TimeRemaining - Amount, 0.007f); // Cannot apply effect with 0 duration
+		const float TimeRemaining = ActiveEffect->GetTimeRemaining(GetWorld()->GetTimeSeconds());
+		constexpr float MinFrame = .007f;
+		float NewTime = FMath::Max(TimeRemaining - Amount, MinFrame); // Cannot apply effect with 0 duration
 		if (Percent > UE_KINDA_SMALL_NUMBER)
 		{
 			Percent = FMath::Min(Percent, 0.6); // Max Cooldown 60%
-			NewTime = FMath::Max(NewTime * (1 - Percent), NewTime);
+			NewTime = FMath::Max(NewTime * (1 - Percent), MinFrame);
 		}
 
 		if (const TSubclassOf<UGameplayEffect> CooldownEffectClass = ActiveEffect->Spec.Def->GetClass())
@@ -136,7 +152,6 @@ void UAuraAbilitySystemComponent::ReduceCooldownByTag(const FGameplayTagContaine
 		}
 	}
 }
-
 #pragma endregion
 
 
@@ -180,8 +195,8 @@ void UAuraAbilitySystemComponent::OnRemoveAbility(FGameplayAbilitySpec& AbilityS
 */
 void UAuraAbilitySystemComponent::ClientUpdateAbilityData_Implementation(const FGameplayAbilitySpec& AbilitySpec) const
 {
-	if (const FAuraAbilityData* Data = UAbilityDataAsset::GetAbilityFromGameState(
-		this, AbilitySpec.Ability->GetAssetTags()))
+	if (const FAuraAbilityData* Data = UAbilityDataAsset::GetAbilityFromGameState(this,
+		AbilitySpec.Ability->GetAssetTags()))
 	{
 		FPlayerAbilityData PlayerData;
 		for (const FGameplayTag& Tag : AbilitySpec.GetDynamicSpecSourceTags())
@@ -245,7 +260,7 @@ void UAuraAbilitySystemComponent::ServerChangeAbilitySlot_Implementation(const F
 	const FGameplayTag& SlotToSwap = GetInputFromSpec(Spec); // Store Spec's input if there is any
 	if (SlotToSwap.MatchesTagExact(SlotTag)) return; // if Ability is moved to the same Slot
 	if (SlotTag.MatchesTag(AuraGameplayTags::Input_Combat_Passive) /*Server side check valid type*/
-		!= Cast<UAuraGameplayAbility>(Spec->Ability)->bActivateAbilityOnGranted) return;
+		!= (Cast<UAuraGameplayAbility>(Spec->Ability)->ActivationPolicy == EAuraActivationPolicy::OnSpawn)) return;
 	if (SlotTag.IsValid()) // if not, Slot will just be removed
 	{
 		FScopedAbilityListLock AbilityListLock(*this);
@@ -265,3 +280,46 @@ void UAuraAbilitySystemComponent::ServerChangeAbilitySlot_Implementation(const F
 	ClientUpdateAbilityData(*Spec);
 }
 #pragma endregion
+
+
+void UAuraAbilitySystemComponent::NetMulticast_InvokeGameplayCueExecuted_WithParams_Implementation(
+	const FGameplayTag GameplayCueTag, FPredictionKey PredictionKey, FGameplayCueParameters GameplayCueParameters)
+{
+	if (!IsOwnerActorAuthoritative() && PredictionKey.IsLocalClientKey()) return;
+
+	InvokeGameplayCueEvent(GameplayCueTag, EGameplayCueEvent::Executed, GameplayCueParameters);
+	FAuraEffectContext* AuraContext = FAuraEffectContext::ExtractAuraContext(GameplayCueParameters.EffectContext);
+	if (AuraContext == nullptr) return;
+	FGameplayCueParameters CueParameters(GameplayCueParameters.EffectContext);
+	for (const FCoreEffectCues& EffectCue : AuraContext->GetCoreEffectCues())
+	{
+		CueParameters.RawMagnitude = EffectCue.RawMagnitude;
+		InvokeGameplayCueEvent(EffectCue.CueTag, EGameplayCueEvent::Executed, CueParameters);
+	}
+
+	for (FCoreGameplayCue& Cue : AuraContext->GetCoreCuesBatch())
+	{
+		Cue.UnpackAndInvokeGameplayCueEvent(this);
+
+		FAuraEffectContext* Context = FAuraEffectContext::ExtractAuraContext(Cue.EffectContext);
+		if (Context == nullptr) continue;
+		FGameplayCueParameters Params(Cue.EffectContext);
+		for (const FCoreEffectCues& EffectCue : Context->GetCoreEffectCues())
+		{
+			Params.RawMagnitude = EffectCue.RawMagnitude;
+			InvokeGameplayCueEvent(EffectCue.CueTag, EGameplayCueEvent::Executed, Params);
+		}
+	}
+}
+
+void UAuraAbilitySystemComponent::ExecuteGameplayCueNextTick(const FGameplayTag& Tag, const FGameplayCueParameters& Params)
+{
+	const UWorld* World = GetWorld();
+	if (World == nullptr) return;
+	UAbilitySystemGlobals::Get().GetGameplayCueManager()->StartGameplayCueSendContext();//FScopedGameplayCueSendContext()
+	ExecuteGameplayCue(Tag, Params);
+	World->GetTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this, []()
+	{	//~FScopedGameplayCueSendContext()
+		UAbilitySystemGlobals::Get().GetGameplayCueManager()->EndGameplayCueSendContext();
+	}));
+}

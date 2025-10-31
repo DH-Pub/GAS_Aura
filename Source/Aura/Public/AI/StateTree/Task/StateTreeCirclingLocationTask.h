@@ -14,9 +14,8 @@ struct FStateTree_CirClingLocation_InstanceData
 {
 	GENERATED_BODY()
 
-	// Circling Position Result
 	UPROPERTY(EditAnywhere, Category=Out, meta=(RefType = "/Script/CoreUObject.Vector"))
-	FStateTreePropertyRef Result;
+	FStateTreePropertyRef Result; // Circling Position Result
 
 	// UPROPERTY(EditAnywhere, Category=Context)
 	// TObjectPtr<AActor> Actor = nullptr;

@@ -6,7 +6,6 @@
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "Aura/Aura.h"
-#include "BrainComponent.h"
 #include "AbilitySystem/Data/CharacterClassDataAsset.h"
 #include "AI/AuraAIController.h"
 #include "Components/CapsuleComponent.h"
@@ -32,6 +31,8 @@ AAuraEnemy::AAuraEnemy()
 
 	// No need to SpawnDefaultController()
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
+
+	SetNetUpdateFrequency(5); // Slow AI so no need for much update
 }
 
 void AAuraEnemy::PossessedBy(AController* NewController)

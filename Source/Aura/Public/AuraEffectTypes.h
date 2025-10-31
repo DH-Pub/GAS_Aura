@@ -7,22 +7,66 @@
 #include "StructUtils/InstancedStruct.h"
 #include "AuraEffectTypes.generated.h"
 
-struct FInstancedStruct;
 
 /*
- * return from UAuraAbilitySystemGlobals
+ * Custom GameplayCueParameter with only core elements that you might use
+ */
+USTRUCT()
+struct FCoreGameplayCue
+{
+	GENERATED_BODY()
+	FCoreGameplayCue(){};
+	explicit FCoreGameplayCue(const FGameplayTag& Tag, const FGameplayCueParameters& Params);
+
+	void UnpackAndInvokeGameplayCueEvent(UAbilitySystemComponent* ASC) const;
+
+	FGameplayTag CueTag;
+	float RawMagnitude = 0.f;
+	FGameplayEffectContextHandle EffectContext;
+	FVector_NetQuantize10 Location = FVector_NetQuantize10();
+	FVector_NetQuantizeNormal Normal = FVector_NetQuantizeNormal();
+	UPROPERTY()
+	TWeakObjectPtr<AActor> Instigator; // Actor that owns the ability system component
+	UPROPERTY()
+	TWeakObjectPtr<AActor> EffectCauser; // Can be weapon/projectile
+
+	/** Optimized serializer */
+	bool NetSerialize(FArchive& Ar, class UPackageMap* Map, bool& bOutSuccess);
+};
+
+USTRUCT()
+struct FCoreEffectCues
+{
+	GENERATED_BODY()
+	FCoreEffectCues(){}
+	explicit FCoreEffectCues(const float RawMagnitude, const FGameplayTag& CueTag)
+		: RawMagnitude(RawMagnitude), CueTag(CueTag) {}
+
+	float RawMagnitude = 0.f;
+	FGameplayTag CueTag;
+
+	/** Optimized serializer */
+	bool NetSerialize(FArchive& Ar, class UPackageMap* Map, bool& bOutSuccess)
+	{
+		// SafeNetSerializeTArray_Default<31>(Ar, RawMagnitudes);
+		Ar << RawMagnitude;
+		CueTag.NetSerialize(Ar, Map, bOutSuccess);
+		return bOutSuccess = true;
+	}
+};
+
+
+
+/*
+ * override AllocGameplayEffectContext from UAuraAbilitySystemGlobals
  */
 USTRUCT(BlueprintType)
 struct FAuraEffectContext : public FGameplayEffectContext
 {
 	GENERATED_BODY()
 
-	static FAuraEffectContext* ExtractAuraContext(FGameplayEffectContext* Context)
-	{return static_cast<FAuraEffectContext*>(Context);}
 	static FAuraEffectContext* ExtractAuraContext(FGameplayEffectContextHandle ContextHandle)
 	{return static_cast<FAuraEffectContext*>(ContextHandle.Get());}
-	static const FAuraEffectContext* ExtractAuraEffectContext(const FGameplayEffectContextHandle& ContextHandle)
-	{return static_cast<const FAuraEffectContext*>(ContextHandle.Get());}
 
 	bool IsShowDamageOnTarget() const {return bShowDamageOnTarget;}
 	bool SetShowDamageOnTarget(const bool bIn) {return bShowDamageOnTarget = bIn;}
@@ -48,41 +92,55 @@ struct FAuraEffectContext : public FGameplayEffectContext
 		{return InstancedStruct->GetPtr<T>();}
 		return nullptr;
 	}
-	// When you are sure this is valid
-	template<typename T>
-	static T& GetContextMutableStruct(const FGameplayEffectContextHandle& EffectContext)
-	{
-		const FAuraEffectContext* AuraEffectContext =  static_cast<const FAuraEffectContext*>(EffectContext.Get());
-		FInstancedStruct* InstancedStruct = AuraEffectContext->GetInstancedStruct();
-		return InstancedStruct->GetMutable<T>();
-	}
 
 	template<typename T>
-	static void MakeStructAndAddToContext(FGameplayEffectContext* EffectContext, const T& Struct)
+	static T* MakeStructInContext(FGameplayEffectContextHandle ContextHandle)
 	{
-		FAuraEffectContext* AuraEffectContext =  static_cast<FAuraEffectContext*>(EffectContext);
-		const FInstancedStruct InstancedStruct = FInstancedStruct::Make(Struct);
-		if (!InstancedStruct.IsValid()) return;
-		AuraEffectContext->SetInstancedStruct(InstancedStruct);
+		FAuraEffectContext* AuraEffectContext =  static_cast<FAuraEffectContext*>(ContextHandle.Get());
+		AuraEffectContext->SetInstancedStruct(FInstancedStruct::Make<T>());
+		return AuraEffectContext->GetInstancedStruct()->GetMutablePtr<T>();
 	}
 	template<typename T>
-	static T& GetOrMakeContextStructRef(FGameplayEffectContext* EffectContext)
+	static T* GetOrMakeContextStructPtr(FGameplayEffectContextHandle ContextHandle)
 	{
-		FAuraEffectContext* AuraEffectContext =  static_cast<FAuraEffectContext*>(EffectContext);
+		FAuraEffectContext* AuraEffectContext =  static_cast<FAuraEffectContext*>(ContextHandle.Get());
 		if (FInstancedStruct* InstancedStruct = AuraEffectContext->GetInstancedStruct())
 		{
-			if (InstancedStruct->GetPtr<T>()) return InstancedStruct->GetMutable<T>();
+			return InstancedStruct->GetMutablePtr<T>();
 		}
 		AuraEffectContext->SetInstancedStruct(FInstancedStruct::Make(T()));
-		return AuraEffectContext->GetInstancedStruct()->GetMutable<T>();
+		return AuraEffectContext->GetInstancedStruct()->GetMutablePtr<T>();
 	}
 #pragma endregion
 
 
-	UE_DEPRECATED(all, "Use InstancedStruct instead, make a USTRUCT, that will store the array")
-	UPROPERTY()
-	TArray<FVector_NetQuantize> CueLocations = TArray<FVector_NetQuantize>();
+	TArray<FCoreGameplayCue>& GetCoreCuesBatch() {return CoreCuesBatch;}
+	FCoreGameplayCue& AddToCoreCuesBatch(const FGameplayTag& Tag, const FGameplayCueParameters& Cue, const bool bReset = false)
+	{
+		if (bReset && CoreCuesBatch.Num()) CoreCuesBatch.Reset();
+		return CoreCuesBatch[CoreCuesBatch.Add(FCoreGameplayCue(Tag, Cue))];
+	}
 
+	TArray<FCoreEffectCues>& GetCoreEffectCues() {return CoreEffectCuesList;}
+	FCoreEffectCues& AddToCoreEffectCues(const float Magnitude, const FGameplayTag& Cue, const bool bReset = false)
+	{
+		if (bReset && CoreEffectCuesList.Num()) CoreEffectCuesList.Reset();
+		return CoreEffectCuesList[CoreEffectCuesList.Add(FCoreEffectCues(Magnitude, Cue))];
+	}
+protected:
+	UPROPERTY()
+	bool bShowDamageOnTarget = false;
+
+	// This will show a drop-down in the editor, containing only MyStruct and its children structs
+	/*UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BaseStruct = "/Script/MyModule.MyStruct"))*/
+	TSharedPtr<FInstancedStruct> InstancedStruct; // TSharedPtr cannot be UPROPERTY
+
+	UPROPERTY()
+	TArray<FCoreGameplayCue> CoreCuesBatch;
+	UPROPERTY()
+	TArray<FCoreEffectCues> CoreEffectCuesList; // Batch all FGameplayEffectCue here
+
+public: //REQUIRED: override section
 	/** Returns the actual struct used for serialization, subclasses must override this! */
 	virtual UScriptStruct* GetScriptStruct() const override {return StaticStruct();}
 
@@ -106,14 +164,6 @@ struct FAuraEffectContext : public FGameplayEffectContext
 	}
 	/** Custom serialization, subclasses must override this */
 	virtual bool NetSerialize(FArchive& Ar, class UPackageMap* Map, bool& bOutSuccess) override;
-protected:
-	UPROPERTY()
-	bool bShowDamageOnTarget = false;
-
-	// This will show a drop-down in the editor, containing only MyStruct and its children structs
-	/*UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BaseStruct = "/Script/MyModule.MyStruct"))
-	FInstancedStruct MyInstancedStruct;*/
-	TSharedPtr<FInstancedStruct> InstancedStruct; // TSharedPtr cannot be UPROPERTY
 };
 
 template<>

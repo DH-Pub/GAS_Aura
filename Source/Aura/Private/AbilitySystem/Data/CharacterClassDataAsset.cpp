@@ -7,13 +7,13 @@
 #include "AbilitySystemComponent.h"
 #include "AuraGameplayTags.h"
 #include "Character/AuraCharacterBase.h"
-#include "Game/AuraGameModeBase.h"
+#include "Game/AuraGameMode.h"
 #include "Kismet/GameplayStatics.h"
 #include "Player/AuraPlayerController.h"
 
 const UCharacterClassDataAsset* UCharacterClassDataAsset::GetFromGameMode(const UObject* WorldContextObject)
 {
-	if (const AAuraGameModeBase* AuraGameMode = Cast<AAuraGameModeBase>(UGameplayStatics::GetGameMode(WorldContextObject)))
+	if (const AAuraGameMode* AuraGameMode = Cast<AAuraGameMode>(UGameplayStatics::GetGameMode(WorldContextObject)))
 	{
 		return AuraGameMode->CharacterClassData;
 	}
@@ -62,7 +62,7 @@ void UCharacterClassDataAsset::SendXPToDeathCauser(AActor* Causer, const AAuraCh
 	UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(Causer, Payload.EventTag, Payload); // Last Hit player
 
 	Payload.EventMagnitude *= .85f; // For allies
-	for (const AAuraGameModeBase* GameMode = Cast<AAuraGameModeBase>(Causer->GetWorld()->GetAuthGameMode());
+	for (const AAuraGameMode* GameMode = Cast<AAuraGameMode>(Causer->GetWorld()->GetAuthGameMode());
 		const AAuraPlayerController* AuraController : GameMode->PlayerControllers)
 	{
 		if (AuraController->GetPawn() == Causer) continue;

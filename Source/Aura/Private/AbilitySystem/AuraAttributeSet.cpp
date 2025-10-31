@@ -4,6 +4,7 @@
 #include "AbilitySystem/AuraAttributeSet.h"
 
 #include "AbilitySystemBlueprintLibrary.h"
+#include "AuraEffectTypes.h"
 #include "AuraGameplayTags.h"
 #include "Net/UnrealNetwork.h" // DOREPLIFETIME_CONDITION_NOTIFY
 #include "GameplayEffectExtension.h" // FGameplayEffectModCallbackData.EvaluatedData
@@ -74,32 +75,32 @@ void UAuraAttributeSet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, IncomingDamage, COND_None, REPNOTIFY_Always)
 	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, IncomingXP, COND_None, REPNOTIFY_Always)
 }
+
 #pragma endregion
 
 
-void UAuraAttributeSet::PostAttributeChange(const FGameplayAttribute& Attribute, const float OldValue, const float NewValue)
-{
-	Super::PostAttributeChange(Attribute, OldValue, NewValue);
-	if (Attribute == GetMaxHealthAttribute())
-	{	// Keep percentage of Vitals
-		SetHealth(GetHealth()/OldValue * GetMaxHealth()); // float CurrentManaPercent = GetHealth()/OldValue;
-	}
-	else if (Attribute == GetMaxManaAttribute())
-	{
-		SetMana(GetMana()/OldValue * GetMaxMana());
-	}
+void UAuraAttributeSet::PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue)
+{	// can only affect CurrentValue (temporary)
+	Super::PreAttributeChange(Attribute, NewValue);
+	if (Attribute == GetHealthAttribute()) NewValue = FMath::Clamp(NewValue, 0.f, GetMaxHealth());
+	else if (Attribute == GetManaAttribute()) NewValue = FMath::Clamp(NewValue, 0.f, GetMaxMana());
 }
-
-
 // Each Attribute has BaseValue and CurrentValue
-// PreAttributeBaseChange can affect the BaseValue, which affects CurrentValue
-// PreAttributeChange can only affect CurrentValue
 void UAuraAttributeSet::PreAttributeBaseChange(const FGameplayAttribute& Attribute, float& NewValue) const
-{
+{	// affect the BaseValue (permanent), includes CurrentValue
 	Super::PreAttributeBaseChange(Attribute, NewValue);
 	if (Attribute == GetHealthAttribute()) NewValue = FMath::Clamp(NewValue, 0.f, GetMaxHealth());
 	else if (Attribute == GetManaAttribute()) NewValue = FMath::Clamp(NewValue, 0.f, GetMaxMana());
 }
+
+void UAuraAttributeSet::PostAttributeChange(const FGameplayAttribute& Attribute, const float OldValue, const float NewValue)
+{
+	Super::PostAttributeChange(Attribute, OldValue, NewValue);
+	// float CurrentPercent = GetHealth()/OldValue; // If there is a change in MaxValue, Keep percentage of Vitals
+	if (Attribute == GetMaxHealthAttribute()) SetHealth(GetHealth()/OldValue * GetMaxHealth());
+	else if (Attribute == GetMaxManaAttribute()) SetMana(GetMana()/OldValue * GetMaxMana());
+}
+
 
 // Called just before BaseValue is changed, can also be used to clamp
 void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data)
@@ -119,6 +120,9 @@ void UAuraAttributeSet::HandleIncomingDamage(const FGameplayEffectModCallbackDat
 	const float OldHealth = GetHealth();
 	SetHealth(FMath::Clamp(OldHealth - LocalIncomingDamage, 0.f, GetMaxHealth()));
 
+	FDamageEffectContext* DamageContext = FAuraEffectContext::GetOrMakeContextStructPtr<FDamageEffectContext>(
+		Data.EffectSpec.GetContext());
+	DamageContext->TargetActor = Props.TargetCharacter;
 	if (GetHealth() < UE_KINDA_SMALL_NUMBER)
 	{
 		FGameplayEventData DeathData; DeathData.ContextHandle = Data.EffectSpec.GetContext();
@@ -127,6 +131,8 @@ void UAuraAttributeSet::HandleIncomingDamage(const FGameplayEffectModCallbackDat
 	}
 	else if (Data.EffectSpec.GetDynamicAssetTags().HasTagExact(AuraGameplayTags::Character_State_HitReact))
 	{	//Data.Target.TryActivateAbilitiesByTag(TagContainer); // Activate GA_HitReact which has AssetTag
+		// Data.Target.UpdateTagMap(AuraGameplayTags::Character_State_HitReact, 1); // AddLooseGameplayTag()
+		// Data.Target.SetTagMapCount();
 		FGameplayEventData HitData; HitData.ContextHandle = Data.EffectSpec.GetContext();
 		UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(Props.TargetCharacter,
 			AuraGameplayTags::Character_State_HitReact, HitData);

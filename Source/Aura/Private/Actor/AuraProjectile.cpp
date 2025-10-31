@@ -5,13 +5,15 @@
 
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemGlobals.h"
-#include "AuraGameplayTags.h"
 #include "AuraAbilityLibrary.h"
 #include "AuraEffectTypes.h"
+#include "AuraGameplayTags.h"
+#include "NiagaraFunctionLibrary.h"
+#include "AbilitySystem/Ability/DamageAbility.h"
 #include "AbilitySystem/Ability/ProjectileAbility.h"
+#include "Aura/Aura.h"
 #include "Components/SphereComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
-#include "Aura/Aura.h"
 #include "Kismet/GameplayStatics.h"
 
 AAuraProjectile::AAuraProjectile()
@@ -32,6 +34,16 @@ AAuraProjectile::AAuraProjectile()
 	ProjectileMovement->InitialSpeed = 800.f;
 	ProjectileMovement->MaxSpeed = 800.f;
 	ProjectileMovement->ProjectileGravityScale = 0.f;
+
+	SetNetUpdateFrequency(40);
+}
+
+void AAuraProjectile::MulticastSetHomingTarget_Implementation(USceneComponent* Comp, const float AccelerationMagnitude)
+{
+	ProjectileMovement->ProjectileGravityScale = 0.1f;
+	ProjectileMovement->bIsHomingProjectile = true;
+	ProjectileMovement->HomingTargetComponent = Comp;
+	ProjectileMovement->HomingAccelerationMagnitude = AccelerationMagnitude;
 }
 
 void AAuraProjectile::BeginPlay()
@@ -41,15 +53,15 @@ void AAuraProjectile::BeginPlay()
 	Sphere->OnComponentBeginOverlap.AddDynamic(this, &AAuraProjectile::OnSphereOverlap);
 	if (AttachedSound)
 	{
-		/*UAudioComponent* MovingSound =*/ UGameplayStatics::SpawnSoundAttached(AttachedSound, GetRootComponent(), NAME_None,
-			FVector(), GetActorRotation(), EAttachLocation::KeepRelativeOffset,
+		/*UAudioComponent* MovingSound =*/ UGameplayStatics::SpawnSoundAttached(AttachedSound, GetRootComponent(),
+			NAME_None, FVector(), GetActorRotation(), EAttachLocation::KeepRelativeOffset,
 			true, 1.f, 1.f, 0.f);
 	}
 }
 
 //This won't be called on client if server destroy the object first
 void AAuraProjectile::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-                                      UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	if (OtherActor == GetInstigator()) return;
 	if (!UAuraAbilityLibrary::IsNotFriend(GetInstigator(), OtherActor)) return;
@@ -59,12 +71,25 @@ void AAuraProjectile::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, 
 	SetActorHiddenInGame(true);
 	Sphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
+	/*const FVector Loc = GetActorLocation();
+	UGameplayStatics::PlaySoundAtLocation(this, ImpactSound, Loc);
+	UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, ImpactEffect, Loc);*/
 
+	if (UAbilitySystemComponent* InstigatorASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(GetInstigator()))
+	{
+		FGameplayCueParameters Params;
+		Params.EffectCauser = this;
+		Params.Location = GetActorLocation();
+		/** Handles gameplay cue locally */
+		InstigatorASC->InvokeGameplayCueEvent(AuraGameplayTags::GameplayCue_Impact_Projectile,
+			EGameplayCueEvent::Executed, Params);
+	}
 	if (!HasAuthority()) return; // Modify GameplayEffectSpecHandle (client does not have access)
-	SetLifeSpan(.01f);
+	SetLifeSpan(.1f);
 	if (SpawnedFromAbility == nullptr) return;
 	const FGameplayEffectSpecHandle SpecHandle = SpawnedFromAbility->MakeDamageSpecHandle();
 	FGameplayEffectContextHandle ContextHandle = SpecHandle.Data->GetContext();
+	ContextHandle.Get()->SetEffectCauser(this);
 	if (SweepResult.Distance < UE_SMALL_NUMBER)
 	{	// const_cast<FHitResult&>(SweepResult).ImpactPoint = GetActorLocation();
 		ContextHandle.AddOrigin(GetActorLocation());
@@ -72,19 +97,17 @@ void AAuraProjectile::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, 
 
 	if (UAbilitySystemComponent* TargetASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(OtherActor))
 	{	// if hit a character
-		FDamageEffectContext& DamageContext = FAuraEffectContext::GetOrMakeContextStructRef<FDamageEffectContext>(ContextHandle.Get());
-		DamageContext.DamageDirection = GetActorForwardVector();
-		ContextHandle.AddSourceObject(this);
+		FDamageEffectContext* DamageContext = FAuraEffectContext::MakeStructInContext<FDamageEffectContext>(ContextHandle);
+		DamageContext->DamageDirection = GetActorForwardVector();
 		TargetASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data);
 	}
+}
 
-	if (UAbilitySystemComponent* InstigatorASC = ContextHandle.GetInstigatorAbilitySystemComponent())
-	{	// ExecuteGameplayCue if hit "Something"
-		FGameplayCueParameters CueParams(ContextHandle);
-		CueParams.Location = ContextHandle.GetOrigin();
-		CueParams.Instigator = GetInstigator();
-		CueParams.EffectCauser = this;
-		CueParams.SourceObject = OtherActor;
-		InstigatorASC->ExecuteGameplayCue(AuraGameplayTags::GameplayCue_Impact_Projectile, CueParams);
+void AAuraProjectile::ExecuteProjectileImpactCue(const FGameplayCueParameters& Params)
+{
+	if (const AAuraProjectile* Projectile = Cast<AAuraProjectile>(Params.GetEffectCauser()))
+	{
+		UGameplayStatics::PlaySoundAtLocation(Projectile, Projectile->ImpactSound, Params.Location);
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(Projectile, Projectile->ImpactEffect, Params.Location);
 	}
 }

@@ -35,19 +35,10 @@ void UHitReactAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
 	if (const UDamageAbility* DamageAbility = Cast<UDamageAbility>(
 		TriggerEventData->ContextHandle.GetAbilityInstance_NotReplicated()))
 	{
-		if (FMath::RandRange(0.f, 1.f) < DamageAbility->KnockbackChance)
-		{
-			const FDamageEffectContext* DamageContext = FAuraEffectContext::GetContextStruct<FDamageEffectContext>(
-				TriggerEventData->ContextHandle);
-			const FVector KnockbackForce = DamageAbility->KnockbackForce * DamageContext->DamageDirection;
-			AuraCharacter->LaunchCharacter(KnockbackForce, true, true);
-		}
+		if (FMath::RandRange(0.f, 1.f) > DamageAbility->KnockbackChance) return;
+		const FDamageEffectContext* DamageContext = FAuraEffectContext::GetContextStruct<FDamageEffectContext>(
+			TriggerEventData->ContextHandle);
+		const FVector KnockbackForce = DamageAbility->KnockbackForce * DamageContext->DamageDirection;
+		AuraCharacter->LaunchCharacter(KnockbackForce, true, true);
 	}
-}
-
-void UHitReactAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
-                                  const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
-{
-	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
-	GetAbilitySystemComponentFromActorInfo()->SetLooseGameplayTagCount(AuraGameplayTags::Character_State_HitReact, 0);
 }
