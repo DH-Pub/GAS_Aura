@@ -13,6 +13,8 @@ UCLASS()
 class AURA_API UAuraAbilitySystemGlobals : public UAbilitySystemGlobals
 {
 	GENERATED_BODY()
+public:
+	/** Searches the passed in actor for an ability system component */
 	static class UAuraAbilitySystemComponent* GetAuraASC(const AActor* Actor);
 	// virtual FGameplayAbilityActorInfo* AllocAbilityActorInfo() const override;
 

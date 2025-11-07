@@ -80,7 +80,7 @@ protected:
 	UFUNCTION()
 	void OnCameraCapsuleEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 #pragma endregion
-// ==========================================================================================================================================
+// =====================================================================================================================
 
 
 private:
@@ -91,7 +91,7 @@ private:
 	TObjectPtr<UInputAction> MoveAction;
 	void Move(const FInputActionValue& InputActionValue);
 
-#pragma region Click Movement Nav ===============================================================================
+#pragma region Click Movement Nav =================================
 	UPROPERTY(EditDefaultsOnly, Category="Default|Input")
 	TObjectPtr<UInputAction> MoveMouseAction;
 	EMovementState MovementState = Stop;
@@ -100,7 +100,7 @@ private:
 	UPROPERTY()
 	TObjectPtr<class UNavigationSystemV1> NavSystem;
 	void MoveMouseTriggered(const FInputActionValue& InputActionValue);
-	void MoveMouseReleased(const FInputActionValue& InputActionValue);
+	void MoveMouseComplete(const FInputActionValue& InputActionValue);
 	UPROPERTY(EditDefaultsOnly, Category="Default|Mouse")
 	bool bDrawNavBox = false;
 	UPROPERTY(EditDefaultsOnly, Category="Default|Mouse")
@@ -114,7 +114,10 @@ private:
 	FHitResult CursorHitResult;
 	void CursorTick(); // Cursor HitResult
 
-	void ControllerInputTrigger(const ETriggerEvent TriggerEvent, const FGameplayTag* InputTag, UInputAction* InputAction);
+	UPROPERTY()
+	TObjectPtr<class UAuraAbilitySystemComponent> AuraASC;
+	void PlayerInputPressed(const FGameplayTag InputTag);
+	void PlayerInputReleased(const FGameplayTag InputTag);
 
 	UFUNCTION(Server, Reliable)
 	void ServerSetCharacterAimDirection(const FVector& Aim);

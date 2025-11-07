@@ -32,7 +32,7 @@ struct FCharacterClassDefaultInfo
 
 	UPROPERTY(EditDefaultsOnly, Category = "ClassDefaults")
 	TArray<TSubclassOf<UGameplayAbility>> ClassAbilities;
-	
+
 	UPROPERTY(EditDefaultsOnly, Category = "ClassDefaults")
 	FScalableFloat XPReward = 0.f;
 };
@@ -55,7 +55,7 @@ public:
 	TSubclassOf<UGameplayEffect> VitalAttributes;
 
 	UPROPERTY(EditDefaultsOnly, Category = "CommonClassDefaults")
-	TArray<TSubclassOf<UGameplayAbility>> CommonAbilities;
+	TArray<TSubclassOf<class UAuraGameplayAbility>> CommonAbilities;
 
 	UPROPERTY(EditDefaultsOnly, Category = "CommonClassDefaults|Damage")
 	TObjectPtr<UCurveTable> DamageCalculationCoefficients; 

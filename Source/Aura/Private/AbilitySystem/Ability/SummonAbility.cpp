@@ -6,6 +6,7 @@
 #include "AbilitySystemComponent.h"
 #include "AuraEffectTypes.h"
 #include "AuraGameplayTags.h"
+#include "GameplayCue_Types.h"
 #include "NiagaraFunctionLibrary.h"
 #include "Character/AuraCharacterBase.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -73,9 +74,9 @@ void USummonAbility::PreActivate(const FGameplayAbilitySpecHandle Handle,
 }
 
 void USummonAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
-                                    const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
+	const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
 {
-	SummonInfo.Locations.Empty();
+	SummonInfo.Locations.Reset();
 	SpawnLocationIndex = 0;
 
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);

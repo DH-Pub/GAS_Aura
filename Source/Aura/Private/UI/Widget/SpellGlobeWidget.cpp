@@ -44,7 +44,7 @@ bool USpellGlobeWidget::SuccessUpdateAbilityData(const FAuraAbilityData& InAbili
 {
 	if (!SlotTag.MatchesTagExact(InPlayerData.InputTag))
 	{	// Not this Slot
-		if (AbilityTag.MatchesTagExact(InAbilityData.AbilityTag))
+		if (AbilityTag.MatchesTagExact(InAbilityData.GetAuraAbilityTag()))
 		{	// Ability saved to this Slot is moved out
 			if (WaitCDTask) WaitCDTask->EndTask(); // Clear any active Task when Ability Changed
 			ClearGlobe();
@@ -53,7 +53,7 @@ bool USpellGlobeWidget::SuccessUpdateAbilityData(const FAuraAbilityData& InAbili
 	}
 	if (WaitCDTask) WaitCDTask->EndTask();
 	// Update AbilityTag to compare with next InAbilityData when SuccessUpdateAbilityData called
-	AbilityTag = InAbilityData.AbilityTag;
+	AbilityTag = InAbilityData.GetAuraAbilityTag();
 
 	FSlateBrush ResourceImage;
 	ResourceImage.SetResourceObject(InAbilityData.Icon);

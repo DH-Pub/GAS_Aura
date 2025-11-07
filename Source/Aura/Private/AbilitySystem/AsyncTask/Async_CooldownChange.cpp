@@ -48,7 +48,10 @@ void UAsync_CooldownChange::EndTask()
 	}*/
 	ASC->OnActiveGameplayEffectAddedDelegateToSelf.RemoveAll(this);
 	// ASC->OnAnyGameplayEffectRemovedDelegate().RemoveAll(this);
-	if (EffectHandle.IsValid()) ASC->OnGameplayEffectRemoved_InfoDelegate(EffectHandle)->Remove(OnEffectRemovedDelegate);
+	if (FOnActiveGameplayEffectRemoved_Info* DelPtr = ASC->OnGameplayEffectRemoved_InfoDelegate(EffectHandle))
+	{
+		DelPtr->Remove(OnEffectRemovedDelegate);
+	}
 
 	SetReadyToDestroy();
 	MarkAsGarbage();
@@ -75,12 +78,12 @@ void UAsync_CooldownChange::OnActiveEffectAdded(UAbilitySystemComponent* TargetA
 	const FGameplayEffectQuery GameplayEffectQuery = FGameplayEffectQuery::MakeQuery_MatchAnyOwningTags(CooldownTags);
 	if (CooldownTime > UE_KINDA_SMALL_NUMBER) // still on cooldown
 	{
-		const TArray<float> TimesRemaining = TargetASC->GetActiveEffectsTimeRemaining(GameplayEffectQuery);
+		const TArray<float> TimesRemaining = ASC->GetActiveEffectsTimeRemaining(GameplayEffectQuery);
 		CooldownTime = FMath::Max(TimesRemaining); // if empty, returns 0;
 	}
 	else // New Cooldown Session
 	{
-		for (auto [Remain, Duration] : TargetASC->GetActiveEffectsTimeRemainingAndDuration(GameplayEffectQuery))
+		for (auto [Remain, Duration] : ASC->GetActiveEffectsTimeRemainingAndDuration(GameplayEffectQuery))
 		{
 			if (CooldownTime < Remain)
 			{
@@ -90,7 +93,7 @@ void UAsync_CooldownChange::OnActiveEffectAdded(UAbilitySystemComponent* TargetA
 		}
 	}
 
-	if (TargetASC->GetOwnerRole() == ROLE_Authority /*Player is Server*/
+	if (ASC->GetOwnerRole() == ROLE_Authority /*Player is Server*/
 		/*Client's Predicted cooldown*/
 		|| !bUseServerCooldown && SpecApplied.GetContext().GetAbilityInstance_NotReplicated()
 		/*Client using Server's corrective cooldown*/
@@ -105,6 +108,10 @@ void UAsync_CooldownChange::OnActiveEffectAdded(UAbilitySystemComponent* TargetA
 		CooldownChanged.Broadcast(-1.f, -1.f);
 	}
 
+	if (FOnActiveGameplayEffectRemoved_Info* DelPtr = ASC->OnGameplayEffectRemoved_InfoDelegate(EffectHandle))
+	{
+		DelPtr->Remove(OnEffectRemovedDelegate);
+	}
 	EffectHandle = ActiveEffectHandle;
 	OnEffectRemovedDelegate = ASC->OnGameplayEffectRemoved_InfoDelegate(EffectHandle)
 		->AddUObject(this, &UAsync_CooldownChange::OnEffectRemoved);

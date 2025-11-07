@@ -120,4 +120,6 @@ protected:
 	float HeightIfHitGround; // AddedSpawnHeight in case projectile hit ground on spawn
 private:
 	void OnTargetDataReplicatedCallback(const FGameplayAbilityTargetDataHandle& DataHandle, FGameplayTag ActivationTag);
+
+	FDelegateHandle DelegateHandle;
 };

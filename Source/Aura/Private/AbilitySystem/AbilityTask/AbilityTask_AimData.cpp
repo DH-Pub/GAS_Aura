@@ -19,10 +19,10 @@ void UAbilityTask_AimData::Activate()
 	{
 		// Struct that is not meant to be used, automatically finish when out of scope. REQUIRED to set Prediction
 		// Player input SHOULD be instantly predicted (e.g. 'hold down and charge')
-		FScopedPredictionWindow(AbilitySystemComponent.Get());
-		AAuraCharacterBase* Character = Cast<AAuraCharacterBase>(GetAvatarActor());
+		FScopedPredictionWindow(AbilitySystemComponent.Get(), IsPredictingClient());
+		const AAuraCharacterBase* Character = Cast<AAuraCharacterBase>(GetAvatarActor());
 		FGameplayAbilityTargetData_AimData* Data = new FGameplayAbilityTargetData_AimData();
-		Data->ActivatedTime = GetWorld()->GetGameState()->GetServerWorldTimeSeconds();
+		Data->ActivatedTime = GetWorld()->GetTimeSeconds();
 		Data->AimDirection = Character->AimDirection;
 		if (AAuraPlayerController* PC = Cast<AAuraPlayerController>(Character->GetController()))
 		{	/*PlayerControlled*/
@@ -49,8 +49,8 @@ void UAbilityTask_AimData::Activate()
 	{
 		const FGameplayAbilitySpecHandle SpecHandle = GetAbilitySpecHandle();
 		const FPredictionKey ActivationPredictionKey = GetActivationPredictionKey();
-		OnTargetDataReadyCallbackDelegate = AbilitySystemComponent->AbilityTargetDataSetDelegate(SpecHandle,
-			ActivationPredictionKey).AddUObject(this, &UAbilityTask_AimData::OnTargetDataReplicatedCallback);
+		DelegateHandle = AbilitySystemComponent->AbilityTargetDataSetDelegate(SpecHandle, ActivationPredictionKey).AddUObject(
+			this, &UAbilityTask_AimData::OnTargetDataReplicatedCallback);
 		if (!AbilitySystemComponent->CallReplicatedTargetDataDelegatesIfSet(SpecHandle, ActivationPredictionKey))
 		{
 			SetWaitingOnRemotePlayerData(); // if data hasn't reached the server yet
@@ -59,7 +59,7 @@ void UAbilityTask_AimData::Activate()
 }
 
 void UAbilityTask_AimData::OnTargetDataReplicatedCallback(const FGameplayAbilityTargetDataHandle& DataHandle,
-	FGameplayTag ActivationTag) const
+	FGameplayTag ActivationTag)
 {
 	AAuraCharacterBase* Character = Cast<AAuraCharacterBase>(GetAvatarActor());
 	const FGameplayAbilityTargetData* Data = DataHandle.Data[0].Get();
@@ -67,8 +67,7 @@ void UAbilityTask_AimData::OnTargetDataReplicatedCallback(const FGameplayAbility
 	Character->AimDirection = Origin.GetTranslation(); // Set AimDirection on Server side
 	const FVector Floats = Origin.GetScale3D();
 
-	const float ClientTime = Floats.X;
-	const float TimeDifferent = GetWorld()->GetGameState()->GetServerWorldTimeSeconds() - ClientTime; // Server-Client
+	const float TimeDifferent = GetWorld()->GetTimeSeconds() - Floats.X; // Server-Client
 	if (TimeDifferent < 1.f && TimeDifferent > UE_KINDA_SMALL_NUMBER)
 	{
 		// can calculate different compared to client's time here
@@ -76,8 +75,7 @@ void UAbilityTask_AimData::OnTargetDataReplicatedCallback(const FGameplayAbility
 
 	AActor* Target = Data->GetActors().Num() > 0 ? Data->GetActors()[0].Get() : nullptr;
 
-	AbilitySystemComponent->AbilityTargetDataSetDelegate(GetAbilitySpecHandle(), GetActivationPredictionKey()).Remove(
-		OnTargetDataReadyCallbackDelegate);
+	AbilitySystemComponent->AbilityTargetDataSetDelegate(GetAbilitySpecHandle(), GetActivationPredictionKey()).Remove(DelegateHandle);
 	AbilitySystemComponent->ConsumeClientReplicatedTargetData(GetAbilitySpecHandle(), GetActivationPredictionKey());
-	if (ShouldBroadcastAbilityTaskDelegates()) ValidData.Broadcast(Data->GetEndPoint(), /*DataHandle*/Target);
+	if (ShouldBroadcastAbilityTaskDelegates()) ValidData.Broadcast(Data->GetEndPoint(), Target);
 }

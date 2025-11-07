@@ -41,7 +41,7 @@ void USpellMenuWidgetController::UpdateButtonsAndDescriptions(const int32 Points
 
 	FText Description;
 	FText NextLvDescription;
-	if (const FGameplayAbilitySpec* Spec = GetASC()->GetSpecFromAssetTag(AbilityTag))
+	if (const FGameplayAbilitySpec* Spec = GetASC()->GetSpecFromAbilityTag(AbilityTag))
 	{
 		// Spec->GetAbilityInstances(); Spec->GetPrimaryInstance();
 		if (const UCostCooldownAbility* AuraAbility = Cast<UCostCooldownAbility>(Spec->NonReplicatedInstances[0]))

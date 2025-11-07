@@ -54,7 +54,7 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category="Default|Damage")
 	FScalableFloat DamageValue;
 
-	UPROPERTY(EditDefaultsOnly, Category="Default|Damage", meta=(UIMin=0.01, UIMax=10.0, Delta=0.01))
+	UPROPERTY(EditDefaultsOnly, Category="Default|Debuff", meta=(UIMin=0.01, UIMax=10.0, Delta=0.01))
 	float DebuffDelay = 0.2; // Delay until debuff activates
 	UPROPERTY(EditDefaultsOnly, Category="Default|Debuff")
 	TSubclassOf<UGameplayEffect> DebuffEffectClass;

@@ -4,8 +4,9 @@
 #include "AbilitySystem/Data/CharacterClassDataAsset.h"
 
 #include "AbilitySystemBlueprintLibrary.h"
-#include "AbilitySystemComponent.h"
 #include "AuraGameplayTags.h"
+#include "AbilitySystem/AuraAbilitySystemComponent.h"
+#include "AbilitySystem/Ability/AuraGameplayAbility.h"
 #include "Character/AuraCharacterBase.h"
 #include "Game/AuraGameMode.h"
 #include "Kismet/GameplayStatics.h"
@@ -40,9 +41,9 @@ void UCharacterClassDataAsset::InitializeDefaultAttributes(const ECharacterClass
 /* Make sure to check HasAuthority() before calling this */
 void UCharacterClassDataAsset::GiveStartupAbilities(const AAuraCharacterBase* AuraCharacter) const
 {
-	UAbilitySystemComponent* ASC = AuraCharacter->GetAbilitySystemComponent();
+	UAuraAbilitySystemComponent* ASC = AuraCharacter->GetAuraAbilitySystemComponent();
 	for (const TSubclassOf ClassAbility : CommonAbilities)
-	{	// These abilities do not change according to levels (Eg: HitReact, ...)
+	{	// Passives do not change according to levels (Eg: HitReact, ...)
 		ASC->GiveAbility(FGameplayAbilitySpec(ClassAbility, 1));
 	}
 	for (const TSubclassOf Ability : GetClassDefaultInfo(AuraCharacter->CharacterClass)->ClassAbilities)

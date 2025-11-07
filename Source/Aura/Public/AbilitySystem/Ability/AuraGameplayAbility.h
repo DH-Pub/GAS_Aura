@@ -30,8 +30,8 @@ struct FAbilityDetails
 UENUM(BlueprintType)
 enum class EAuraActivationPolicy : uint8
 {
-	InputStarted,
-	InputActive, // Continually try to activate ability while Input is Active (Ongoing, Triggered)
+	InputStart,
+	InputHolding, // Continually try to activate ability while Input is Active (Triggered)
 	OnSpawn, // Passive, activate in OnAvatarSet 
 };
 
@@ -46,11 +46,15 @@ class AURA_API UAuraGameplayAbility : public UGameplayAbility
 public:
 	UAuraGameplayAbility();
 
+	// Added to GetDynamicSpecSourceTags() and also used for CD
+	UPROPERTY(EditDefaultsOnly, Category="Default", meta=(GameplayTagFilter="Ability"))
+	FGameplayTag AuraAbilityTag = FGameplayTag::EmptyTag;
 	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<class AAuraCharacterBase> AuraCharacter = nullptr;
 
+	// Defines how this ability is meant to activate.
 	UPROPERTY(EditDefaultsOnly, Category="Default")
-	EAuraActivationPolicy ActivationPolicy; // Defines how this ability is meant to activate.
+	EAuraActivationPolicy ActivationPolicy = EAuraActivationPolicy::InputHolding;
 protected:
 	virtual void PreActivate(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
 		const FGameplayAbilityActivationInfo ActivationInfo, FOnGameplayAbilityEnded::FDelegate* OnGameplayAbilityEndedDelegate,

@@ -12,9 +12,6 @@ struct FAuraAbilityData
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(GameplayTagFilter="Ability"))
-	FGameplayTag AbilityTag = FGameplayTag();
-
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<UTexture2D> Icon = nullptr;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
@@ -25,6 +22,7 @@ struct FAuraAbilityData
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TSubclassOf<class UAuraGameplayAbility> AbilityClass = nullptr;
+	const FGameplayTag& GetAuraAbilityTag() const;
 };
 //Data Asset is shared among players, this is created to send current player's ability data
 USTRUCT(BlueprintType)
@@ -52,12 +50,16 @@ public:
 	static const UAbilityDataAsset* GetFromGameState(const UObject* WorldContextObject);
 	static const FAuraAbilityData* GetAbilityFromGameState(const UObject* WorldContextObject, const FGameplayTag& Tag);
 	static const FAuraAbilityData* GetAbilityFromGameState(const UObject* WorldContextObject, const FGameplayTagContainer& Tags);
+	static const FAuraAbilityData* GetAbilityFromGameState(const UObject* WorldContextObject,
+		const TSubclassOf<UAuraGameplayAbility> AbilityClass);
 
+	UFUNCTION(BlueprintPure, meta=(DefaultToSelf="WorldContextObject", HidePin="WorldContextObject"))
+	static const FGameplayTag& GetAbilityTagFromClass(const UObject* WorldContextObject,
+		const TSubclassOf<UAuraGameplayAbility> AbilityClass);
 
 #if WITH_EDITOR
 	virtual EDataValidationResult IsDataValid(FDataValidationContext& Context) const override;
-
-	UFUNCTION(CallInEditor, Category="Populate Data")
-	void PopulateDataAsset();
+	/*UFUNCTION(CallInEditor, Category="Populate Data")
+	void PopulateDataAsset();*/
 #endif
 };

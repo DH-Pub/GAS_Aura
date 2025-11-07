@@ -7,22 +7,6 @@
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "AbilitySystem/Effect/CostCooldownEffect.h"
 
-void UCostCooldownAbility::OnAvatarSet(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec)
-{
-	Super::OnAvatarSet(ActorInfo, Spec);
-	if (StartupInputTag.IsValid())
-	{	// Ability Has default input
-		GetCurrentAbilitySpec()->GetDynamicSpecSourceTags().AddTagFast(StartupInputTag);
-		GetCurrentAbilitySpec()->GetDynamicSpecSourceTags().AddTagFast(AuraGameplayTags::Ability_Status_Unlocked);
-		GetAbilitySystemComponentFromActorInfo()->MarkAbilitySpecDirty(*GetCurrentAbilitySpec());
-	}
-}
-
-void UCostCooldownAbility::FinishAbilityAction()
-{	// GetAbilitySystemComponentFromActorInfo()->RemoveLooseGameplayTag(AuraGameplayTags::Character_State_Ability, -1);
-	GetAbilitySystemComponentFromActorInfo()->UpdateTagMap(AuraGameplayTags::Character_State_Ability, -1);
-}
-
 UCostCooldownAbility::UCostCooldownAbility()
 {
 	FGameplayTagContainer DefaultAssetTags;
@@ -32,37 +16,44 @@ UCostCooldownAbility::UCostCooldownAbility()
 	ActivationBlockedTags.AddTag(AuraGameplayTags::Character_State_HitReact);
 	ActivationBlockedTags.AddTag(AuraGameplayTags::Character_State_Death);
 	// ActivationRequiredTags.AddTag();
-	bRetriggerInstancedAbility = true;
 
 	CooldownGameplayEffectClass = UCooldownEffect::StaticClass();
 	CostGameplayEffectClass = UCostEffect::StaticClass();
 }
 
 const FGameplayTagContainer* UCostCooldownAbility::GetCooldownTags() const
-{
-	if (!CooldownTag.IsValid()) return Super::GetCooldownTags();
+{	// For CheckCooldown and Get Time Remains
+	if (!AuraAbilityTag.IsValid()) return Super::GetCooldownTags();
 	FGameplayTagContainer* MutableTags = const_cast<FGameplayTagContainer*>(&TempCooldownTags);
-	MutableTags->Reset(); // MutableTags writes to the TempCooldownTags on the CDO so clear it in case the cooldown tags change (to a different slot)
+	MutableTags->Reset(); // MutableTags writes to the TempCooldownTags on the CDO so clear it in case the CD tags change (to another slot)
 	if (const FGameplayTagContainer* ParentTags = Super::GetCooldownTags())
 	{	// if GetCooldownGameplayEffect() exists, GE->GetGrantedTags()
 		MutableTags->AppendTags(*ParentTags);
 	}
-	MutableTags->AddTag(CooldownTag); // MutableTags->AppendTags(CooldownTags);
+	MutableTags->AddTag(AuraAbilityTag);
 	return MutableTags;
 }
 
 void UCostCooldownAbility::ApplyCooldown(const FGameplayAbilitySpecHandle Handle,
 	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo) const
 {
-	if (!CooldownTag.IsValid()) {Super::ApplyCooldown(Handle, ActorInfo, ActivationInfo); return;}
-	const float AbilityCooldown = CooldownDuration.GetValueAtLevel(GetAbilityLevel());
-	if (AbilityCooldown < UE_KINDA_SMALL_NUMBER) return;
-	if (const UGameplayEffect* CooldownGE = GetCooldownGameplayEffect())
-	{
-		const FGameplayEffectSpecHandle SpecHandle = MakeOutgoingGameplayEffectSpec(CooldownGE->GetClass(), GetAbilityLevel());
-		SpecHandle.Data->DynamicGrantedTags.AddTag(CooldownTag);
-		SpecHandle.Data->SetByCallerTagMagnitudes.FindOrAdd(CooldownTag) = AbilityCooldown;
-		FActiveGameplayEffectHandle ActiveHandle = ApplyGameplayEffectSpecToOwner(Handle, ActorInfo, ActivationInfo, SpecHandle);
+	if (!AuraAbilityTag.IsValid()) {Super::ApplyCooldown(Handle, ActorInfo, ActivationInfo); return;}
+	if (CooldownGameplayEffectClass == nullptr) return; // Using UMMC_CooldownDuration for DurMag
+	if (CooldownDuration.GetValueAtLevel(GetAbilityLevel()) < UE_KINDA_SMALL_NUMBER) return;
+	const FGameplayEffectSpecHandle SpecHandle = MakeOutgoingGameplayEffectSpec(CooldownGameplayEffectClass, GetAbilityLevel());
+	SpecHandle.Data->DynamicGrantedTags.AddTag(AuraAbilityTag); // if DurMag:SetByCaller ->SetByCallerMagnitudes
+	// ReSharper disable once CppExpressionWithoutSideEffects
+	ApplyGameplayEffectSpecToOwner(Handle, ActorInfo, ActivationInfo, SpecHandle);
+}
+
+void UCostCooldownAbility::OnAvatarSet(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec)
+{
+	Super::OnAvatarSet(ActorInfo, Spec);
+	if (StartupInputTag.IsValid())
+	{	// Ability has default input, for testing only
+		GetCurrentAbilitySpec()->GetDynamicSpecSourceTags().AddTagFast(StartupInputTag);
+		GetCurrentAbilitySpec()->GetDynamicSpecSourceTags().AddTagFast(AuraGameplayTags::Ability_Status_Unlocked);
+		GetAbilitySystemComponentFromActorInfo()->MarkAbilitySpecDirty(*GetCurrentAbilitySpec());
 	}
 }
 
@@ -108,20 +99,3 @@ void UCostCooldownAbility::GetAbilityDetailsCostCooldown(FAbilityDetails& Detail
 	GetCost(Details);
 	GetCooldownAndReduction(Details);
 }
-
-
-/*
- * Input: bReplicateInputDirectly = true; for this to works ===========================================================
- */
-#pragma region Input ===============================================
-void UCostCooldownAbility::InputPressed(const FGameplayAbilitySpecHandle Handle,
-	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo)
-{
-	Super::InputPressed(Handle, ActorInfo, ActivationInfo);
-}
-void UCostCooldownAbility::InputReleased(const FGameplayAbilitySpecHandle Handle,
-	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo)
-{
-	Super::InputReleased(Handle, ActorInfo, ActivationInfo);
-}
-#pragma endregion

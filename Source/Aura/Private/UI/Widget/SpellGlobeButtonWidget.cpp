@@ -22,7 +22,7 @@ void USpellGlobeButtonWidget::SetWidgetController(UAuraWidgetController* InWidge
 
 void USpellGlobeButtonWidget::ReceiveAbilityData(const FAuraAbilityData& AbilityData, const FPlayerAbilityData& PlayerData)
 {
-	if (!AbilityData.AbilityTag.MatchesTagExact(AbilityTag)) return;
+	if (!AbilityData.GetAuraAbilityTag().MatchesTagExact(AbilityTag)) return;
 	StatusTag = PlayerData.StatusTag;
 	if (StatusTag.MatchesTagExact(AuraGameplayTags::Ability_Status_Locked))
 	{

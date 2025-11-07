@@ -59,6 +59,7 @@ void AAuraPlayerController::SetPawn(APawn* InPawn)
 {
 	Super::SetPawn(InPawn);
 	AuraPawn = Cast<AAuraCharacterBase>(InPawn);
+	AuraASC = AuraPawn ? AuraPawn->GetAuraAbilitySystemComponent() : nullptr;
 	SetCameraComponent();
 }
 
@@ -84,17 +85,17 @@ void AAuraPlayerController::BeginPlay()
 	NavSystem = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
 }
 void AAuraPlayerController::SetupInputComponent()
-{
+{	// AuraInputComponent->BindActionValue(InputAction).GetValue();
 	Super::SetupInputComponent();
 
 	UAuraInputComponent* InputComp = CastChecked<UAuraInputComponent>(InputComponent);
 	InputComp->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AAuraPlayerController::Move);
 
 	InputComp->BindAction(MoveMouseAction, ETriggerEvent::Triggered, this, &AAuraPlayerController::MoveMouseTriggered);
-	InputComp->BindAction(MoveMouseAction, ETriggerEvent::Completed, this, &AAuraPlayerController::MoveMouseReleased);
+	InputComp->BindAction(MoveMouseAction, ETriggerEvent::Completed, this, &AAuraPlayerController::MoveMouseComplete);
 
-	InputComp->BindAbilityActions(InputConfig, InputMappingContext,this, &AAuraPlayerController::ControllerInputTrigger);
-	// AuraInputComponent->BindActionValue(InputAction).GetValue();
+	InputComp->BindAbilityActions(InputConfig, InputMappingContext,this,
+		&AAuraPlayerController::PlayerInputPressed, &AAuraPlayerController::PlayerInputReleased);
 }
 
 
@@ -180,7 +181,7 @@ void AAuraPlayerController::MoveMouseTriggered(const FInputActionValue& InputAct
 	if (MovementState != HoldMove) MovementState = HoldMove;
 	MoveHoldTime += GetWorld()->GetDeltaSeconds();
 }
-void AAuraPlayerController::MoveMouseReleased(const FInputActionValue& InputActionValue)
+void AAuraPlayerController::MoveMouseComplete(const FInputActionValue& InputActionValue)
 {
 	if (MoveHoldTime < HoldTimeThreshold && CursorHitResult.bBlockingHit)
 	{
@@ -268,13 +269,15 @@ void AAuraPlayerController::CursorTick()
 	/*GetWorld()->OverlapMultiByObjectType();*/
 }
 
-//IMPORTANT: Do not remove comment below and change function to const or there will be error with BindAction()
-// ReSharper disable once CppMemberFunctionMayBeConst
-void AAuraPlayerController::ControllerInputTrigger(const ETriggerEvent TriggerEvent, const FGameplayTag* InputTag,
-	UInputAction* InputAction)
+void AAuraPlayerController::PlayerInputPressed(const FGameplayTag InputTag)
 {
-	if (AuraPawn == nullptr) return;
-	AuraPawn->GetAuraAbilitySystemComponent()->AbilityInputTagTrigger(TriggerEvent, *InputTag, InputAction);
+	if (AuraASC) AuraASC->AbilityInputTagPressed(InputTag);
+	else if (AuraPawn) AuraASC = AuraPawn->GetAuraAbilitySystemComponent();
+}
+void AAuraPlayerController::PlayerInputReleased(const FGameplayTag InputTag)
+{
+	if (AuraASC) AuraASC->AbilityInputTagReleased(InputTag);
+	else if (AuraPawn) AuraASC = AuraPawn->GetAuraAbilitySystemComponent();
 }
 
 // Change on server for UPROPERTY(Replicated/ReplicatedUsing) to work, else use AbilityTask_AimData

@@ -7,50 +7,69 @@
 #include "StructUtils/InstancedStruct.h"
 #include "AuraEffectTypes.generated.h"
 
-
 /*
  * Custom GameplayCueParameter with only core elements that you might use
  */
 USTRUCT()
-struct FCoreGameplayCue
+struct FCoreCueParams
 {
 	GENERATED_BODY()
-	FCoreGameplayCue(){};
-	explicit FCoreGameplayCue(const FGameplayTag& Tag, const FGameplayCueParameters& Params);
+	FCoreCueParams(){};
+	explicit FCoreCueParams(const FGameplayTag& Tag, const FGameplayCueParameters& Params);
 
 	void UnpackAndInvokeGameplayCueEvent(UAbilitySystemComponent* ASC) const;
 
+	UPROPERTY()
 	FGameplayTag CueTag;
 	float RawMagnitude = 0.f;
+	UPROPERTY()
 	FGameplayEffectContextHandle EffectContext;
+	UPROPERTY()
 	FVector_NetQuantize10 Location = FVector_NetQuantize10();
+	UPROPERTY()
 	FVector_NetQuantizeNormal Normal = FVector_NetQuantizeNormal();
 	UPROPERTY()
 	TWeakObjectPtr<AActor> Instigator; // Actor that owns the ability system component
 	UPROPERTY()
 	TWeakObjectPtr<AActor> EffectCauser; // Can be weapon/projectile
 
+	bool operator==(const FCoreCueParams& Other) const
+	{
+		return CueTag == Other.CueTag
+		&& RawMagnitude == Other.RawMagnitude
+		&& EffectContext == Other.EffectContext
+		&& Location == Other.Location
+		&& Normal == Other.Normal
+		&& Instigator == Other.Instigator
+		&& EffectCauser == Other.EffectCauser;
+	}
+
 	/** Optimized serializer */
 	bool NetSerialize(FArchive& Ar, class UPackageMap* Map, bool& bOutSuccess);
 };
 
 USTRUCT()
-struct FCoreEffectCues
+struct FEffectCues
 {
 	GENERATED_BODY()
-	FCoreEffectCues(){}
-	explicit FCoreEffectCues(const float RawMagnitude, const FGameplayTag& CueTag)
-		: RawMagnitude(RawMagnitude), CueTag(CueTag) {}
+	FEffectCues(){}
+	explicit FEffectCues(const FGameplayTag& CueTag, const float RawMagnitude)
+		: CueTag(CueTag), RawMagnitude(RawMagnitude) {}
 
-	float RawMagnitude = 0.f;
+	UPROPERTY()
 	FGameplayTag CueTag;
+	float RawMagnitude = 0.f;
+
+	bool operator==(const FEffectCues& Other) const
+	{
+		return (CueTag == Other.CueTag) && (RawMagnitude == Other.RawMagnitude);
+	}
 
 	/** Optimized serializer */
 	bool NetSerialize(FArchive& Ar, class UPackageMap* Map, bool& bOutSuccess)
 	{
-		// SafeNetSerializeTArray_Default<31>(Ar, RawMagnitudes);
-		Ar << RawMagnitude;
 		CueTag.NetSerialize(Ar, Map, bOutSuccess);
+		Ar << RawMagnitude; // SafeNetSerializeTArray_Default<31>(Ar, RawMagnitudes);
 		return bOutSuccess = true;
 	}
 };
@@ -114,18 +133,21 @@ struct FAuraEffectContext : public FGameplayEffectContext
 #pragma endregion
 
 
-	TArray<FCoreGameplayCue>& GetCoreCuesBatch() {return CoreCuesBatch;}
-	FCoreGameplayCue& AddToCoreCuesBatch(const FGameplayTag& Tag, const FGameplayCueParameters& Cue, const bool bReset = false)
+	TArray<FCoreCueParams>& GetCueParamsBatched() {return CueParamsBatched;}
+	// Add CueParams to CueParamsBatched, check if Cue.EffectContext.Get() is NOT self (this) before adding
+	int32 BatchCuesParams(const FGameplayTag& Tag, const FGameplayCueParameters& Cue, const bool bReset = false)
 	{
-		if (bReset && CoreCuesBatch.Num()) CoreCuesBatch.Reset();
-		return CoreCuesBatch[CoreCuesBatch.Add(FCoreGameplayCue(Tag, Cue))];
+		if (Cue.EffectContext.Get() == this) return 0; // Adding itself will cause error in NetSerialize to Client
+		if (bReset && CueParamsBatched.Num()) CueParamsBatched.Reset();
+		return CueParamsBatched.AddUnique(FCoreCueParams(Tag, Cue));
 	}
 
-	TArray<FCoreEffectCues>& GetCoreEffectCues() {return CoreEffectCuesList;}
-	FCoreEffectCues& AddToCoreEffectCues(const float Magnitude, const FGameplayTag& Cue, const bool bReset = false)
+	TArray<FEffectCues>& GetEffectCuesList() {return EffectCuesList;}
+	// Batch all FGameplayEffectCue in effect
+	FEffectCues& AddToEffectCuesList(const FGameplayTag& Cue, const float Magnitude, const bool bReset = false)
 	{
-		if (bReset && CoreEffectCuesList.Num()) CoreEffectCuesList.Reset();
-		return CoreEffectCuesList[CoreEffectCuesList.Add(FCoreEffectCues(Magnitude, Cue))];
+		if (bReset && EffectCuesList.Num()) EffectCuesList.Reset();
+		return EffectCuesList[EffectCuesList.AddUnique(FEffectCues(Cue, Magnitude))];
 	}
 protected:
 	UPROPERTY()
@@ -136,9 +158,9 @@ protected:
 	TSharedPtr<FInstancedStruct> InstancedStruct; // TSharedPtr cannot be UPROPERTY
 
 	UPROPERTY()
-	TArray<FCoreGameplayCue> CoreCuesBatch;
+	TArray<FCoreCueParams> CueParamsBatched;
 	UPROPERTY()
-	TArray<FCoreEffectCues> CoreEffectCuesList; // Batch all FGameplayEffectCue here
+	TArray<FEffectCues> EffectCuesList; // Batch all FGameplayEffectCue here
 
 public: //REQUIRED: override section
 	/** Returns the actual struct used for serialization, subclasses must override this! */

@@ -108,7 +108,6 @@ void AAuraPlayer::InitAuraCharacter()
 	{
 		ClassData->InitializeDefaultAttributes(CharacterClass, Level, AbilitySystemComponent);
 		ClassData->GiveStartupAbilities(this);
-		FGameplayAbilitySpec Spec(UAttributesEventAbility::StaticClass(), 1);
-		AbilitySystemComponent->GiveAbility(Spec);
+		AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(UAttributesEventAbility::StaticClass(), 1));
 	}
 }

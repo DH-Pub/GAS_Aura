@@ -23,24 +23,25 @@ class AURA_API UAuraInputComponent : public UEnhancedInputComponent
 	GENERATED_BODY()
 public:
 	// Bind UAuraInputConfig's InputAction:
-	template<class UserClassT, typename TriggerFuncT>
+	template<class UserClassT, typename PressedFuncT, typename ReleasedFuncT>
 	void BindAbilityActions(const UAuraInputConfig* InputConfig, UInputMappingContext* InputMappingContext,
-		UserClassT* Object, TriggerFuncT TriggerFunc)
+		UserClassT* Object, PressedFuncT PressedFunc, ReleasedFuncT ReleasedFunc)
 	{
 		check(InputConfig);
-		for (const auto& [InputTag, InputAction] : InputConfig->AbilityInputActions)
+		for (const auto [InputTag, InputAction] : InputConfig->AbilityInputActions)
 		{
 			if (InputAction && InputTag.IsValid())
 			{	/* FEnhancedInputActionEventBinding& BindAction(const UInputAction* Action, ETriggerEvent TriggerEvent,
 				UserClass* Object, typename HANDLER_SIG::template TMethodPtr< UserClass, VarTypes... > Func, VarTypes... Vars) */
-				BindAction(InputAction, ETriggerEvent::Started, Object, TriggerFunc, ETriggerEvent::Started, &InputTag, InputAction.Get());
-				BindAction(InputAction, ETriggerEvent::Triggered, Object, TriggerFunc, ETriggerEvent::Triggered, &InputTag, InputAction.Get());
-				BindAction(InputAction, ETriggerEvent::Completed, Object, TriggerFunc, ETriggerEvent::Completed, &InputTag, InputAction.Get());
+				if (PressedFunc)
+				{
+					BindAction(InputAction, ETriggerEvent::Started, Object, PressedFunc, InputTag);
+					BindAction(InputAction, ETriggerEvent::Triggered, Object, PressedFunc, InputTag);
+				}
+				if (ReleasedFunc) BindAction(InputAction, ETriggerEvent::Completed, Object, ReleasedFunc, InputTag);
 			}
 			/*for (const auto& Key : EnhancedInputLocalPlayerSubsystem->QueryKeysMappedToAction(InputAction))
-			{
-				InputMappingContext->MapKey(Pair.Value, Key);
-			}*/
+			{InputMappingContext->MapKey(Pair.Value, Key);}*/
 			UEnhancedInputLibrary::RequestRebuildControlMappingsUsingContext(InputMappingContext);
 		}
 	}

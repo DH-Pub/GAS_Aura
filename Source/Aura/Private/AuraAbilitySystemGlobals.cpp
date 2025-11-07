@@ -7,6 +7,7 @@
 #include "AuraEffectTypes.h"
 #include "Character/AuraCharacterBase.h"
 #include "GameplayAbilitiesDeveloperSettings.h"
+#include "AbilitySystem/AuraAbilitySystemComponent.h"
 
 UAuraAbilitySystemComponent* UAuraAbilitySystemGlobals::GetAuraASC(const AActor* Actor)
 {

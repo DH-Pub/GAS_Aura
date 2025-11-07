@@ -29,9 +29,10 @@ void UExecCalc_Debuff::Execute_Implementation(const FGameplayEffectCustomExecuti
 	if (const UDamageAbility* DamageAbility = Cast<UDamageAbility>(Spec.GetEffectContext().GetAbilityInstance_NotReplicated()))
 	{
 		Spec.GetContext().AddOrigin(TargetAvatar->GetActorLocation());
+		float Damage = DamageAbility->DebuffDamage.GetValueAtLevel(DamageAbility->GetAbilityLevel());
+		Damage *= Spec.GetStackCount();
 		OutExecutionOutput.AddOutputModifier(FGameplayModifierEvaluatedData(
-			UAuraAttributeSet::GetIncomingDamageAttribute(), EGameplayModOp::Override,
-			DamageAbility->DebuffDamage.GetValueAtLevel(DamageAbility->GetAbilityLevel())));
+			UAuraAttributeSet::GetIncomingDamageAttribute(), EGameplayModOp::Override, Damage));
 	}
 }
 

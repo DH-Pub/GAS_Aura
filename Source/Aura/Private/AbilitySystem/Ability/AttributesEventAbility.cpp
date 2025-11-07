@@ -18,6 +18,19 @@ UAttributesEventAbility::UAttributesEventAbility()
 	AbilityTriggers[i].TriggerSource = EGameplayAbilityTriggerSource::GameplayEvent;
 }
 
+void UAttributesEventAbility::OnAvatarSet(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec)
+{
+	Super::OnAvatarSet(ActorInfo, Spec);
+
+	FGameplayAbilitySpec* AbilitySpec = GetCurrentAbilitySpec();
+	for (const FGameplayModifierInfo& Mod : UAttributeEventEffect::StaticClass()
+		->GetDefaultObject<UAttributeEventEffect>()->Modifiers)
+	{	// Set From IncomingXP or Default to 0.f to avoid error
+		const FGameplayTag& Tag = Mod.ModifierMagnitude.GetSetByCallerFloat().DataTag;
+		AbilitySpec->SetByCallerTagMagnitudes.FindOrAdd(Tag) = 0.f;
+	}
+}
+
 void UAttributesEventAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
 	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo,
 	const FGameplayEventData* TriggerEventData)
@@ -27,19 +40,17 @@ void UAttributesEventAbility::ActivateAbility(const FGameplayAbilitySpecHandle H
 	const FGameplayEffectSpecHandle EffectSpecHandle = MakeOutgoingGameplayEffectSpec(UAttributeEventEffect::StaticClass(), 1.f);
 	FGameplayEffectSpec* Spec = EffectSpecHandle.Data.Get();
 
-	for (const FGameplayModifierInfo& Mod : Spec->Def->Modifiers)
-	{	// Set From IncomingXP or Default to 0.f to avoid error
-		const FGameplayTag& Tag = Mod.ModifierMagnitude.GetSetByCallerFloat().DataTag;
-		Spec->SetByCallerTagMagnitudes.FindOrAdd(Tag) = Tag.MatchesTagExact(TriggerEventData->EventTag) ?
-			TriggerEventData->EventMagnitude : 0.f;
+	if (TriggerEventData->EventTag.IsValid())
+	{
+		Spec->SetByCallerTagMagnitudes.FindOrAdd(TriggerEventData->EventTag) = TriggerEventData->EventMagnitude;
 	}
 
-	if (TriggerEventData->TargetData.Num() != 0)
+	if (const FGameplayAbilityTargetData* Data = TriggerEventData->TargetData.Get(0))
 	{
-		const FGameplayAbilityTargetData* Data = TriggerEventData->TargetData.Get(0);
 		if (Data->GetScriptStruct() == FGameplayAbilityTargetData_AttributeData::StaticStruct())
 		{
-			const FGameplayAbilityTargetData_AttributeData* AttributeData = static_cast<const FGameplayAbilityTargetData_AttributeData*>(Data);
+			const FGameplayAbilityTargetData_AttributeData* AttributeData = static_cast<const
+				FGameplayAbilityTargetData_AttributeData*>(Data);
 			for (int32 i = 0; i < AttributeData->AttributeTags.Num(); i++)
 			{
 				Spec->SetByCallerTagMagnitudes.FindOrAdd(AttributeData->AttributeTags[i]) = AttributeData->AttributeMagnitudes[i];

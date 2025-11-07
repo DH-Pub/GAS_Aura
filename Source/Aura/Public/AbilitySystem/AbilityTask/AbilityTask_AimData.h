@@ -68,7 +68,7 @@ class AURA_API UAbilityTask_AimData : public UAbilityTask
 {
 	GENERATED_BODY()
 public:
-	UFUNCTION(BlueprintCallable, Category = "Ability|Task", meta=(HidePin="OwningAbility", DefaultToSelf="OwningAbility",
+	UFUNCTION(BlueprintCallable, Category="Ability|Task", meta=(HidePin="OwningAbility", DefaultToSelf="OwningAbility",
 		BlueprintInternalUseOnly="true"))
 	static UAbilityTask_AimData* SendAimData(UGameplayAbility* OwningAbility);
 
@@ -77,7 +77,7 @@ public:
 protected:
 	virtual void Activate() override;
 private:
-	void OnTargetDataReplicatedCallback(const FGameplayAbilityTargetDataHandle& DataHandle, FGameplayTag ActivationTag) const;
+	void OnTargetDataReplicatedCallback(const FGameplayAbilityTargetDataHandle& DataHandle, FGameplayTag ActivationTag);
 
-	FDelegateHandle OnTargetDataReadyCallbackDelegate;
+	FDelegateHandle DelegateHandle;
 };

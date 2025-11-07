@@ -8,7 +8,6 @@
 
 class AAuraCharacterBase;
 struct FPlayerAbilityData;
-class UInputAction;
 enum class ETriggerEvent : uint8;
 class UAuraGameplayAbility;
 
@@ -64,10 +63,11 @@ public:
 	void AddCharacterAbilities(const TArray<TSubclassOf<UAuraGameplayAbility>>& StartupActives); // Add Startup Abilities in PossessedBy
 	void UnlockAbilityByLevel(int32 CharacterLevel);
 
-	void AbilityInputTagTrigger(const ETriggerEvent TriggerEvent, const FGameplayTag& InputTag, UInputAction* InputAction);
+	void AbilityInputTagPressed(const FGameplayTag& InputTag);
+	void AbilityInputTagReleased(const FGameplayTag& InputTag);
 
 	// Get ActivatableAbility Spec from Tag
-	FGameplayAbilitySpec* GetSpecFromAssetTag(const FGameplayTag& AbilityTag);
+	FGameplayAbilitySpec* GetSpecFromAbilityTag(const FGameplayTag& AbilityTag);
 	// return FGameplayTag::EmptyTag if not assigned to any input
 	const FGameplayTag& GetInputFromSpec(const FGameplayAbilitySpec* Spec);
 
@@ -101,10 +101,8 @@ public:
 	void ServerChangeAbilitySlot(const FGameplayTag& AbilityTag, const FGameplayTag& SlotTag = FGameplayTag::EmptyTag);
 
 public:
+	UFUNCTION(BlueprintCallable)
+	bool TryActivateAbilityByDynamicTag(const FGameplayTag& Tag, const bool bAllowRemoteActivation = true);
 	virtual void NetMulticast_InvokeGameplayCueExecuted_WithParams_Implementation(const FGameplayTag GameplayCueTag,
 		FPredictionKey PredictionKey, FGameplayCueParameters GameplayCueParameters) override;
-
-	UE_DEPRECATED(5.6, "No use for this")
-	UFUNCTION()
-	void ExecuteGameplayCueNextTick(const FGameplayTag& Tag, const FGameplayCueParameters& Params);
 };

@@ -72,10 +72,7 @@ namespace AuraGameplayTags
 
 	// Abilities with Cooldown ============================================================================================
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Fire_FireBolt, "Ability.Fire.FireBolt", "FireBolt Gameplay Ability")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Fire_FireBolt_Cooldown, "Ability.Fire.FireBolt.Cooldown", "FireBolt Cooldown")
-
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Lightning_Electrocute, "Ability.Lightning.Electrocute", "")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Lightning_Electrocute_Cooldown, "Ability.Lightning.Electrocute.Cooldown", "")
 	// =======================================================================================================================
 
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Status, "Ability.Status", "")

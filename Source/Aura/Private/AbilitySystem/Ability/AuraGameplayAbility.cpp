@@ -12,7 +12,6 @@
 UAuraGameplayAbility::UAuraGameplayAbility()
 {
 	InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
-	// bRetriggerInstancedAbility = true;
 }
 
 void UAuraGameplayAbility::PreActivate(const FGameplayAbilitySpecHandle Handle,
@@ -24,7 +23,7 @@ void UAuraGameplayAbility::PreActivate(const FGameplayAbilitySpecHandle Handle,
 }
 
 void UAuraGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
-                                      const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
+	const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
 {
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 	if (bChangeMovementOnActivate) EnableMovement(true);
@@ -33,7 +32,11 @@ void UAuraGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, c
 void UAuraGameplayAbility::OnAvatarSet(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec)
 {	// "BeginPlay" logic
 	Super::OnAvatarSet(ActorInfo, Spec);
-
+	if (AuraAbilityTag.IsValid())
+	{
+		GetCurrentAbilitySpec()->GetDynamicSpecSourceTags().AddTag(AuraAbilityTag);
+		ActorInfo->AbilitySystemComponent->MarkAbilitySpecDirty(*GetCurrentAbilitySpec());
+	}
 	AuraCharacter = Cast<AAuraCharacterBase>(ActorInfo->AvatarActor);
 	if (ActivationPolicy == EAuraActivationPolicy::OnSpawn)
 	{

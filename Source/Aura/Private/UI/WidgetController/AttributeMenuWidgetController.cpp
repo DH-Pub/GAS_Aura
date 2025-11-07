@@ -39,7 +39,7 @@ void UAttributeMenuWidgetController::BroadcastInitialValues()
 	}
 
 	AttributePoints = GetPlayerState()->GetAttributePoints();
-	PointAllocationList.Empty();
+	PointAllocationList.Reset();
 	AttributePointsToUIDelegate.Broadcast(AttributePoints, 0);
 }
 
@@ -71,7 +71,7 @@ void UAttributeMenuWidgetController::ApplyUpgrades()
 {
 	bIsApplying = false;
 	GetASC()->ServerUpgradeAttribute(PointAllocationList);
-	PointAllocationList.Empty();
+	PointAllocationList.Reset();
 }
 
 void UAttributeMenuWidgetController::AllocatePointToAttribute(const FGameplayTag& AttributeTag, const int32 Points)

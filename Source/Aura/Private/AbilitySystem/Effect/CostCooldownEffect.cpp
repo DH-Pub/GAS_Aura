@@ -40,7 +40,7 @@ UMMC_CooldownDuration::UMMC_CooldownDuration()
 float UMMC_CooldownDuration::CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const
 {
 	const UCostCooldownAbility* Ability = Cast<UCostCooldownAbility>(Spec.GetEffectContext().GetAbilityInstance_NotReplicated());
-	if (!Ability) return 0.f;
+	if (!Ability) return .006f;
 
 	// Gather tags from source and target
 	FAggregatorEvaluateParameters EvaluateParameters;
@@ -49,7 +49,7 @@ float UMMC_CooldownDuration::CalculateBaseMagnitude_Implementation(const FGamepl
 
 	float Intelligence = 0.f; GetCapturedAttributeMagnitude(IntelligenceDef, Spec, EvaluateParameters, Intelligence);
 	const float CooldownDuration = Ability->CooldownDuration.GetValueAtLevel(Spec.GetLevel());
-	return CooldownDuration * (1 - GetCooldownReductionPercent(Intelligence));
+	return FMath::Max(CooldownDuration * (1 - GetCooldownReductionPercent(Intelligence)), .006f);
 }
 TPair<float, float> UMMC_CooldownDuration::GetBaseCooldownAndReductionPercent(const FGameplayEffectSpec& Spec) const
 {
@@ -62,7 +62,7 @@ TPair<float, float> UMMC_CooldownDuration::GetBaseCooldownAndReductionPercent(co
 }
 float UMMC_CooldownDuration::GetCooldownReductionPercent(const float Intelligence) const
 {
-	return FMath::Min<float>(Intelligence * 0.01f, 0.6f); // Max 60%
+	return FMath::Min<float>(Intelligence * .01f, .6f); // Max 60%
 }
 
 

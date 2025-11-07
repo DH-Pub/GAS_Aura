@@ -74,10 +74,7 @@ namespace AuraGameplayTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Cooldown_Reduce)
 	// Abilities with CD =============================================================================================
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Fire_FireBolt)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Fire_FireBolt_Cooldown) // CD Tags
-
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Lightning_Electrocute)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Lightning_Electrocute_Cooldown)
 	//================================================================================================================
 
 	// Dynamic Tags

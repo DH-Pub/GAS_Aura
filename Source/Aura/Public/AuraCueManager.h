@@ -22,7 +22,16 @@ public:
 
 	// Called in ApplyGameplayEffectSpecToSelf()
 	virtual void InvokeGameplayCueExecuted_FromSpec(UAbilitySystemComponent* OwningComponent,
-	const FGameplayEffectSpec& Spec, FPredictionKey PredictionKey) override;
+		const FGameplayEffectSpec& Spec, FPredictionKey PredictionKey) override;
+	virtual void InvokeGameplayCueExecuted(UAbilitySystemComponent* OwningComponent, const FGameplayTag GameplayCueTag,
+		FPredictionKey PredictionKey, FGameplayEffectContextHandle EffectContext) override;
+	virtual void InvokeGameplayCueExecuted_WithParams(UAbilitySystemComponent* OwningComponent,
+		const FGameplayTag GameplayCueTag, FPredictionKey PredictionKey, FGameplayCueParameters GameplayCueParameters) override;
+
 	virtual void InvokeGameplayCueAddedAndWhileActive_FromSpec(UAbilitySystemComponent* OwningComponent,
 		const FGameplayEffectSpec& Spec, FPredictionKey PredictionKey) override;
+
+private:
+	void AddPendingCueNextTick(FGameplayCuePendingExecute& PendingCue);
+	FTimerHandle PendingHandle;
 };

@@ -130,9 +130,7 @@ void UAuraAttributeSet::HandleIncomingDamage(const FGameplayEffectModCallbackDat
 			AuraGameplayTags::Character_State_Death, DeathData);
 	}
 	else if (Data.EffectSpec.GetDynamicAssetTags().HasTagExact(AuraGameplayTags::Character_State_HitReact))
-	{	//Data.Target.TryActivateAbilitiesByTag(TagContainer); // Activate GA_HitReact which has AssetTag
-		// Data.Target.UpdateTagMap(AuraGameplayTags::Character_State_HitReact, 1); // AddLooseGameplayTag()
-		// Data.Target.SetTagMapCount();
+	{	// Data.Target.UpdateTagMap(, 1); // AddLooseGameplayTag() SetTagMapCount()
 		FGameplayEventData HitData; HitData.ContextHandle = Data.EffectSpec.GetContext();
 		UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(Props.TargetCharacter,
 			AuraGameplayTags::Character_State_HitReact, HitData);

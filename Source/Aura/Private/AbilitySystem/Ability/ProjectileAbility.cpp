@@ -9,7 +9,7 @@
 #include "GameFramework/GameStateBase.h"
 
 void UProjectileAbility::SpawnProjectile(FVector& SpawnLoc, const FVector& CursorHit, FRotator InRot, const AActor* HomingTarget,
-	float HeightAdd)
+                                         float HeightAdd)
 {
 	// stop projectile from hitting the floor on spawned
 	FHitResult FloorHitResult; FCollisionObjectQueryParams Params(ECC_WorldStatic);
@@ -75,7 +75,7 @@ void UAbilityTask_SpawnProjectile::Activate()
 	{
 		// Struct that is not meant to be used, automatically finish when out of scope. REQUIRED to set Prediction
 		// Player input SHOULD be instantly predicted (e.g. 'hold down and charge')
-		FScopedPredictionWindow(AbilitySystemComponent.Get());
+		FScopedPredictionWindow(AbilitySystemComponent.Get(), IsPredictingClient());
 		if (IsPredictingClient())
 		{
 			FGA_TargetData_ProjectileInfo* Data = new FGA_TargetData_ProjectileInfo();
@@ -101,7 +101,7 @@ void UAbilityTask_SpawnProjectile::Activate()
 		const FGameplayAbilitySpecHandle SpecHandle = GetAbilitySpecHandle();
 		const FPredictionKey ActivationPredictionKey = GetActivationPredictionKey();
 
-		AbilitySystemComponent->AbilityTargetDataSetDelegate(SpecHandle, ActivationPredictionKey).AddUObject(
+		DelegateHandle = AbilitySystemComponent->AbilityTargetDataSetDelegate(SpecHandle, ActivationPredictionKey).AddUObject(
 			this, &UAbilityTask_SpawnProjectile::OnTargetDataReplicatedCallback);
 		if (!AbilitySystemComponent->CallReplicatedTargetDataDelegatesIfSet(SpecHandle, ActivationPredictionKey))
 		{
@@ -134,6 +134,7 @@ void UAbilityTask_SpawnProjectile::OnTargetDataReplicatedCallback(const FGamepla
 	ProjectileAbility->SpawnProjectile(SocketLocation, EndPoint,
 		ProjectileAbility->AuraCharacter->AimDirection.ToOrientationRotator(), Target, HeightIfHitGround);
 
+	AbilitySystemComponent->AbilityTargetDataSetDelegate(GetAbilitySpecHandle(), GetActivationPredictionKey()).Remove(DelegateHandle);
 	AbilitySystemComponent->ConsumeClientReplicatedTargetData(GetAbilitySpecHandle(), GetActivationPredictionKey());
 	if (ShouldBroadcastAbilityTaskDelegates()) OnSpawnFinish.Broadcast();
 }

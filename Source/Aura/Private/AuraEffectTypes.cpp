@@ -10,7 +10,7 @@
  * Custom GameplayCueParameter with only core elements that you might use
  */
 #pragma region Custom GameplayCueParameters
-FCoreGameplayCue::FCoreGameplayCue(const FGameplayTag& Tag, const FGameplayCueParameters& Params)
+FCoreCueParams::FCoreCueParams(const FGameplayTag& Tag, const FGameplayCueParameters& Params)
 {
 	CueTag = Tag;
 	RawMagnitude = Params.RawMagnitude;
@@ -20,7 +20,7 @@ FCoreGameplayCue::FCoreGameplayCue(const FGameplayTag& Tag, const FGameplayCuePa
 	Instigator = Params.Instigator;
 	EffectCauser = Params.EffectCauser;
 }
-void FCoreGameplayCue::UnpackAndInvokeGameplayCueEvent(UAbilitySystemComponent* ASC) const
+void FCoreCueParams::UnpackAndInvokeGameplayCueEvent(UAbilitySystemComponent* ASC) const
 {
 	FGameplayCueParameters Params(EffectContext);
 	Params.RawMagnitude = RawMagnitude;
@@ -30,7 +30,7 @@ void FCoreGameplayCue::UnpackAndInvokeGameplayCueEvent(UAbilitySystemComponent* 
 	Params.EffectCauser = EffectCauser;
 	ASC->InvokeGameplayCueEvent(CueTag, EGameplayCueEvent::Executed, Params);
 }
-bool FCoreGameplayCue::NetSerialize(FArchive& Ar, class UPackageMap* Map, bool& bOutSuccess)
+bool FCoreCueParams::NetSerialize(FArchive& Ar, class UPackageMap* Map, bool& bOutSuccess)
 {
 	enum ERepFlag
 	{
@@ -40,11 +40,12 @@ bool FCoreGameplayCue::NetSerialize(FArchive& Ar, class UPackageMap* Map, bool& 
 		REP_Normal,
 		REP_Instigator,
 		REP_EffectCauser,
+		REP_CueTag,
 
 		REP_MAX // Put this last as the Num(), not for index
 	};
 
-	uint16 RepBits = 0;
+	uint8 RepBits = 0;
 	if (Ar.IsSaving())
 	{
 		if (RawMagnitude != 0.f) RepBits |= (1 << REP_RawMagnitude);
@@ -53,12 +54,10 @@ bool FCoreGameplayCue::NetSerialize(FArchive& Ar, class UPackageMap* Map, bool& 
 		if (Normal.IsNearlyZero() == false) RepBits |= (1 << REP_Normal);
 		if (Instigator.IsValid()) RepBits |= (1 << REP_Instigator);
 		if (EffectCauser.IsValid()) RepBits |= (1 << REP_EffectCauser);
+		if (CueTag.IsValid()) RepBits |= (1 << REP_CueTag);
 	}
 
 	Ar.SerializeBits(&RepBits, REP_MAX);
-
-	// Tag serialize empty containers with 1 bit, so no need to serialize this in the RepBits field.
-	CueTag.NetSerialize(Ar, Map, bOutSuccess);
 
 	if (RepBits & (1 << REP_RawMagnitude)) Ar << RawMagnitude;
 	if (RepBits & (1 << REP_EffectContext)) EffectContext.NetSerialize(Ar, Map, bOutSuccess);
@@ -66,6 +65,7 @@ bool FCoreGameplayCue::NetSerialize(FArchive& Ar, class UPackageMap* Map, bool& 
 	if (RepBits & (1 << REP_Normal)) Normal.NetSerialize(Ar, Map, bOutSuccess);
 	if (RepBits & (1 << REP_Instigator)) Ar << Instigator;
 	if (RepBits & (1 << REP_EffectCauser)) Ar << EffectCauser;
+	if (RepBits & (1 << REP_CueTag)) CueTag.NetSerialize(Ar, Map, bOutSuccess);
 
 	return bOutSuccess = true;
 }
@@ -83,7 +83,7 @@ bool FAuraEffectContext::NetSerialize(FArchive& Ar, class UPackageMap* Map, bool
 		{
 			RepBits |= 1 << 0;
 		}
-		if (bReplicateEffectCauser && EffectCauser.IsValid() )
+		if (bReplicateEffectCauser && EffectCauser.IsValid())
 		{
 			RepBits |= 1 << 1;
 		}
@@ -111,8 +111,8 @@ bool FAuraEffectContext::NetSerialize(FArchive& Ar, class UPackageMap* Map, bool
 		//IMPORTANT: Add Custom here -------------------------------------------------------------------------------
 		if (bShowDamageOnTarget) RepBits |= 1 << 7;
 		if (InstancedStruct.IsValid()) RepBits |= 1 << 8;
-		if (CoreCuesBatch.Num() > 0) RepBits |= 1 << 9;
-		if (CoreEffectCuesList.Num() > 0) RepBits |= 1 << 10;
+		if (CueParamsBatched.Num() > 0) RepBits |= 1 << 9;
+		if (EffectCuesList.Num() > 0) RepBits |= 1 << 10;
 		// End -----------------------------------------------------------------------------------------------------
 	}
 
@@ -172,11 +172,11 @@ bool FAuraEffectContext::NetSerialize(FArchive& Ar, class UPackageMap* Map, bool
 	}
 	if (RepBits & (1 << 9))
 	{	// Must add NetCore in Build.cs
-		SafeNetSerializeTArray_WithNetSerialize<31>(Ar, CoreCuesBatch, Map);
+		SafeNetSerializeTArray_WithNetSerialize<31>(Ar, CueParamsBatched, Map);
 	}
 	if (RepBits & (1 << 10))
 	{	// Must add NetCore in Build.cs
-		SafeNetSerializeTArray_WithNetSerialize<31>(Ar, CoreEffectCuesList, Map);
+		SafeNetSerializeTArray_WithNetSerialize<31>(Ar, EffectCuesList, Map);
 	}
 	/*if (RepBits & (1<<14)) // Ar << DeathImpulse; // DeathImpulse.NetSerialize(Ar, Map, bOutSuccess);*/
 	/*if (RepBits & (1 << 9))
