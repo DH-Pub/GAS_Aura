@@ -41,12 +41,12 @@ float UMMC_CooldownDuration::CalculateBaseMagnitude_Implementation(const FGamepl
 {
 	const UCostCooldownAbility* Ability = Cast<UCostCooldownAbility>(Spec.GetEffectContext().GetAbilityInstance_NotReplicated());
 	if (!Ability) return .006f;
-
+	
 	// Gather tags from source and target
 	FAggregatorEvaluateParameters EvaluateParameters;
 	EvaluateParameters.SourceTags = Spec.CapturedSourceTags.GetAggregatedTags();
 	EvaluateParameters.TargetTags = Spec.CapturedTargetTags.GetAggregatedTags();
-
+	
 	float Intelligence = 0.f; GetCapturedAttributeMagnitude(IntelligenceDef, Spec, EvaluateParameters, Intelligence);
 	const float CooldownDuration = Ability->CooldownDuration.GetValueAtLevel(Spec.GetLevel());
 	return FMath::Max(CooldownDuration * (1 - GetCooldownReductionPercent(Intelligence)), .006f);

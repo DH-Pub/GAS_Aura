@@ -22,7 +22,7 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Default|Properties")
 	FVector2D ButtonWidthHeight = FVector2D(40., 40.);
-
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Default|Properties")
 	FSlateBrush BorderBrush = FSlateBrush();
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Default|Properties")

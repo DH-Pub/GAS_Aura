@@ -3,8 +3,6 @@
 
 #include "UI/HUD/AuraHUD.h"
 
-#include "AbilitySystem/AuraAbilitySystemComponent.h"
-#include "AbilitySystem/Ability/CostCooldownAbility.h"
 #include "AbilitySystem/Data/AttributeDataAsset.h"
 #include "Character/AuraCharacterBase.h"
 #include "Components/Overlay.h"
@@ -19,7 +17,7 @@ void AAuraHUD::InitAuraHUD(AAuraPlayerController* PC, AAuraPlayerState* PS, AAur
 	PlayerState = PS;
 	AbilitySystemComponent = Character->GetAuraAbilitySystemComponent();
 	AttributeSet = Character->GetAttributeSet();
-
+	
 	// Create and add HUD widget to viewport
 	OverlayWidget = CreateWidget<UAuraUserWidget>(GetWorld(), OverlayWidgetClass);
 	OverlayWidget->AddToViewport();
@@ -27,20 +25,11 @@ void AAuraHUD::InitAuraHUD(AAuraPlayerController* PC, AAuraPlayerState* PS, AAur
 	UAuraWidgetController::CreateOrGetWidgetController<UOverlayWidgetController>(this, Character,
 		OverlayController, OverlayWidgetControllerClass);
 	OverlayWidget->SetWidgetController(OverlayController);
-
+	
 	UAuraWidgetController::CreateOrGetWidgetController<UAttributeMenuWidgetController>(this, Character,
 		AttributeMenuController, AttributeMenuWidgetControllerClass);
 	UAuraWidgetController::CreateOrGetWidgetController<USpellMenuWidgetController>(this, Character,
 		SpellMenuController, SpellMenuWidgetControllerClass);
-}
-
-void AAuraHUD::BroadcastAllActivatableAbilities() const
-{
-	FScopedAbilityListLock AbilityListLock(*AbilitySystemComponent);
-	for (const FGameplayAbilitySpec& AbilitySpec : AbilitySystemComponent->GetActivatableAbilities())
-	{
-		AbilitySystemComponent->ClientUpdateAbilityData(AbilitySpec);
-	}
 }
 
 const TMap<FGameplayTag, FAuraAttributeData>& AAuraHUD::GetAttributeDataList() const

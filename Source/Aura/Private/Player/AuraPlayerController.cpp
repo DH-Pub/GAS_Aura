@@ -32,7 +32,7 @@ void AAuraPlayerController::PlayerTick(const float DeltaTime)
 	Super::PlayerTick(DeltaTime);
 	if (AuraPawn == nullptr) return;
 	CursorTick();
-
+	
 	switch (MovementState)
 	{
 	case Stop: break;
@@ -67,13 +67,13 @@ void AAuraPlayerController::BeginPlay()
 {
 	check(InputMappingContext); // check/verify/ensure
 	Super::BeginPlay();
-
+	
 	if (UEnhancedInputLocalPlayerSubsystem* InputSystem =
 		ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
 	{
 		InputSystem->AddMappingContext(InputMappingContext, 0);
 	}
-
+	
 	// Mouse Cursor Settings
 	bShowMouseCursor = true;
 	DefaultMouseCursor = EMouseCursor::Default;
@@ -81,19 +81,19 @@ void AAuraPlayerController::BeginPlay()
 	InputModeData.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
 	InputModeData.SetHideCursorDuringCapture(false);
 	SetInputMode(InputModeData);
-
+	
 	NavSystem = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
 }
 void AAuraPlayerController::SetupInputComponent()
 {	// AuraInputComponent->BindActionValue(InputAction).GetValue();
 	Super::SetupInputComponent();
-
+	
 	UAuraInputComponent* InputComp = CastChecked<UAuraInputComponent>(InputComponent);
 	InputComp->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AAuraPlayerController::Move);
-
+	
 	InputComp->BindAction(MoveMouseAction, ETriggerEvent::Triggered, this, &AAuraPlayerController::MoveMouseTriggered);
 	InputComp->BindAction(MoveMouseAction, ETriggerEvent::Completed, this, &AAuraPlayerController::MoveMouseComplete);
-
+	
 	InputComp->BindAbilityActions(InputConfig, InputMappingContext,this,
 		&AAuraPlayerController::PlayerInputPressed, &AAuraPlayerController::PlayerInputReleased);
 }
@@ -106,8 +106,7 @@ void AAuraPlayerController::SetCameraComponent()
 	// APawn::Controller might replicate before AController::Pawn so GetPawn() might be nullptr
 	if (!IsLocalController()) return;
 	if (AAuraPlayer* AuraCharacter = GetPawn<AAuraPlayer>())
-	{
-		/*ActiveSpringArm = Cast<USpringArmComponent>(AuraCharacter->GetComponentByClass(USpringArmComponent::StaticClass()));
+	{	/*ActiveSpringArm = Cast<USpringArmComponent>(AuraCharacter->GetComponentByClass(USpringArmComponent::StaticClass()));
 		ActiveCamera = Cast<UCameraComponent>(AuraCharacter->GetComponentByClass(UCameraComponent::StaticClass()));*/
 		CameraCapsule = Cast<UCapsuleComponent>(AuraCharacter->GetCameraCapsule());
 		if (CameraCapsule->OnComponentBeginOverlap.IsBound() || CameraCapsule->OnComponentEndOverlap.IsBound())
@@ -121,7 +120,7 @@ void AAuraPlayerController::SetCameraComponent()
 }
 
 void AAuraPlayerController::OnCameraCapsuleOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-                                                   UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	TArray<UStaticMeshComponent*> StaticMeshes;
 	OtherActor->GetComponents(UStaticMeshComponent::StaticClass(), StaticMeshes);
@@ -165,7 +164,7 @@ void AAuraPlayerController::Move(const FInputActionValue& InputActionValue)
 	const FVector2D InputAxisVector = InputActionValue.Get<FVector2D>();
 	//TODO: No need to run this every tick because this project's camera is static
 	// const FRotator Rotation = GetControlRotation(); // Camera->bUsePawnControlRotation has to be true for this to work
-
+	
 	// GetPlayerViewPoint(); // Called in APawn::GetBaseAimRotation() 
 	const FRotator Rotation = PlayerCameraManager->GetCameraRotation();
 	const FRotator YawRotation(0., Rotation.Yaw, 0.);
@@ -233,7 +232,7 @@ void AAuraPlayerController::CursorTick()
 		if (LastEnemy) LastEnemy->UnHighlightActor();
 		if (CursorHitEnemy) CursorHitEnemy->HighlightActor();
 	}
-
+	
 	const FVector CharacterLocation = GetPawn()->GetActorLocation();
 	/*
 	 * We use a point at the same plane as character location:
@@ -243,15 +242,15 @@ void AAuraPlayerController::CursorTick()
 	FVector Intersection; float TIntersection;
 	UKismetMathLibrary::LinePlaneIntersection_OriginNormal(CursorHitResult.TraceStart, CursorHitResult.TraceEnd,
 		CharacterLocation, FVector::UpVector, TIntersection, Intersection);
-	AuraPawn->AimDirection = Intersection - CharacterLocation;
+	AuraPawn->AimDirection = (Intersection - CharacterLocation).GetSafeNormal();
 	ServerSetCharacterAimDirection(AuraPawn->AimDirection);
-
+	
 	if (CursorHitEnemy) return; // Has valid Hit to end here
 	TArray<FHitResult> Hits;
 	UKismetSystemLibrary::SphereTraceMultiForObjects(this,
 		CursorHitResult.TraceStart, CursorHitResult.TraceEnd, 50.f, {ObjectTypeQuery3},
 		false, {GetPawn()}, EDrawDebugTrace::None, Hits, true);
-	float NearestDistance = 50000.f;
+	float NearestDistance = UE_BIG_NUMBER;
 	for (const FHitResult& Hit : Hits)
 	{
 		AAuraEnemy* HitEnemy = Cast<AAuraEnemy>(Hit.GetActor());
@@ -281,7 +280,7 @@ void AAuraPlayerController::PlayerInputReleased(const FGameplayTag InputTag)
 }
 
 // Change on server for UPROPERTY(Replicated/ReplicatedUsing) to work, else use AbilityTask_AimData
-void AAuraPlayerController::ServerSetCharacterAimDirection_Implementation(const FVector& Aim)
+void AAuraPlayerController::ServerSetCharacterAimDirection_Implementation(const FVector_NetQuantizeNormal& Aim)
 {
 	AuraPawn->AimDirection = Aim;
 }

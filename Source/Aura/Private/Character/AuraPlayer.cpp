@@ -20,7 +20,7 @@
 AAuraPlayer::AAuraPlayer()
 {
 	PrimaryActorTick.bCanEverTick = true;
-
+	
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>("SpringArm");
 	SpringArm->SetupAttachment(RootComponent);
 	SpringArm->SetRelativeRotation(FRotator(-45., 0., 0.));
@@ -30,22 +30,22 @@ AAuraPlayer::AAuraPlayer()
 	SpringArm->CameraLagSpeed = 25.f;
 	SpringArm->bInheritPitch = SpringArm->bInheritRoll = SpringArm->bInheritYaw = false;
 	SpringArm->bDoCollisionTest = false;
-
+	
 	Camera = CreateDefaultSubobject<UCameraComponent>("Camera");
 	Camera->SetupAttachment(SpringArm, USpringArmComponent::SocketName);
 	Camera->bUsePawnControlRotation = false;
-
+	
 	CameraCapsule = CreateDefaultSubobject<UCapsuleComponent>("CameraCapsule");
 	CameraCapsule->SetupAttachment(Camera);
 	CameraCapsule->SetRelativeLocationAndRotation(FVector(370., 0., 0.), FRotator(90., 0., 0.));
 	CameraCapsule->SetCapsuleHalfHeight(350.f);
 	CameraCapsule->SetCollisionResponseToAllChannels(ECR_Ignore);
 	CameraCapsule->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Overlap);
-
+	
 	LevelUpNiagaraComponent = CreateDefaultSubobject<UNiagaraComponent>("LevelUpNiagara");
 	LevelUpNiagaraComponent->SetupAttachment(GetRootComponent());
 	LevelUpNiagaraComponent->bAutoActivate = false;
-
+	
 	LevelUpWidgetComponent = CreateDefaultSubobject<UWidgetComponent>("LevelUpWidget");
 	LevelUpWidgetComponent->SetupAttachment(GetRootComponent());
 	LevelUpWidgetComponent->SetRelativeLocation(FVector(0.f, 0.f, 120.f));
@@ -86,7 +86,7 @@ void AAuraPlayer::MulticastLevelUpEffects_Implementation(const int32 Level)
 void AAuraPlayer::BeginPlay()
 {
 	Super::BeginPlay();
-
+	
 	UAuraUserWidget* LevelUpWidget = Cast<UAuraUserWidget>(LevelUpWidgetComponent->GetUserWidgetObject());
 	UAuraWidgetController::CreateOrGetWidgetController(this, this, CharacterWC, CharacterWidgetClass);
 	LevelUpWidget->SetWidgetController(CharacterWC);

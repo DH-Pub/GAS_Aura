@@ -3,12 +3,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameplayTagContainer.h"
 #include "GlobeWidget.h"
-#include "AbilitySystem/Data/AbilityDataAsset.h"
 #include "SpellGlobeWidget.generated.h"
 
 class UProgressBar;
-struct FAuraAbilityData;
 struct FGameplayTag;
 class UTextBlock;
 class UImage;
@@ -31,35 +30,35 @@ public:
 protected:
 	virtual void NativePreConstruct() override;
 	virtual void NativeDestruct() override;
-
+	
 	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<class UOverlayWidgetController> OverlayWC;
-
+	
 	UPROPERTY(BlueprintReadWrite, meta=(BindWidget))
 	TObjectPtr<UProgressBar> Progress_Cooldown;
 	UPROPERTY(BlueprintReadWrite, meta=(BindWidget))
 	TObjectPtr<UImage> Image_SpellIcon; // Icon of spell
-
+	
 	UPROPERTY(BlueprintReadWrite, meta=(BindWidget))
 	TObjectPtr<UImage> Image_WheelProgress;
 	UPROPERTY(BlueprintReadWrite)
 	TObjectPtr<UMaterialInstanceDynamic> WheelMaterialInstance; // Material of Image_WheelProgress
 	const FName WheelPercentParam = FName("Percentage");
-
+	
 	UPROPERTY(BlueprintReadWrite, meta=(BindWidget))
 	TObjectPtr<UTextBlock> Text_Cooldown; // Cooldown Remaining
-
-
+	
+	
 	UFUNCTION(BlueprintCallable, meta=(ExpandBoolAsExecs = "ReturnValue"))
-	bool SuccessUpdateAbilityData(const FAuraAbilityData& InAbilityData, const FPlayerAbilityData& InPlayerData,
+	bool SuccessUpdateAbilityData(const struct FAuraAbilityData& InAbilityData, const struct FPlayerAbilityData& InPlayerData,
 		FGameplayTagContainer& OutCooldownTags);
-
+	
 	UPROPERTY(BlueprintReadWrite)
 	TObjectPtr<class UAsync_CooldownChange> WaitCDTask;
-
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Default|Properties")
 	float Frequency = 0.05f;
-
+	
 	bool bOnCooldown = false;
 	UPROPERTY(BlueprintReadWrite)
 	float CooldownDuration = 0.f;
@@ -69,7 +68,7 @@ protected:
 	void UpdateCooldown(float InTime, float InDuration = -1.f);
 	UFUNCTION(BlueprintCallable)
 	void EndCooldown();
-
+	
 	UPROPERTY(BlueprintReadWrite, Category="Properties")
 	FTimerHandle CooldownTimerHandle;
 private:

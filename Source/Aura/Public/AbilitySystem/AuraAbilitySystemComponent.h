@@ -7,7 +7,6 @@
 #include "AuraAbilitySystemComponent.generated.h"
 
 class AAuraCharacterBase;
-struct FPlayerAbilityData;
 enum class ETriggerEvent : uint8;
 class UAuraGameplayAbility;
 
@@ -20,15 +19,15 @@ USTRUCT(BlueprintType)
 struct FPointAllocation
 {
 	GENERATED_BODY()
-
+	
 	FPointAllocation() {}
 	FPointAllocation(const FGameplayTag& Tag, const int32 Points) : AttributeTag(Tag), AddedPoints(Points) {}
-
+	
 	UPROPERTY(BlueprintReadOnly, meta=(GameplayTagFilter="Attributes"))
 	FGameplayTag AttributeTag;
 	UPROPERTY(BlueprintReadOnly)
 	int32 AddedPoints = 0;
-
+	
 	// This is so that TArray functions works: RemoveSingleSwap, Find, ...
 	bool operator==(const FPointAllocation& Other) const
 	{
@@ -41,7 +40,7 @@ struct FPointAllocation
  * @param AssetTags: Tags of effect
  */
 DECLARE_MULTICAST_DELEGATE_OneParam(FEffectAssetTags, const FGameplayTagContainer& /* AssetTags */);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FAbilityDataSignature, const FAuraAbilityData&, Data, const FPlayerAbilityData&, PlayerData);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FAbilityDataSignature, const FAuraAbilityData&, Data, const struct FPlayerAbilityData&, PlayerData);
 DECLARE_MULTICAST_DELEGATE(FOnApplyingStatFinished)
 /**
  * 
@@ -62,10 +61,10 @@ private:
 public:
 	void AddCharacterAbilities(const TArray<TSubclassOf<UAuraGameplayAbility>>& StartupActives); // Add Startup Abilities in PossessedBy
 	void UnlockAbilityByLevel(int32 CharacterLevel);
-
+	
 	void AbilityInputTagPressed(const FGameplayTag& InputTag);
 	void AbilityInputTagReleased(const FGameplayTag& InputTag);
-
+	
 	// Get ActivatableAbility Spec from Tag
 	FGameplayAbilitySpec* GetSpecFromAbilityTag(const FGameplayTag& AbilityTag);
 	// return FGameplayTag::EmptyTag if not assigned to any input
@@ -88,13 +87,15 @@ public:
 	FAbilityDataSignature AbilityDataDelegate;// Send AbilityData (Icon, Tag, ...)
 	UFUNCTION(Client, Reliable)
 	void ClientUpdateAbilityData(const FGameplayAbilitySpec& AbilitySpec) const;
-
+	void UpdateAbilityData(const FGameplayAbilitySpec& AbilitySpec) const;
+	void BroadcastAllAbilityData();
+	
 	UFUNCTION(Server, Reliable)
 	void ServerUpgradeAttribute(const TArray<FPointAllocation>& PointsAllocated); // apply upgrade from server
 	UFUNCTION(Client, Reliable)
 	void ClientFinishUpgradeAttribute(); // Called in Server RPC to broadcast back to client
 	FOnApplyingStatFinished OnApplyingStatFinishedDelegate; // for Attribute/Spell Points Finished Applying
-
+	
 	UFUNCTION(Server, Reliable)
 	void ServerSpendSpellPoints(const FGameplayTag& AbilityTag);
 	UFUNCTION(Server, Reliable)

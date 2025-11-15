@@ -21,21 +21,21 @@ class AURA_API UAttributeMenuWidgetController : public UAuraWidgetController
 public:
 	virtual void BindCallbacksDependencies() override;
 	virtual void BroadcastInitialValues() override;
-
+	
 	UPROPERTY(BlueprintAssignable, Category="GAS|Attributes")
 	FAttributeInfoSignature AttributeInfoDelegate;
-
+	
 	TArray<FPointAllocation> PointAllocationList;
 	UFUNCTION(BlueprintCallable, meta=(ExpandBoolAsExecs="bFound"))
 	int32& FindPointAllocationByTag(const FGameplayTag& Tag, bool& bFound);
 	int32 GetTotalPointsAllocating();
 	UFUNCTION(BlueprintCallable)
 	void ApplyUpgrades();
-
+	
 	UPROPERTY(BlueprintReadWrite)
 	int32 AttributePoints = 0; // AttributePoints stored in AuraPlayerSate that will only change once apply
 	UPROPERTY(BlueprintReadOnly)
-	bool bIsApplying = false; // Grey out buttons until Server send update
+	bool bIsApplying = false; // Gray out buttons until Server send update
 	UPROPERTY(BlueprintAssignable, Category="GAS|Attributes")
 	FOnAttriubtePointsChanged AttributePointsToUIDelegate;
 	UFUNCTION(BlueprintCallable)

@@ -11,18 +11,18 @@ struct FGameplayAbilityTargetData_AttributeData : public FGameplayAbilityTargetD
 {
 	GENERATED_BODY()
 	FGameplayAbilityTargetData_AttributeData() {}
-
+	
 	UPROPERTY()
 	TArray<FGameplayTag> AttributeTags;
 	UPROPERTY()
 	TArray<int32> AttributeMagnitudes;
-
+	
 	/** Returns all actors targeted, almost always overridden */
 	virtual TArray<TWeakObjectPtr<AActor>> GetActors() const
 	{
 		return TArray<TWeakObjectPtr<AActor>>();
 	}
-
+	
 	// Required for all child structs of FGameplayAbilityTargetData
 	virtual UScriptStruct* GetScriptStruct() const override { return StaticStruct();}
 	// Required for all child structs of FGameplayAbilityTargetData
@@ -45,7 +45,7 @@ struct TStructOpsTypeTraits<FGameplayAbilityTargetData_AttributeData> : public T
 
 /**
  * - Receive event to upgrade Attributes (XP, Strength, ...)
- * - UAbilitySystemBlueprintLibrary::SendGameplayEventToActor with tag Attributes to activate this ability
+ * - ::SendGameplayEventToActor -> ASC->HandleGameplayEvent with tag Attributes to activate this ability
  * - if Activate in BP, make it passive and use [Wait Gameplay Event] with EventTag
  */
 UCLASS()

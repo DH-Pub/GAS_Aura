@@ -6,7 +6,6 @@
 #include "GameplayEffectComponent.h"
 #include "DebuffComponent.generated.h"
 
-struct FGameplayEffectRemovalInfo;
 /**
  * modify from UAdditionalEffectsGameplayEffectComponent
  */
@@ -18,7 +17,7 @@ public:
 	virtual bool OnActiveGameplayEffectAdded(FActiveGameplayEffectsContainer& ActiveGEContainer,
 		FActiveGameplayEffect& ActiveGE) const override;
 protected:
-	void OnActiveGameplayEffectRemoved(const FGameplayEffectRemovalInfo& RemovalInfo,
+	void OnActiveGameplayEffectRemoved(const struct FGameplayEffectRemovalInfo& RemovalInfo,
 		FActiveGameplayEffectsContainer* ActiveGEContainer) const;
 public:
 	/*// Other gameplay effects that will be applied to the target of this effect if the owning effect applies

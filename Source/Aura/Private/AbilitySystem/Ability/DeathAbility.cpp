@@ -17,14 +17,15 @@ UDeathAbility::UDeathAbility()
 {
 	CancelAbilitiesWithTag = FGameplayTagContainer(AuraGameplayTags::Generic_Ability_Cancelable);
 	CancelAbilitiesWithTag.AddTag(AuraGameplayTags::Character_State_HitReact);
-
+	
 	ActivationOwnedTags.AddTag(AuraGameplayTags::Character_State_Death); // Adds Tag to ASC on Activation 
-
+	ActivationOwnedTags.AddTag(AuraGameplayTags::Character_State_Block_Movement);
+	
 	NetExecutionPolicy = EGameplayAbilityNetExecutionPolicy::ServerInitiated;
 	NetSecurityPolicy = EGameplayAbilityNetSecurityPolicy::ServerOnly;
-
-	bStopRotation = bStopMovement = true;
-
+	
+	bStopRotation = true;
+	
 	const int32 Idx = AbilityTriggers.Add(FAbilityTriggerData());
 	AbilityTriggers[Idx].TriggerTag = AuraGameplayTags::Character_State_Death;
 	AbilityTriggers[Idx].TriggerSource = EGameplayAbilityTriggerSource::GameplayEvent;
@@ -45,17 +46,17 @@ void UDeathAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, con
 	GetAbilitySystemComponentFromActorInfo()->RemoveActiveEffectsWithGrantedTags(
 		FGameplayTagContainer(AuraGameplayTags::Debuff_Type)); // Clear all debuffs
 
-	if (!HasAuthority(&GetCurrentActivationInfoRef())) return;
+	if (!HasAuthority(&CurrentActivationInfo)) return;
 	// Send XP To Source on death =====================================================================================
 	const UCharacterClassDataAsset* ClassDataAsset = UCharacterClassDataAsset::GetFromGameMode(this);
-	AActor* Causer = TriggerEventData->ContextHandle.GetInstigatorAbilitySystemComponent()->GetAvatarActor();
-	if (Causer != AuraCharacter) ClassDataAsset->SendXPToDeathCauser(Causer, AuraCharacter); // cause is not itself
+	ClassDataAsset->SendXPToDeathCauser(TriggerEventData->ContextHandle.GetInstigatorAbilitySystemComponent(),
+		AuraCharacter);
 	if (AAuraEnemy* Enemy = Cast<AAuraEnemy>(AuraCharacter))
 	{
 		Enemy->SetLifeSpan(Enemy->LifeSpan);
 		Enemy->AuraAIController->GetBrainComponent()->StopLogic("Death! Disable StateTree");
 	}
-
+	
 	const FAuraEffectContext* AuraContext = FAuraEffectContext::ExtractAuraContext(TriggerEventData->ContextHandle);
 	FVector Impulse;
 	if (const UDamageAbility* DamageAbility = Cast<UDamageAbility>(AuraContext->GetAbilityInstance_NotReplicated()))

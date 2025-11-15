@@ -18,13 +18,13 @@ void USpellMenuWidgetController::BindCallbacksDependencies()
 	{
 		SpellPoints = Points;
 		SpellPointsToUIDelegate.Broadcast(SpellPoints);
-		if (FocusSpellGlobe) UpdateButtonsAndDescriptions(SpellPoints, FocusSpellGlobe->AbilityTag, FocusSpellGlobe->StatusTag);
+		if (FocusSpellGlobe) UpdateButtonsAndDescriptions();
 	});
 }
 
 void USpellMenuWidgetController::BroadcastInitialValues()
 {
-	AuraHUD->BroadcastAllActivatableAbilities();
+	GetASC()->BroadcastAllAbilityData();
 	SpellPointsToUIDelegate.Broadcast(GetPlayerState()->GetSpellPoints());
 }
 
@@ -33,12 +33,13 @@ void USpellMenuWidgetController::ClearSelected()
 	SelectedSpellGlobe = FocusSpellGlobe = nullptr;
 }
 
-void USpellMenuWidgetController::UpdateButtonsAndDescriptions(const int32 Points, const FGameplayTag& AbilityTag,
-	const FGameplayTag& Status, const bool bClick)
+void USpellMenuWidgetController::UpdateButtonsAndDescriptions(const bool bClick) const
 {
-	const bool bSpendEnabled = Points > 0 && !Status.MatchesTagExact(AuraGameplayTags::Ability_Status_Locked);
-	const bool bEquipEnabled = Status.MatchesTagExact(AuraGameplayTags::Ability_Status_Unlocked);
-
+	const FGameplayTag& AbilityTag = FocusSpellGlobe ? FocusSpellGlobe->AbilityTag : FGameplayTag();
+	const FGameplayTag& StatusTag = FocusSpellGlobe ? FocusSpellGlobe->StatusTag : FGameplayTag();
+	const bool bSpendEnabled = SpellPoints > 0 && !StatusTag.MatchesTagExact(AuraGameplayTags::Ability_Status_Locked);
+	const bool bEquipEnabled = !StatusTag.MatchesTag(AuraGameplayTags::Ability_Status);
+	
 	FText Description;
 	FText NextLvDescription;
 	if (const FGameplayAbilitySpec* Spec = GetASC()->GetSpecFromAbilityTag(AbilityTag))
@@ -78,7 +79,7 @@ bool USpellMenuWidgetController::EquipAbility()
 		if (const FAuraAbilityData* Data = UAbilityDataAsset::GetAbilityFromGameState(this,
 			SelectedSpellGlobe->AbilityTag))
 		{
-			UpdateButtonsAndDescriptions(SpellPoints, SelectedSpellGlobe->AbilityTag, SelectedSpellGlobe->StatusTag, true);
+			UpdateButtonsAndDescriptions(true);
 			return Data->AbilityClass->GetDefaultObject<UAuraGameplayAbility>()->ActivationPolicy == EAuraActivationPolicy::OnSpawn;
 		}
 	}

@@ -63,7 +63,6 @@ const FGameplayTag& UAbilityDataAsset::GetAbilityTagFromClass(const UObject* Wor
 #if WITH_EDITOR
 EDataValidationResult UAbilityDataAsset::IsDataValid(FDataValidationContext& Context) const
 {
-	// return Super::IsDataValid(Context);
 	EDataValidationResult Result = CombineDataValidationResults(Super::IsDataValid(Context), EDataValidationResult::Valid);
 	for (auto& AbilityData : AbilityDataList)
 	{
@@ -73,6 +72,6 @@ EDataValidationResult UAbilityDataAsset::IsDataValid(FDataValidationContext& Con
 			Context.AddError(FText::FromString("Ability Class Required!!!"));
 		}
 	}
-	return Result;
+	return Result; // return Super::IsDataValid(Context);
 }
 #endif

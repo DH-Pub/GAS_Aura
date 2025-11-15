@@ -3,8 +3,6 @@
 
 #include "AI/AuraAIController.h"
 
-#include "BehaviorTree/BehaviorTreeComponent.h"
-#include "BehaviorTree/BlackboardComponent.h"
 #include "Components/StateTreeAIComponent.h"
 
 AAuraAIController::AAuraAIController()

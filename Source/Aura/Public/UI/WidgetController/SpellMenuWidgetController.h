@@ -22,30 +22,31 @@ class AURA_API USpellMenuWidgetController : public UAuraWidgetController
 public:
 	virtual void BindCallbacksDependencies() override;
 	virtual void BroadcastInitialValues() override;
-
+	
 	UPROPERTY(BlueprintAssignable)
 	FOnSpellPointsChanged SpellPointsToUIDelegate;
-
+	
 	UFUNCTION(BlueprintCallable)
 	void ClearSelected();
 	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<USpellGlobeButtonWidget> SelectedSpellGlobe = nullptr;
 	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<USpellGlobeButtonWidget> FocusSpellGlobe = nullptr;
-
+	
 	int32 SpellPoints = 0;
-	void UpdateButtonsAndDescriptions(const int32 Points, const FGameplayTag& AbilityTag, const FGameplayTag& Status,
-		const bool bClick = false); // Enable Buttons depending on the state of HoveredSpellGlobe
+	void UpdateButtonsAndDescriptions(const bool bClick = false) const; // Enable Buttons depending on the state of FocusSpellGlobe
 	UPROPERTY(BlueprintAssignable)
 	FOnSpellButtonFocused SpellButtonFocusDelegate;
-
+	
 	UFUNCTION(BlueprintCallable)
 	void SpendPoint();
-
+	
 	UFUNCTION(BlueprintCallable, meta=(ReturnDisplayName="IsPassive"))
 	bool EquipAbility();
 	/**
+	 * @param AbilityTag
 	 * @param NewSlotTag: Can be !IsValid() for when you want to clear ability from input
+	 * @param bIsPassive
 	 */
 	UFUNCTION(BlueprintCallable)
 	void ChangeSpellInputSlot(const FGameplayTag& AbilityTag, const FGameplayTag NewSlotTag = FGameplayTag(),

@@ -27,6 +27,8 @@ namespace AuraGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Vital_Health, "Attributes.Vital.Health", "Amount of damage a player can take before death")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Vital_Mana, "Attributes.Vital.Mana", "Amount of energy used to cast spells")
 
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Vital_MovementSpeed, "Attributes.Vital.MovementSpeed", "Character MovementSpeed")
+
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Resistance_Fire, "Attributes.Resistance.Fire", "Resistance to Fire")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Resistance_Lightning, "Attributes.Resistance.Lightning", "Resistance to Lightning")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Resistance_Arcane, "Attributes.Resistance.Arcane", "Resistance to Arcane")
@@ -78,7 +80,6 @@ namespace AuraGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Status, "Ability.Status", "")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Status_Locked, "Ability.Status.Locked", "")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Status_Eligible, "Ability.Status.Eligible", "Reached Level Requirement to unlock this Ability")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Status_Unlocked, "Ability.Status.Unlocked", "")
 
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Type_Activatable, "Ability.Type.Activatable", "")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Type_Passive, "Ability.Type.Passive", "")
@@ -96,6 +97,9 @@ namespace AuraGameplayTags
 		"Block other Abilities, ... Added in ActivationOwnedTags(To Block others including self) and ActivationBlockedTags(To be Blocked)")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Character_State_HitReact, "Character.State.HitReact", "")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Character_State_Death, "Character.State.Death", "")
+	
+	// PlayerTags
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Character_State_Block_Movement, "Character.State.Block.Movement", "Block Movement")
 #pragma endregion
 
 #pragma region Combat
@@ -112,19 +116,20 @@ namespace AuraGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Debuff_Type_Arcane, "Debuff.Type.Arcane", "Arcane type debuff")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Debuff_Type_Physical, "Debuff.Type.Physical", "Physical type debuff")
 
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Montage_Attack_1, "Montage.Attack.1", "Attack 1")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Montage_Attack_2, "Montage.Attack.2", "Attack 2")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Montage_Attack_3, "Montage.Attack.3", "Attack 3")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Montage_Attack_4, "Montage.Attack.4", "Attack 4")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(GameplayEventTagsCategory_Montage_1, "GameplayEventTagsCategory.Montage.1", "Generic for SendGameplayEventToActor in montage")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(GameplayEventTagsCategory_Montage_2, "GameplayEventTagsCategory.Montage.2", "")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(GameplayEventTagsCategory_Montage_3, "GameplayEventTagsCategory.Montage.3", "")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(GameplayEventTagsCategory_Montage_4, "GameplayEventTagsCategory.Montage.4", "")
 #pragma endregion
 
 
 #pragma region Gameplay Cue
 	// UE_DEFINE_GAMEPLAY_TAG_COMMENT(GameplayCue_FireBolt_Impact, "GameplayCue.FireBolt.Impact", "Fire Bolt explode on impact")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(GameplayCue_Damage, "GameplayCue.Damage", "Gameplay cue executed for GE_Damage")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(GameplayCue_Impact_Melee, "GameplayCue.Impact.Melee", "Impact Melee")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(GameplayCue_Impact_Projectile, "GameplayCue.Impact.Projectile", "Impact Projectile")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(GameplayCue_Summon, "GameplayCue.Summon", "Summon Cue")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(GameplayCue_Impact_Melee, "GameplayCue.Impact.Melee", "")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(GameplayCue_Impact_Projectile, "GameplayCue.Impact.Projectile", "")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(GameplayCue_ShockBurst, "GameplayCue.ShockBurst", "")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(GameplayCue_Summon, "GameplayCue.Summon", "")
 #pragma endregion
 }
 

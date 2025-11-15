@@ -48,13 +48,11 @@ void UCostCooldownAbility::ApplyCooldown(const FGameplayAbilitySpecHandle Handle
 
 void UCostCooldownAbility::OnAvatarSet(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec)
 {
-	Super::OnAvatarSet(ActorInfo, Spec);
 	if (StartupInputTag.IsValid())
 	{	// Ability has default input, for testing only
 		GetCurrentAbilitySpec()->GetDynamicSpecSourceTags().AddTagFast(StartupInputTag);
-		GetCurrentAbilitySpec()->GetDynamicSpecSourceTags().AddTagFast(AuraGameplayTags::Ability_Status_Unlocked);
-		GetAbilitySystemComponentFromActorInfo()->MarkAbilitySpecDirty(*GetCurrentAbilitySpec());
 	}
+	Super::OnAvatarSet(ActorInfo, Spec); // MarkAbilitySpecDirty() is called in this
 }
 
 void UCostCooldownAbility::GetCost(FAbilityDetails& Details) const

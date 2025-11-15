@@ -19,7 +19,7 @@ public:
 	UFUNCTION(BlueprintCallable, meta=(ExpandBoolAsExecs="ReturnValue"), Category="AuraLibrary|Actor")
 	static bool YawActorToRotation(AActor* InActor, FVector InAimDirection,
 		float DeltaTime, float InterpSpeed); // return true if finished
-
+	
 	UFUNCTION(BlueprintCallable, meta=(DefaultToSelf="WorldContextObject"), Category="AuraLibrary|GameplayMechanics")
 	static void GetLivePlayersInRadius(const UObject* WorldContextObject, TArray<AActor*>& OutActors,
 		const TArray<AActor*>& ActorsToIgnore, float Radius, const FVector& Origin, bool bShowDebug = false);

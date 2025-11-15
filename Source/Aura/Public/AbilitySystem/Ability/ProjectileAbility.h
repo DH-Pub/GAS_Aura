@@ -22,7 +22,7 @@ public:
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Default|Projectile")
 	TSubclassOf<AAuraProjectile> ProjectileClass;
-
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Default|Projectile")
 	FScalableFloat ProjectileNums = 1.f;
 	// const func creates Target[self], use static
@@ -35,7 +35,7 @@ private:
 	float ProjectileSpread = 90.f;
 	UPROPERTY(EditDefaultsOnly, Category="Default|Projectile")
 	float ProjectilePitch = 0.f;
-
+	
 	UPROPERTY(EditDefaultsOnly, Category="Default|Projectile", meta=(InlineEditConditionToggle))
 	bool bHoming = false;
 	UPROPERTY(EditDefaultsOnly, Category="Default|Projectile", meta=(EditCondition="bHoming"))
@@ -51,12 +51,12 @@ struct FGA_TargetData_ProjectileInfo : public FGameplayAbilityTargetData
 {
 	GENERATED_BODY()
 	FGA_TargetData_ProjectileInfo() {}
-
+	
 	UPROPERTY()
 	FVector Location = FVector();
 	UPROPERTY()
 	FRotator Rotation = FRotator();
-
+	
 	float ActivationTime = 0.f;
 	virtual FTransform GetOrigin() const override // Use Origin for spawn point
 	{
@@ -65,14 +65,14 @@ struct FGA_TargetData_ProjectileInfo : public FGameplayAbilityTargetData
 		Origin.SetScale3D(FVector(ActivationTime, 0.f, 0.f));
 		return Origin;
 	}
-
+	
 	UPROPERTY()
 	FVector EndPoint = FVector();
 	virtual bool HasEndPoint() const override {return true;}
 	virtual FVector GetEndPoint() const override {return EndPoint;}
 	// Required for all child structs of FGameplayAbilityTargetData
 	virtual UScriptStruct* GetScriptStruct() const override { return StaticStruct();}
-
+	
 	// Required for all child structs of FGameplayAbilityTargetData
 	bool NetSerialize(FArchive& Ar, class UPackageMap* Map, bool& bOutSuccess)
 	{
@@ -103,14 +103,14 @@ class AURA_API UAbilityTask_SpawnProjectile : public UAbilityTask
 public:
 	UPROPERTY(BlueprintAssignable)
 	FFinishSpawn OnSpawnFinish;
-
+	
 	UFUNCTION(BlueprintCallable, Category = "Ability|Task", meta=(HidePin="OwningAbility", DefaultToSelf="OwningAbility",
 		BlueprintInternalUseOnly="true"))
 	static UAbilityTask_SpawnProjectile* SpawnProjectile(UProjectileAbility* OwningAbility,
 		const ECombatSocket SpawnSocket, FVector EndPoint, AActor* Target, float HeightIfHitGround = 60.f);
 protected:
 	virtual void Activate() override;
-
+	
 	UPROPERTY()
 	TObjectPtr<UProjectileAbility> ProjectileAbility;
 	FVector SocketLocation;
@@ -120,6 +120,6 @@ protected:
 	float HeightIfHitGround; // AddedSpawnHeight in case projectile hit ground on spawn
 private:
 	void OnTargetDataReplicatedCallback(const FGameplayAbilityTargetDataHandle& DataHandle, FGameplayTag ActivationTag);
-
+	
 	FDelegateHandle DelegateHandle;
 };

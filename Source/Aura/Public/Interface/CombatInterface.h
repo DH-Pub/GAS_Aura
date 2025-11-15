@@ -3,7 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameplayTagContainer.h"
 #include "UObject/Interface.h"
 #include "CombatInterface.generated.h"
 
@@ -24,15 +23,13 @@ USTRUCT(BlueprintType)
 struct FTaggedMontage
 {
 	GENERATED_BODY()
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(GameplayTagFilter="Montage"))
-	FGameplayTag MontageTag;
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<UAnimMontage> Montage = nullptr;
-
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	ECombatSocket SocketEnum = ECombatSocket::Weapon;
-
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<USoundBase> ImpactSound = nullptr;
 };
@@ -59,7 +56,7 @@ public:
 	int32 GetCharacterLevel();*/
 	UFUNCTION(BlueprintNativeEvent)
 	UNiagaraSystem* GetBloodEffect();
-
+	
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	bool IsDead() const;
 	/*

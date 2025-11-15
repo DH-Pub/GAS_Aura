@@ -11,12 +11,12 @@ struct FGameplayAbilityTargetData_AimData : public FGameplayAbilityTargetData
 {
 	GENERATED_BODY()
 	FGameplayAbilityTargetData_AimData() {}
-
+	
 	UPROPERTY()
 	TWeakObjectPtr<AActor> TargetActor;
 	/** Returns all actors targeted, almost always overridden */
 	virtual TArray<TWeakObjectPtr<AActor>> GetActors() const override {return {TargetActor};}
-
+	
 	UPROPERTY()
 	FVector AimDirection = FVector();
 	float ActivatedTime = 0.f;
@@ -26,16 +26,16 @@ struct FGameplayAbilityTargetData_AimData : public FGameplayAbilityTargetData
 		Result.SetScale3D(FVector(ActivatedTime, 0.f, 0.f)); // store float in Scale
 		return Result;
 	}
-
+	
 	bool bHasEndPoint = false;
 	UPROPERTY()
 	FVector EndPoint = FVector(); // Cursor hit for player, CombatActor Loc for Bot
 	virtual bool HasEndPoint() const override { return bHasEndPoint; }
 	virtual FVector GetEndPoint() const override {return EndPoint;}
-
+	
 	// Required for all child structs of FGameplayAbilityTargetData
 	virtual UScriptStruct* GetScriptStruct() const override { return StaticStruct();}
-
+	
 	// Required for all child structs of FGameplayAbilityTargetData
 	bool NetSerialize(FArchive& Ar, class UPackageMap* Map, bool& bOutSuccess)
 	{
@@ -71,13 +71,13 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Ability|Task", meta=(HidePin="OwningAbility", DefaultToSelf="OwningAbility",
 		BlueprintInternalUseOnly="true"))
 	static UAbilityTask_AimData* SendAimData(UGameplayAbility* OwningAbility);
-
+	
 	UPROPERTY(BlueprintAssignable)
 	FMouseTargetDataSignature ValidData;
 protected:
 	virtual void Activate() override;
 private:
 	void OnTargetDataReplicatedCallback(const FGameplayAbilityTargetDataHandle& DataHandle, FGameplayTag ActivationTag);
-
+	
 	FDelegateHandle DelegateHandle;
 };

@@ -16,7 +16,7 @@ class UEnemyWidgetController : public UAuraWidgetController
 public:
 	virtual void BindCallbacksDependencies() override;
 	virtual void BroadcastInitialValues() override;
-
+	
 	UPROPERTY(BlueprintAssignable, Category = "GAS|Attributes")
 	FOnVitalAttributeChanged OnHealthChanged;
 	UPROPERTY(BlueprintAssignable, Category = "GAS|Attributes")

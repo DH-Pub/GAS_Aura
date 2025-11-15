@@ -28,14 +28,14 @@ public:
 	FCooldownChanged CooldownChanged;
 	UPROPERTY(BlueprintAssignable)
 	FCooldownEnd CooldownEnd;
-
+	
 	UFUNCTION(BlueprintCallable, meta=(BlueprintInternalUseOnly="true"))
 	static UAsync_CooldownChange* WaitForCooldownChange(UAbilitySystemComponent* InASC,
 		const FGameplayTagContainer& InCooldownTags, bool InUseServerCooldown = false);
-
+	
 	UFUNCTION(BlueprintCallable)
 	void EndTask();
-
+	
 	UFUNCTION(BlueprintCallable)
 	void BroadcastInitialCooldown() const;
 private:
@@ -46,11 +46,11 @@ private:
 	
 	float CooldownDuration = 0.f;
 	float CooldownTime = 0.f;
-
+	
 	void OnActiveEffectAdded(UAbilitySystemComponent* TargetASC, const FGameplayEffectSpec& SpecApplied, FActiveGameplayEffectHandle ActiveEffectHandle);
 	void OnGameplayEffectRemoved(const FActiveGameplayEffect& ActiveEffect);
 	// void CooldownTagChanged(const FGameplayTag InCooldownTag, int32 NewCount);
-
+	
 	FActiveGameplayEffectHandle EffectHandle;
 	FDelegateHandle OnEffectRemovedDelegate;
 	void OnEffectRemoved(const struct FGameplayEffectRemovalInfo& Info);

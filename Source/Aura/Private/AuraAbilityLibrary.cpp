@@ -3,20 +3,25 @@
 
 #include "AuraAbilityLibrary.h"
 
-#include "Character/AuraCharacterBase.h"
 #include "Kismet/GameplayStatics.h"
-#include "Player/AuraPlayerController.h"
 
 bool UAuraAbilityLibrary::YawActorToRotation(AActor* InActor, const FVector InAimDirection, const float DeltaTime,
-                                             const float InterpSpeed)
+	const float InterpSpeed)
 {
 	FRotator CurrentRot = InActor->GetActorRotation();
-	FRotator TargetRot = InAimDirection.ToOrientationRotator();
-	TargetRot.Pitch = TargetRot.Roll = 0.f;
-	if (FMath::Abs(TargetRot.Yaw - CurrentRot.Yaw) < UE_SMALL_NUMBER) return true; // if rotation is within Tolerance
-
-	const FRotator InterpToRot = FMath::RInterpConstantTo(CurrentRot, TargetRot, DeltaTime, InterpSpeed);
-	CurrentRot.Yaw = InterpToRot.Yaw; // For up view
+	const FRotator TargetRot = InAimDirection.ToOrientationRotator();
+	const float CurrentDiff = FMath::Abs(TargetRot.Yaw - CurrentRot.Yaw);
+	if (CurrentDiff < UE_SMALL_NUMBER) return true; // if rotation is within Tolerance
+	if (CurrentDiff < 1.f)
+	{
+		CurrentRot.Yaw = TargetRot.Yaw;
+		InActor->GetRootComponent()->SetWorldRotation(CurrentRot);
+		return true;
+	}
+	
+	const float DeltaRot = DeltaTime * InterpSpeed * 3.f;
+	CurrentRot.Yaw = FMath::FixedTurn(CurrentRot.Yaw, TargetRot.Yaw, DeltaRot);
+	// CurrentRot.Yaw = FMath::FInterpTo(CurrentRot.Yaw, TargetRot.Yaw, DeltaTime, InterpSpeed * .05f); // For top-down view
 	InActor->GetRootComponent()->SetWorldRotation(CurrentRot);
 	return false;
 }
@@ -32,8 +37,11 @@ void UAuraAbilityLibrary::GetLivePlayersInRadius(const UObject* WorldContextObje
 	World->OverlapMultiByObjectType(Overlaps, Origin, FQuat::Identity,
 		FCollisionObjectQueryParams(ECC_Pawn)/*FCollisionObjectQueryParams(FCollisionObjectQueryParams::InitType::AllDynamicObjects)*/,
 		FCollisionShape::MakeSphere(Radius), SphereParams);
-	for (FOverlapResult& Overlap : Overlaps) OutActors.AddUnique(Overlap.GetActor());
-
+	for (FOverlapResult& Overlap : Overlaps)
+	{
+		OutActors.AddUnique(Overlap.GetActor());
+	}
+	
 	if (bShowDebug) UKismetSystemLibrary::DrawDebugSphere(WorldContextObject, Origin, Radius, 12, FColor::Red, 1.f);
 }
 

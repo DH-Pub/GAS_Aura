@@ -6,7 +6,6 @@
 #include "Abilities/Tasks/AbilityTask.h"
 #include "AbilityTask_WaitInput.generated.h"
 
-class UAuraGameplayAbility;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSpecInputDelegate, float, TimeWaited);
 /**
  * Waits until the input is pressed from activating an ability.
@@ -17,7 +16,7 @@ UCLASS()
 class AURA_API UAbilityTask_WaitSpecInputPressed : public UAbilityTask
 {	// Based on UAbilityTask_WaitInputPress
 	GENERATED_BODY()
-
+	
 	UPROPERTY(BlueprintAssignable)
 	FSpecInputDelegate OnPress;
 	/**
@@ -25,14 +24,12 @@ class AURA_API UAbilityTask_WaitSpecInputPressed : public UAbilityTask
 	 * @returns time this node spent waiting for the press. 0 if input was already down.
 	 */
 	UFUNCTION(BlueprintCallable, meta=(HidePin="OwningAbility", DefaultToSelf="OwningAbility", BlueprintInternalUseOnly="TRUE"))
-	static UAbilityTask_WaitSpecInputPressed* WaitSpecInputPressed(UAuraGameplayAbility* OwningAbility);
-
+	static UAbilityTask_WaitSpecInputPressed* WaitSpecInputPressed(class UAuraGameplayAbility* OwningAbility);
+	
 	virtual void Activate() override;
+protected:
 	UFUNCTION()
 	void OnPressedCallback();
-
-	virtual void OnDestroy(bool bInOwnerFinished) override;
-protected:
 	float StartTime = 0.f;
 	FDelegateHandle DelegateHandle;
 };
@@ -47,7 +44,7 @@ UCLASS()
 class AURA_API UAbilityTask_WaitSpecInputReleased : public UAbilityTask
 {	// Based on UAbilityTask_WaitInputRelease
 	GENERATED_BODY()
-
+	
 	UPROPERTY(BlueprintAssignable)
 	FSpecInputDelegate OnReleased;
 	/**
@@ -55,15 +52,12 @@ class AURA_API UAbilityTask_WaitSpecInputReleased : public UAbilityTask
 	 * @returns time from hitting this node, till release. 0 if input was already released.
 	 */
 	UFUNCTION(BlueprintCallable, meta=(HidePin="OwningAbility", DefaultToSelf="OwningAbility", BlueprintInternalUseOnly="TRUE"))
-	static UAbilityTask_WaitSpecInputReleased* WaitSpecInputReleased(UAuraGameplayAbility* OwningAbility);
-
+	static UAbilityTask_WaitSpecInputReleased* WaitSpecInputReleased(class UAuraGameplayAbility* OwningAbility);
+	
 	virtual void Activate() override;
-
+protected:
 	UFUNCTION()
 	void OnReleasedCallback();
-
-	virtual void OnDestroy(bool bInOwnerFinished) override;
-protected:
 	float StartTime = 0.f;
 	FDelegateHandle DelegateHandle;
 };

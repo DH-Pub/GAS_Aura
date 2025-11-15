@@ -9,7 +9,7 @@
 void UGlobeWidget::NativePreConstruct()
 {
 	Super::NativePreConstruct();
-
+	
 	Image_Background->SetBrush(DefaultBackground);
 	Image_Ring->SetBrush(RingBrush);
 	

@@ -10,19 +10,19 @@ USTRUCT(BlueprintType) // USTRUCT needed for FInstancedStruct::Make()
 struct FDamageEffectContext
 {
 	GENERATED_BODY()
-
+	
 	FDamageEffectContext() {}
-
+	
 	UPROPERTY(/* Need this to replicate data to client */)
 	FVector_NetQuantizeNormal DamageDirection = FVector::ZeroVector;
-
+	
 	UPROPERTY(BlueprintReadOnly)
 	bool bIsBlocked = false; bool SetIsBlocked(const bool bIn) {return bIsBlocked = bIn;}
 	UPROPERTY(BlueprintReadOnly)
 	bool bIsCrit = false; bool SetIsCrit(const bool bIn) {return bIsCrit = bIn;}
 	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<AActor> TargetActor = nullptr;
-
+	
 	UPROPERTY()
 	TObjectPtr<USoundBase> ImpactSound = nullptr;
 	UPROPERTY()
@@ -40,20 +40,20 @@ public:
 	UFUNCTION(BlueprintPure, meta=(CompactNodeTitle="Dmg", DefaultToSelf="Ability", HidePin="Ability"))
 	static float GetDamageAtLevel(const UDamageAbility* Ability, const int32 Level)
 	{return static_cast<int32>(Ability->DamageValue.GetValueAtLevel(Level) * 10.f) / 10.f;}
-
+	
 	UPROPERTY(EditDefaultsOnly, Category="Default|Damage")
 	bool bStagger = false;
-
+	
 	FGameplayEffectSpecHandle MakeDamageSpecHandle() const;
 	FActiveGameplayEffectHandle ApplyDebuffToTarget(UAbilitySystemComponent* TargetASC) const;
-
+	
 	UPROPERTY(EditDefaultsOnly, Category="Default|Damage")
 	TSubclassOf<UGameplayEffect> DamageEffectClass;
 	UPROPERTY(EditDefaultsOnly, Category="Default|Damage", meta=(ForceInlineRow, GameplayTagFilter="Damage"))
 	FGameplayTag DamageType;
 	UPROPERTY(EditDefaultsOnly, Category="Default|Damage")
 	FScalableFloat DamageValue;
-
+	
 	UPROPERTY(EditDefaultsOnly, Category="Default|Debuff", meta=(UIMin=0.01, UIMax=10.0, Delta=0.01))
 	float DebuffDelay = 0.2; // Delay until debuff activates
 	UPROPERTY(EditDefaultsOnly, Category="Default|Debuff")
@@ -68,7 +68,7 @@ public:
 	FScalableFloat DebuffDuration = 4.f;
 	UPROPERTY(EditDefaultsOnly, Category="Default|Debuff")
 	FScalableFloat DebuffPeriod = 1.f;
-
+	
 	UPROPERTY(EditDefaultsOnly, Category="Default|Damage")
 	float KnockbackForce = 200.f;
 	UPROPERTY(EditDefaultsOnly, Category="Default|Damage")

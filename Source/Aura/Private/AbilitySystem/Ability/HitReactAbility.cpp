@@ -11,16 +11,18 @@
 
 UHitReactAbility::UHitReactAbility()
 {
+	SetAssetTags(FGameplayTagContainer(AuraGameplayTags::Character_State_HitReact)); // so that Death can cancel this
 	CancelAbilitiesWithTag = FGameplayTagContainer(AuraGameplayTags::Generic_Ability_Cancelable);
 	ActivationOwnedTags.AddTag(AuraGameplayTags::Character_State_HitReact);
+	ActivationOwnedTags.AddTag(AuraGameplayTags::Character_State_Block_Movement);
 	ActivationBlockedTags.AddTag(AuraGameplayTags::Character_State_Death);
-
+	
 	bRetriggerInstancedAbility = true;
 	NetExecutionPolicy = EGameplayAbilityNetExecutionPolicy::ServerInitiated;
 	NetSecurityPolicy = EGameplayAbilityNetSecurityPolicy::ServerOnly;
-
-	bStopRotation = bStopMovement = true;
-
+	
+	bStopRotation = true;
+	
 	const int32 Idx = AbilityTriggers.Add(FAbilityTriggerData());
 	AbilityTriggers[Idx].TriggerTag = AuraGameplayTags::Character_State_HitReact;
 	AbilityTriggers[Idx].TriggerSource = EGameplayAbilityTriggerSource::GameplayEvent;

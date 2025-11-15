@@ -35,7 +35,7 @@ void AAuraEffectActor::ApplyEffectToTarget(AActor* TargetActor, const FEffectTyp
 void AAuraEffectActor::OnOverlap(AActor* TargetActor)
 {
 	if (!HasAuthority() || IsNotForEnemy(TargetActor)) return;
-
+	
 	for (const FEffectType& Effect : Effects)
 	{
 		if (Effect.ApplicationPolicy == EEffectApplicationPolicy::ApplyOnOverlap)
@@ -47,14 +47,14 @@ void AAuraEffectActor::OnOverlap(AActor* TargetActor)
 void AAuraEffectActor::OnEndOverlap(AActor* TargetActor)
 {
 	if (!HasAuthority() || IsNotForEnemy(TargetActor)) return;
-
+	
 	for (const FEffectType& Effect : Effects)
 	{
 		if (Effect.ApplicationPolicy == EEffectApplicationPolicy::ApplyOnEndOverlap)
 		{
 			ApplyEffectToTarget(TargetActor, Effect);
 		}
-
+		
 		if (Effect.GameplayEffectClass.GetDefaultObject()->DurationPolicy == EGameplayEffectDurationType::Infinite
 			&& Effect.RemovalPolicy == EEffectRemovalPolicy::RemoveOnEndOverlap)
 		{

@@ -166,7 +166,8 @@ bool FAuraEffectContext::NetSerialize(FArchive& Ar, class UPackageMap* Map, bool
 	{
 		if (Ar.IsLoading() && !InstancedStruct.IsValid())
 		{	// HitResult has been serialized
-			InstancedStruct = TSharedPtr<FInstancedStruct>(new FInstancedStruct()); // Set new if not exist
+			// InstancedStruct = TSharedPtr<FInstancedStruct>(new FInstancedStruct()); // Set new if not exist
+			InstancedStruct = MakeShared<FInstancedStruct>(); // Set new if not exist
 		}
 		InstancedStruct->NetSerialize(Ar, Map, bOutSuccess);
 	}

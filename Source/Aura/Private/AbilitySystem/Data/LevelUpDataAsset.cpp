@@ -8,8 +8,7 @@
 #define LOCTEXT_NAMESPACE "XPError"
 
 int32 ULevelUpDataAsset::FindLevelForXP(const int32 XP) const
-{
-	// Binary Search Algorithm
+{	// Binary Search Algorithm
 	int32 Left = 1; // Min Level
 	int32 Right = LevelUpDataList.Num() - 1; // Max Level
 	while (Left < Right) // if sort by value increase

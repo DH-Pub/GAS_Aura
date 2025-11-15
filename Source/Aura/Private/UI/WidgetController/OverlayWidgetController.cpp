@@ -10,20 +10,19 @@
 #include "AbilitySystem/Data/LevelUpDataAsset.h"
 #include "Player/AuraPlayerState.h"
 #include "UI/Data/TextDataAsset.h"
-#include "UI/HUD/AuraHUD.h"
 
-template<typename T = FTableRowBase> UE_DEPRECATED(all, "just loop through Data Table")
+/*template<typename T = FTableRowBase> UE_DEPRECATED(all, "just loop through Data Table")
 static T* GetDataTableRowByTag(UDataTable* DataTable, const FGameplayTag& Tag)
 {
-	return DataTable->FindRow<T>(Tag.GetTagName(), TEXT("")); // Find by RowName
-}
+	return DataTable->FindRow<T>(Tag.GetTagName(), TEXT("")); // Find by RowName (by FName)
+}*/
 void UOverlayWidgetController::BindCallbacksDependencies()
 {
 	BindGameplayAttributeToBroadcast(GetAttributeSet()->GetHealthAttribute(), OnHealthChanged);
 	BindGameplayAttributeToBroadcast(GetAttributeSet()->GetMaxHealthAttribute(), OnMaxHealthChanged);
 	BindGameplayAttributeToBroadcast(GetAttributeSet()->GetManaAttribute(), OnManaChanged);
 	BindGameplayAttributeToBroadcast(GetAttributeSet()->GetMaxManaAttribute(), OnMaxManaChanged);
-
+	
 	GetPlayerState()->OnXPChangedDelegate.RemoveAll(this);
 	GetPlayerState()->OnXPChangedDelegate.AddUObject(this, &UOverlayWidgetController::BroadcastXPToUI);
 	// Receive broadcast from AuraAbilitySystemComponent
@@ -50,9 +49,9 @@ void UOverlayWidgetController::BroadcastInitialValues()
 	OnMaxHealthChanged.Broadcast(GetAttributeSet()->GetMaxHealth());
 	OnManaChanged.Broadcast(GetAttributeSet()->GetMana());
 	OnMaxManaChanged.Broadcast(GetAttributeSet()->GetMaxMana());
-
+	
 	// if AddCharacterStartupAbilities is called on the server before Client InitAuraCharacter()->InitAuraHUD
-	AuraHUD->BroadcastAllActivatableAbilities(); // Make sure Ability Icons on UI receive their data
+	GetASC()->BroadcastAllAbilityData(); // Make sure Ability Icons on UI receive their data
 	BroadcastXPToUI();
 }
 

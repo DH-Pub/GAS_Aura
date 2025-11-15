@@ -19,6 +19,9 @@ struct FStateTreeCombatConditionInstanceData
 	float LostTargetRange = 0.f;
 };
 STATETREE_POD_INSTANCEDATA(FStateTreeCombatConditionInstanceData)
+/*
+ * same as STC_TargetInsideRange
+ */
 USTRUCT(DisplayName="Can Enter Combat State")
 struct FStateTreeCombatCondition : public FStateTreeConditionCommonBase
 {
@@ -28,15 +31,14 @@ struct FStateTreeCombatCondition : public FStateTreeConditionCommonBase
 	
 	FStateTreeCombatCondition() = default;
 	explicit FStateTreeCombatCondition(const EStateTreeCompare InInverts)
-		: bInvert(InInverts == EStateTreeCompare::Invert)
-	{}
-
+		: bInvert(InInverts == EStateTreeCompare::Invert) {}
+	
 	virtual bool TestCondition(FStateTreeExecutionContext& Context) const override;
 #if WITH_EDITOR
 	virtual FText GetDescription(const FGuid& ID, FStateTreeDataView InstanceDataView, const IStateTreeBindingLookup& BindingLookup,
 		EStateTreeNodeFormatting Formatting = EStateTreeNodeFormatting::Text) const override;
 #endif
-
+	
 	UPROPERTY(EditAnywhere, Category="Condition")
 	bool bInvert = false;
 };

@@ -16,7 +16,7 @@ class AURA_API AAuraAIController : public AAIController
 	GENERATED_BODY()
 public:
 	AAuraAIController();
-
+	
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Default")
 	TObjectPtr<class UStateTreeAIComponent> StateTreeAI;

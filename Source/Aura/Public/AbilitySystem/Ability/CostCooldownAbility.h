@@ -19,12 +19,12 @@ public:
 	virtual const FGameplayTagContainer* GetCooldownTags() const override;
 	virtual void ApplyCooldown(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
 		const FGameplayAbilityActivationInfo ActivationInfo) const override;
-
+	
 	UPROPERTY(EditDefaultsOnly, Category="Costs|Aura")
 	FScalableFloat ManaCost; // FGameplayEffectModifiedAttribute
 	UPROPERTY(EditDefaultsOnly, Category="Costs|Aura")
 	FScalableFloat HealthCost; // FGameplayEffectModifiedAttribute
-
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Cooldowns|Aura")
 	FScalableFloat CooldownDuration;
 	UPROPERTY(Transient)

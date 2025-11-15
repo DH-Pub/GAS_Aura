@@ -27,13 +27,13 @@ void UCharacterClassDataAsset::InitializeDefaultAttributes(const ECharacterClass
 {
 	const FCharacterClassDefaultInfo* ClassDefaultInfo = GetClassDefaultInfo(CharacterClass);
 	const FGameplayEffectContextHandle ContextHandle = ASC->MakeEffectContext();
-
+	
 	const FGameplayEffectSpecHandle PrimaryAttrSpecHandle = ASC->MakeOutgoingSpec(ClassDefaultInfo->PrimaryAttributes, Level, ContextHandle);
 	ASC->ApplyGameplayEffectSpecToSelf(*PrimaryAttrSpecHandle.Data);
-
+	
 	const FGameplayEffectSpecHandle SecondaryAttrSpecHandle = ASC->MakeOutgoingSpec(SecondaryAttributes, Level, ContextHandle);
 	ASC->ApplyGameplayEffectSpecToSelf(*SecondaryAttrSpecHandle.Data);
-
+	
 	const FGameplayEffectSpecHandle VitalAttrSpecHandle = ASC->MakeOutgoingSpec(VitalAttributes, Level, ContextHandle);
 	ASC->ApplyGameplayEffectSpecToSelf(*VitalAttrSpecHandle.Data);
 }
@@ -52,21 +52,21 @@ void UCharacterClassDataAsset::GiveStartupAbilities(const AAuraCharacterBase* Au
 	}
 }
 
-void UCharacterClassDataAsset::SendXPToDeathCauser(AActor* Causer, const AAuraCharacterBase* DeadCharacter) const
+void UCharacterClassDataAsset::SendXPToDeathCauser(UAbilitySystemComponent* Causer, const AAuraCharacterBase* DeadCharacter) const
 {
-	if (Causer == DeadCharacter) return;
+	if (Causer->GetAvatarActor() == DeadCharacter) return; // cause is not itself
 	FGameplayEventData Payload;
 	const FCharacterClassDefaultInfo* Info = GetClassDefaultInfo(DeadCharacter->CharacterClass);
 	Payload.EventMagnitude = Info ? Info->XPReward.GetValueAtLevel(DeadCharacter->GetCharacterLevel()) : 0;
 	if (Payload.EventMagnitude < UE_KINDA_SMALL_NUMBER) return;
 	Payload.EventTag = AuraGameplayTags::Attributes_Meta_IncomingXP;
-	UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(Causer, Payload.EventTag, Payload); // Last Hit player
-
+	Causer->HandleGameplayEvent(Payload.EventTag, &Payload); // Last Hit player
+	
 	Payload.EventMagnitude *= .85f; // For allies
 	for (const AAuraGameMode* GameMode = Cast<AAuraGameMode>(Causer->GetWorld()->GetAuthGameMode());
 		const AAuraPlayerController* AuraController : GameMode->PlayerControllers)
 	{
-		if (AuraController->GetPawn() == Causer) continue;
-		UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(AuraController->GetPawn(), Payload.EventTag, Payload);
+		if (AuraController->AuraASC == Causer) continue;
+		AuraController->AuraASC->HandleGameplayEvent(Payload.EventTag, &Payload);
 	}
 }

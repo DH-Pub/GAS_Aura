@@ -6,11 +6,6 @@
 #include "AuraButtonWidget.h"
 #include "TextButtonWidget.generated.h"
 
-class UScaleBox;
-class UTextBlock;
-class UButton;
-class UBorder;
-class USizeBox;
 /**
  * 
  */
@@ -28,9 +23,9 @@ public:
 protected:
 	virtual void NativePreConstruct() override;
 	UPROPERTY(BlueprintReadWrite, meta=(BindWidget))
-	TObjectPtr<UBorder> Border;
+	TObjectPtr<class UBorder> Border;
 	UPROPERTY(BlueprintReadWrite, meta=(BindWidget))
-	TObjectPtr<UScaleBox> ScaleBox;
+	TObjectPtr<class UScaleBox> ScaleBox;
 	UPROPERTY(BlueprintReadWrite, meta=(BindWidget))
-	TObjectPtr<UTextBlock> Text;
+	TObjectPtr<class UTextBlock> Text;
 };

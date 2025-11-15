@@ -16,29 +16,29 @@
 AAuraEnemy::AAuraEnemy()
 {
 	PrimaryActorTick.bCanEverTick = true;
-
+	
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Projectile, ECR_Block);
-
+	
 	AbilitySystemComponent = CreateDefaultSubobject<UAuraAbilitySystemComponent>("AbilitySystemComponent");
 	AbilitySystemComponent->SetIsReplicated(true);
 	AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Minimal); // Save bandwidth
-
+	
 	AttributeSet = CreateDefaultSubobject<UAuraAttributeSet>("AttributeSet");
-
+	
 	HealthBar = CreateDefaultSubobject<UWidgetComponent>("HealthBar");
 	HealthBar->SetupAttachment(GetRootComponent());
-
+	
 	// No need to SpawnDefaultController()
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
-
+	
 	SetNetUpdateFrequency(5); // Slow AI so no need for much update
 }
 
 void AAuraEnemy::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
-
+	
 	if (HasAuthority())
 	{
 		AuraAIController = Cast<AAuraAIController>(NewController);
@@ -70,7 +70,7 @@ void AAuraEnemy::BeginPlay()
 {
 	Super::BeginPlay();
 	InitAuraCharacter();
-
+	
 	UAuraUserWidget* Widget = Cast<UAuraUserWidget>(HealthBar->GetUserWidgetObject());
 	UAuraWidgetController::CreateOrGetWidgetController(this, this, HealthBarController, HealthBarControllerClass);
 	Widget->SetWidgetController(HealthBarController);
@@ -79,7 +79,7 @@ void AAuraEnemy::BeginPlay()
 void AAuraEnemy::InitAuraCharacter()
 {
 	AbilitySystemComponent->InitAuraASC(this, this);
-
+	
 	if (const UCharacterClassDataAsset* ClassData = UCharacterClassDataAsset::GetFromGameMode(this))
 	{
 		ClassData->InitializeDefaultAttributes(CharacterClass, Level, AbilitySystemComponent);

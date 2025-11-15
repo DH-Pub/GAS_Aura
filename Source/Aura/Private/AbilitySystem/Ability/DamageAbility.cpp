@@ -46,7 +46,7 @@ FActiveGameplayEffectHandle UDamageAbility::ApplyDebuffToTarget(UAbilitySystemCo
 void UDamageAbility::CauseDamageToActors(const TArray<AActor*>& Actors, USoundBase* ImpactSound)
 {
 	//TODO: Use FGameplayAbilityTargetData
-	if (Actors.IsEmpty() || !HasAuthority(&GetCurrentActivationInfoRef())) return;
+	if (Actors.IsEmpty() || !HasAuthority(&CurrentActivationInfo)) return;
 	for (AActor* Actor : Actors)
 	{
 		if (!UAuraAbilityLibrary::IsNotFriend(GetAvatarActorFromActorInfo(), Actor)) continue;
@@ -76,7 +76,7 @@ bool UDamageAbility::ExecuteCueShowDamage(const FGameplayCueParameters& Paramete
 	if (PC == nullptr || GEngine == nullptr) return false;
 	const APlayerController* LocalPlayerController = GEngine->GetFirstLocalPlayerController(PC->GetWorld());
 	if (LocalPlayerController == nullptr || LocalPlayerController != PC) return false; // if damage dealer isn't local*/
-
+	
 	const FAuraEffectContext* AuraContext = FAuraEffectContext::ExtractAuraContext(Parameters.EffectContext);
 	if (!AuraContext->IsShowDamageOnTarget()) return false;
 	OutDamage = Parameters.RawMagnitude;
@@ -97,10 +97,10 @@ UDamageGameplayEffect::UDamageGameplayEffect()
 	DurationPolicy = EGameplayEffectDurationType::HasDuration;
 	UDebuffComponent* DebuffComponent = CreateDefaultSubobject<UDebuffComponent>("Debuff");
 	GEComponents.Add(DebuffComponent); // DebuffComponent.OnCompleteDamageDebuff;
-
+	
 	int32 i = Executions.Add(FGameplayEffectExecutionDefinition());
 	Executions[i].CalculationClass = UExecCalc_Damage::StaticClass();
-
+	
 	i = GameplayCues.Add(FGameplayEffectCue(AuraGameplayTags::GameplayCue_Damage, 0.f, 0.f));
 	GameplayCues[i].MagnitudeAttribute = UAuraAttributeSet::GetIncomingDamageAttribute();
 }
@@ -110,10 +110,10 @@ UDebuffDamageEffect::UDebuffDamageEffect()
 	DurationPolicy = EGameplayEffectDurationType::HasDuration;
 	int32 i = Executions.Add(FGameplayEffectExecutionDefinition());
 	Executions[i].CalculationClass = UExecCalc_Debuff::StaticClass();
-
+	
 	i = GameplayCues.Add(FGameplayEffectCue(AuraGameplayTags::GameplayCue_Damage, 0.f, 0.f));
 	GameplayCues[i].MagnitudeAttribute = UAuraAttributeSet::GetIncomingDamageAttribute();
-
+	
 	StackingType = EGameplayEffectStackingType::AggregateByTarget;
 }
 #pragma endregion

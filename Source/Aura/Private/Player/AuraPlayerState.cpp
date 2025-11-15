@@ -14,16 +14,16 @@ AAuraPlayerState::AAuraPlayerState()
 	AbilitySystemComponent = CreateDefaultSubobject<UAuraAbilitySystemComponent>("AbilitySystemComponent");
 	AbilitySystemComponent->SetIsReplicated(true);
 	AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Mixed);
-
+	
 	AttributeSet = CreateDefaultSubobject<UAuraAttributeSet>("AttributeSet");
-
+	
 	SetNetUpdateFrequency(120.f); // Update per second
 }
 
 void AAuraPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
+	
 	DOREPLIFETIME(AAuraPlayerState, Level);
 	DOREPLIFETIME(AAuraPlayerState, XP);
 	DOREPLIFETIME(AAuraPlayerState, AttributePoints);
@@ -34,7 +34,6 @@ UAbilitySystemComponent* AAuraPlayerState::GetAbilitySystemComponent() const {re
 
 void AAuraPlayerState::SetXP(const int32 NewXP)
 {
-	GetPlayerController();
 	XP = NewXP;
 	int32 i = GetPlayerLevel();
 	const int32 NewXPLevel = LevelUpDataAsset->FindLevelForXP(XP);

@@ -11,12 +11,11 @@
 
 bool FStateTreeCombatCondition::TestCondition(FStateTreeExecutionContext& Context) const
 {
-	const FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
-	const AActor* CombatTarget = InstanceData.EnemyActor->CombatTarget;
-	if (!InstanceData.EnemyActor->bHitReacting && CombatTarget != nullptr)
+	const auto [EnemyActor, LostTargetRange] = Context.GetInstanceData(*this);
+	if (const AActor* CombatTarget = EnemyActor->CombatTarget)
 	{
-		const float SquaredDistance = CombatTarget->GetSquaredDistanceTo(InstanceData.EnemyActor);
-		const bool CanEnterCombatState = SquaredDistance < InstanceData.LostTargetRange * InstanceData.LostTargetRange;
+		const float SquaredDistance = CombatTarget->GetSquaredDistanceTo(EnemyActor);
+		const bool CanEnterCombatState = SquaredDistance < LostTargetRange * LostTargetRange;
 		return CanEnterCombatState ^ bInvert;
 	}
 	return false ^ bInvert;
@@ -29,9 +28,9 @@ FText FStateTreeCombatCondition::GetDescription(const FGuid& ID, FStateTreeDataV
 	check(InstanceData);
 	const FText InvertText = UE::StateTree::DescHelpers::GetInvertText(bInvert, Formatting);
 	FText Range = BindingLookup.GetBindingSourceDisplayName(FPropertyBindingPath(ID, GET_MEMBER_NAME_CHECKED(FInstanceDataType, LostTargetRange)), Formatting);
-
+	
 	const FText Format = (Formatting == EStateTreeNodeFormatting::RichText)
-		? LOCTEXT("CombatRich", "{EmptyOrNot} in range {Range}")
+		? LOCTEXT("CombatRich", "{EmptyOrNot} is valid and in range {Range}")
 		: LOCTEXT("Combat", "{EmptyOrNot} Is EmptyOrNot");
 	return FText::FormatNamed(Format,
 		TEXT("EmptyOrNot"), InvertText,

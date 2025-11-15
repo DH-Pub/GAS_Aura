@@ -12,7 +12,7 @@ UAttributesEventAbility::UAttributesEventAbility()
 	NetExecutionPolicy = EGameplayAbilityNetExecutionPolicy::ServerOnly;
 	NetSecurityPolicy = EGameplayAbilityNetSecurityPolicy::ServerOnly;
 	bRetriggerInstancedAbility = true;
-
+	
 	const int32 i = AbilityTriggers.Add(FAbilityTriggerData());
 	AbilityTriggers[i].TriggerTag = AuraGameplayTags::Attributes;
 	AbilityTriggers[i].TriggerSource = EGameplayAbilityTriggerSource::GameplayEvent;
@@ -20,8 +20,8 @@ UAttributesEventAbility::UAttributesEventAbility()
 
 void UAttributesEventAbility::OnAvatarSet(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec)
 {
-	Super::OnAvatarSet(ActorInfo, Spec);
-
+	Super::OnAvatarSet(ActorInfo, Spec); // Put anything that requires MarkAbilitySpecDirty() before this
+	
 	FGameplayAbilitySpec* AbilitySpec = GetCurrentAbilitySpec();
 	for (const FGameplayModifierInfo& Mod : UAttributeEventEffect::StaticClass()
 		->GetDefaultObject<UAttributeEventEffect>()->Modifiers)
@@ -39,12 +39,12 @@ void UAttributesEventAbility::ActivateAbility(const FGameplayAbilitySpecHandle H
 	if (TriggerEventData == nullptr) return;
 	const FGameplayEffectSpecHandle EffectSpecHandle = MakeOutgoingGameplayEffectSpec(UAttributeEventEffect::StaticClass(), 1.f);
 	FGameplayEffectSpec* Spec = EffectSpecHandle.Data.Get();
-
+	
 	if (TriggerEventData->EventTag.IsValid())
 	{
 		Spec->SetByCallerTagMagnitudes.FindOrAdd(TriggerEventData->EventTag) = TriggerEventData->EventMagnitude;
 	}
-
+	
 	if (const FGameplayAbilityTargetData* Data = TriggerEventData->TargetData.Get(0))
 	{
 		if (Data->GetScriptStruct() == FGameplayAbilityTargetData_AttributeData::StaticStruct())

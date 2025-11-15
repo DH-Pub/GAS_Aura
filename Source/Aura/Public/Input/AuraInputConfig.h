@@ -24,7 +24,7 @@ USTRUCT(BlueprintType)
 struct FAuraInputAction
 {
 	GENERATED_BODY()
-
+	
 	UPROPERTY(EditDefaultsOnly, meta=(GameplayTagFilter="Input"))
 	FGameplayTag InputTag = FGameplayTag();
 	UPROPERTY(EditDefaultsOnly)

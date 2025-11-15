@@ -18,11 +18,11 @@ class AURA_API AAuraGameMode : public AGameModeBase
 public:
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 	virtual void Logout(AController* Exiting) override;
-
+	
 	UPROPERTY()
 	TArray<TObjectPtr<AAuraPlayerController>> PlayerControllers;
-
-
+	
+	
 	UPROPERTY(EditDefaultsOnly, Category=Default)
 	const TObjectPtr<UCharacterClassDataAsset> CharacterClassData;
 };

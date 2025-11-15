@@ -31,7 +31,7 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable)
 	virtual void BroadcastInitialValues() {}; // If SetWidgetController is not called, call this
-
+	
 	// Create WidgetController if none and BindCallbacksDependencies()
 	template <typename ControllerT = UAuraWidgetController>
 	static ControllerT* CreateOrGetWidgetController(UObject* Outer, AAuraCharacterBase* InCharacter,
@@ -54,7 +54,7 @@ public:
 	UAuraAbilitySystemComponent* GetASC() const;
 	UFUNCTION(BlueprintPure, meta=(CompactNodeTitle="AttributeSet"))
 	UAuraAttributeSet* GetAttributeSet() const;
-
+	
 	UPROPERTY()
 	TObjectPtr<class AAuraHUD> AuraHUD;
 protected:

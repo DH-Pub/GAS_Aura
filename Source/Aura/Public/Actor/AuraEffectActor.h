@@ -26,10 +26,10 @@ USTRUCT(BlueprintType)
 struct FEffectType
 {
 	GENERATED_BODY()
-
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="AppliedEffects")
 	TSubclassOf<UGameplayEffect> GameplayEffectClass;
-
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="AppliedEffects")
 	EEffectApplicationPolicy ApplicationPolicy = EEffectApplicationPolicy::DoNotApply;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="AppliedEffects")
@@ -48,16 +48,16 @@ protected:
 	void OnOverlap(AActor* TargetActor);
 	UFUNCTION(BlueprintCallable)
 	void OnEndOverlap(AActor* TargetActor);
-
+	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Default")
 	bool bDestroyOnEffectApplication = false;
-
+	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Default")
 	bool bApplyEffectsToEnemies = false;
-
+	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Default")
 	TArray<FEffectType> Effects;
-
+	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Default")
 	float ActorLevel = 1.f;
 private:
