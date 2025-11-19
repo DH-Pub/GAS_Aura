@@ -13,7 +13,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_FiveParams(FOnSpellButtonFocused, bool, bSpen
 	const FText&, AbilityDescriptions, const FText&, LevelChangeDescriptions, bool, bSelected);
 
 /**
- * 
+ *
  */
 UCLASS()
 class AURA_API USpellMenuWidgetController : public UAuraWidgetController
@@ -22,33 +22,31 @@ class AURA_API USpellMenuWidgetController : public UAuraWidgetController
 public:
 	virtual void BindCallbacksDependencies() override;
 	virtual void BroadcastInitialValues() override;
-	
+
 	UPROPERTY(BlueprintAssignable)
 	FOnSpellPointsChanged SpellPointsToUIDelegate;
-	
+
 	UFUNCTION(BlueprintCallable)
 	void ClearSelected();
 	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<USpellGlobeButtonWidget> SelectedSpellGlobe = nullptr;
 	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<USpellGlobeButtonWidget> FocusSpellGlobe = nullptr;
-	
+
 	int32 SpellPoints = 0;
 	void UpdateButtonsAndDescriptions(const bool bClick = false) const; // Enable Buttons depending on the state of FocusSpellGlobe
 	UPROPERTY(BlueprintAssignable)
 	FOnSpellButtonFocused SpellButtonFocusDelegate;
-	
+
 	UFUNCTION(BlueprintCallable)
 	void SpendPoint();
-	
+
 	UFUNCTION(BlueprintCallable, meta=(ReturnDisplayName="IsPassive"))
 	bool EquipAbility();
 	/**
 	 * @param AbilityTag
-	 * @param NewSlotTag: Can be !IsValid() for when you want to clear ability from input
-	 * @param bIsPassive
+	 * @param AbilityID: -1 (INDEX_NONE) to unequip ability
 	 */
 	UFUNCTION(BlueprintCallable)
-	void ChangeSpellInputSlot(const FGameplayTag& AbilityTag, const FGameplayTag NewSlotTag = FGameplayTag(),
-		const bool bIsPassive = false);
+	void ChangeSpellInputSlot(const FGameplayTag& AbilityTag, const int32 AbilityID = -1);
 };

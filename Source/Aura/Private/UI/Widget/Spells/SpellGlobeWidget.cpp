@@ -1,7 +1,7 @@
 // Copyright Hung
 
 
-#include "UI/Widget/SpellGlobeWidget.h"
+#include "UI/Widget/Spells/SpellGlobeWidget.h"
 
 #include "AbilitySystem/Ability/AuraGameplayAbility.h"
 #include "AbilitySystem/AsyncTask/Async_CooldownChange.h"
@@ -24,10 +24,10 @@ void USpellGlobeWidget::SetWidgetController(UAuraWidgetController* InWidgetContr
 void USpellGlobeWidget::NativePreConstruct()
 {
 	Super::NativePreConstruct();
-	
+
 	Cast<UOverlaySlot>(Progress_Cooldown->Slot)->SetPadding(InPadding);
 	Cast<UOverlaySlot>(Image_SpellIcon->Slot)->SetPadding(InPadding);
-	
+
 	Progress_Cooldown->SetBarFillType(EProgressBarFillType::TopToBottom);
 	ClearGlobe();
 }
@@ -42,7 +42,7 @@ void USpellGlobeWidget::NativeDestruct()
 bool USpellGlobeWidget::SuccessUpdateAbilityData(const FAuraAbilityData& InAbilityData, const FPlayerAbilityData& InPlayerData,
 	FGameplayTagContainer& OutCooldownTags)
 {
-	if (!SlotTag.MatchesTagExact(InPlayerData.InputTag))
+	if (AbilityID != InPlayerData.AbilityID)
 	{	// Not this Slot
 		if (AbilityTag.MatchesTagExact(InAbilityData.GetAuraAbilityTag()))
 		{	// Ability saved to this Slot is moved out
@@ -54,14 +54,14 @@ bool USpellGlobeWidget::SuccessUpdateAbilityData(const FAuraAbilityData& InAbili
 	if (WaitCDTask) WaitCDTask->EndTask();
 	// Update AbilityTag to compare with next InAbilityData when SuccessUpdateAbilityData called
 	AbilityTag = InAbilityData.GetAuraAbilityTag();
-	
+
 	FSlateBrush ResourceImage;
 	ResourceImage.SetResourceObject(InAbilityData.Icon);
 	Image_SpellIcon->SetBrush(ResourceImage);
 	ResourceImage.SetResourceObject(InAbilityData.BackgroundMaterial);
 	Image_Background->SetBrush(ResourceImage);
 	// Image_Background->SetBrushFromMaterial(InAbilityData.BackgroundMaterial);
-	
+
 	if (const FGameplayTagContainer* CooldownTags = InAbilityData.AbilityClass.GetDefaultObject()->GetCooldownTags())
 	{
 		OutCooldownTags = *CooldownTags;
@@ -81,18 +81,18 @@ void USpellGlobeWidget::UpdateCooldown(const float InTime, const float InDuratio
 	if (InDuration < -UE_KINDA_SMALL_NUMBER) return; // InDuration is -1.f on client: wait for server correction
 	TimeRemaining = InTime;
 	CooldownDuration = InDuration;
-	
+
 	const float CooldownPercent = TimeRemaining / CooldownDuration;
 	Progress_Cooldown->SetPercent(CooldownPercent);
 	WheelMaterialInstance->SetScalarParameterValue(WheelPercentParam, CooldownPercent);
-	
+
 	bOnCooldown = true;
 	Text_Cooldown->SetVisibility(ESlateVisibility::Visible);
 	Text_Cooldown->SetText(UKismetTextLibrary::Conv_DoubleToText(TimeRemaining, HalfToEven, false,
 		true, 1, 2, 1, 1));
 	if (const UWorld* World = GetWorld())
 	{	/*FTimerDelegate Delegate; Delegate.BindUFunction(this, "UpdateByTimerHandle", DelegateParameter);*/
-		World->GetTimerManager().SetTimer(CooldownTimerHandle, this, &USpellGlobeWidget::UpdateByTimerHandle, 
+		World->GetTimerManager().SetTimer(CooldownTimerHandle, this, &USpellGlobeWidget::UpdateByTimerHandle,
 			Frequency, true);
 	}
 }

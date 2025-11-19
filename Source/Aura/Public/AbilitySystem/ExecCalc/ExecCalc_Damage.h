@@ -8,7 +8,7 @@
 
 /**
  * Used in GE_Damage.
- * Unlike MMCs, UGameplayEffectExecutionCalculation can change more than one Attribute and essentially do anything the else 
+ * Unlike MMCs, UGameplayEffectExecutionCalculation can change more than one Attribute and essentially do anything
  */
 UCLASS()
 class AURA_API UExecCalc_Damage : public UGameplayEffectExecutionCalculation

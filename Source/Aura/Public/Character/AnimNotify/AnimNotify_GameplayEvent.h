@@ -8,7 +8,7 @@
 #include "AnimNotify_GameplayEvent.generated.h"
 
 /**
- * 
+ *
  */
 UCLASS()
 class AURA_API UAnimNotify_GameplayEvent : public UAnimNotify
@@ -16,7 +16,7 @@ class AURA_API UAnimNotify_GameplayEvent : public UAnimNotify
 	GENERATED_BODY()
 public:
 	UAnimNotify_GameplayEvent();
-	
+
 	virtual void Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,
 		const FAnimNotifyEventReference& EventReference) override;
 protected:

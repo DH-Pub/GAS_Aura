@@ -7,7 +7,7 @@
 #include "TextButtonWidget.generated.h"
 
 /**
- * 
+ *
  */
 UCLASS()
 class AURA_API UTextButtonWidget : public UAuraButtonWidget

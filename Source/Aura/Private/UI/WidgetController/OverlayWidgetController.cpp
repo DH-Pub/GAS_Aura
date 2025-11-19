@@ -22,7 +22,7 @@ void UOverlayWidgetController::BindCallbacksDependencies()
 	BindGameplayAttributeToBroadcast(GetAttributeSet()->GetMaxHealthAttribute(), OnMaxHealthChanged);
 	BindGameplayAttributeToBroadcast(GetAttributeSet()->GetManaAttribute(), OnManaChanged);
 	BindGameplayAttributeToBroadcast(GetAttributeSet()->GetMaxManaAttribute(), OnMaxManaChanged);
-	
+
 	GetPlayerState()->OnXPChangedDelegate.RemoveAll(this);
 	GetPlayerState()->OnXPChangedDelegate.AddUObject(this, &UOverlayWidgetController::BroadcastXPToUI);
 	// Receive broadcast from AuraAbilitySystemComponent
@@ -49,7 +49,7 @@ void UOverlayWidgetController::BroadcastInitialValues()
 	OnMaxHealthChanged.Broadcast(GetAttributeSet()->GetMaxHealth());
 	OnManaChanged.Broadcast(GetAttributeSet()->GetMana());
 	OnMaxManaChanged.Broadcast(GetAttributeSet()->GetMaxMana());
-	
+
 	// if AddCharacterStartupAbilities is called on the server before Client InitAuraCharacter()->InitAuraHUD
 	GetASC()->BroadcastAllAbilityData(); // Make sure Ability Icons on UI receive their data
 	BroadcastXPToUI();

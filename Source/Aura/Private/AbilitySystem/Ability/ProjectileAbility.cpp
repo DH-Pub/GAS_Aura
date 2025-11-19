@@ -8,7 +8,7 @@
 #include "Character/AuraCharacterBase.h"
 #include "GameFramework/GameStateBase.h"
 
-void UProjectileAbility::SpawnProjectile(FVector& SpawnLoc, const FVector& CursorHit, FRotator InRot, 
+void UProjectileAbility::SpawnProjectile(FVector& SpawnLoc, const FVector& CursorHit, FRotator InRot,
 	const AActor* HomingTarget, float HeightAdd)
 {
 	// stop projectile from hitting the floor on spawned
@@ -16,24 +16,24 @@ void UProjectileAbility::SpawnProjectile(FVector& SpawnLoc, const FVector& Curso
 	GetWorld()->LineTraceSingleByObjectType(FloorHitResult, SpawnLoc,
 		SpawnLoc + FVector(0.f, 0.f, -200.f), Params);
 	if (SpawnLoc.Z - FloorHitResult.ImpactPoint.Z < 50.f) SpawnLoc.Z = FloorHitResult.ImpactPoint.Z + HeightAdd;
-	
+
 	InRot.Pitch = ProjectilePitch;
 	FTransform SpawnTransform(InRot); // SpawnTransform.SetRotation(Rotation.Quaternion());
 	SpawnTransform.SetLocation(SpawnLoc);
-	
+
 	const int32 NumProjectiles = ProjectileNums.GetValueAtLevel(GetAbilityLevel());
 	const float DeltaSpread = ProjectileSpread / NumProjectiles;
 	FRotator RotatingRot = InRot - FRotator(0.f, ProjectileSpread / 2.f, 0.f);
-	
+
 	const bool bHasAuth = HasAuthorityOrPredictionKey(CurrentActorInfo, &CurrentActivationInfo);
 	const bool bPredictingClient = IsPredictingClient();
 	const bool bHomingValid = bHoming && HomingTarget && HomingTarget->Implements<UCombatInterface>();
-	
+
 	for (int32 i = 0; i < NumProjectiles; i++)
 	{
 		FRotator Rot(RotatingRot.Pitch, RotatingRot.Yaw + DeltaSpread * (i + .5f), RotatingRot.Roll);
 		SpawnTransform.SetRotation(Rot.Quaternion());
-		
+
 		if (bHasAuth)
 		{	// Spawn on server
 			AAuraProjectile* Projectile = GetWorld()->SpawnActorDeferred<AAuraProjectile>(ProjectileClass,
@@ -103,7 +103,7 @@ void UAbilityTask_SpawnProjectile::Activate()
 	{
 		const FGameplayAbilitySpecHandle SpecHandle = GetAbilitySpecHandle();
 		const FPredictionKey ActivationPredictionKey = GetActivationPredictionKey();
-		
+
 		DelegateHandle = AbilitySystemComponent->AbilityTargetDataSetDelegate(SpecHandle, ActivationPredictionKey).AddUObject(
 			this, &UAbilityTask_SpawnProjectile::OnTargetDataReplicatedCallback);
 		if (!AbilitySystemComponent->CallReplicatedTargetDataDelegatesIfSet(SpecHandle, ActivationPredictionKey))
@@ -136,7 +136,7 @@ void UAbilityTask_SpawnProjectile::OnTargetDataReplicatedCallback(const FGamepla
 	EndPoint = Data->GetEndPoint();
 	ProjectileAbility->SpawnProjectile(SocketLocation, EndPoint,
 		ProjectileAbility->AuraCharacter->AimDirection.ToOrientationRotator(), Target, HeightIfHitGround);
-	
+
 	AbilitySystemComponent->AbilityTargetDataSetDelegate(GetAbilitySpecHandle(), GetActivationPredictionKey()).Remove(DelegateHandle);
 	AbilitySystemComponent->ConsumeClientReplicatedTargetData(GetAbilitySpecHandle(), GetActivationPredictionKey());
 	if (ShouldBroadcastAbilityTaskDelegates()) OnSpawnFinish.Broadcast();

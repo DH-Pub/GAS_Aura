@@ -27,13 +27,13 @@ void UCharacterClassDataAsset::InitializeDefaultAttributes(const ECharacterClass
 {
 	const FCharacterClassDefaultInfo* ClassDefaultInfo = GetClassDefaultInfo(CharacterClass);
 	const FGameplayEffectContextHandle ContextHandle = ASC->MakeEffectContext();
-	
+
 	const FGameplayEffectSpecHandle PrimaryAttrSpecHandle = ASC->MakeOutgoingSpec(ClassDefaultInfo->PrimaryAttributes, Level, ContextHandle);
 	ASC->ApplyGameplayEffectSpecToSelf(*PrimaryAttrSpecHandle.Data);
-	
+
 	const FGameplayEffectSpecHandle SecondaryAttrSpecHandle = ASC->MakeOutgoingSpec(SecondaryAttributes, Level, ContextHandle);
 	ASC->ApplyGameplayEffectSpecToSelf(*SecondaryAttrSpecHandle.Data);
-	
+
 	const FGameplayEffectSpecHandle VitalAttrSpecHandle = ASC->MakeOutgoingSpec(VitalAttributes, Level, ContextHandle);
 	ASC->ApplyGameplayEffectSpecToSelf(*VitalAttrSpecHandle.Data);
 }
@@ -61,7 +61,7 @@ void UCharacterClassDataAsset::SendXPToDeathCauser(UAbilitySystemComponent* Caus
 	if (Payload.EventMagnitude < UE_KINDA_SMALL_NUMBER) return;
 	Payload.EventTag = AuraGameplayTags::Attributes_Meta_IncomingXP;
 	Causer->HandleGameplayEvent(Payload.EventTag, &Payload); // Last Hit player
-	
+
 	Payload.EventMagnitude *= .85f; // For allies
 	for (const AAuraGameMode* GameMode = Cast<AAuraGameMode>(Causer->GetWorld()->GetAuthGameMode());
 		const AAuraPlayerController* AuraController : GameMode->PlayerControllers)

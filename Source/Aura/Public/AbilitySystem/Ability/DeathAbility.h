@@ -7,7 +7,7 @@
 #include "DeathAbility.generated.h"
 
 /**
- * 
+ *
  */
 UCLASS()
 class AURA_API UDeathAbility : public UAuraGameplayAbility

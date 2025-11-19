@@ -22,7 +22,7 @@ class AURA_API UOverlayWidgetController : public UAuraWidgetController
 public:
 	virtual void BindCallbacksDependencies() override;
 	virtual void BroadcastInitialValues() override;
-	
+
 	UPROPERTY(BlueprintAssignable, Category = "GAS|Attributes")
 	FOnVitalAttributeChanged OnHealthChanged;
 	UPROPERTY(BlueprintAssignable, Category = "GAS|Attributes")
@@ -31,14 +31,14 @@ public:
 	FOnVitalAttributeChanged OnManaChanged;
 	UPROPERTY(BlueprintAssignable, Category = "GAS|Attributes")
 	FOnVitalAttributeChanged OnMaxManaChanged;
-	
+
 	UPROPERTY(BlueprintReadWrite)
 	TObjectPtr<UOverlay> Overlay_Screen;
 	UPROPERTY(BlueprintAssignable)
 	FMessageWidgetInfoSignature MessageWidgetInfoDelegate; // Item Pickup Message
 	UPROPERTY(BlueprintAssignable)
 	FMessageTableSignature MessageTableDelegate; // Item Pickup Message
-	
+
 	UPROPERTY(BlueprintAssignable)
 	FOnXPChangedSignature OnXPPercentChangedDelegate; // Send XP% and Level to UI
 protected:
@@ -46,7 +46,7 @@ protected:
 	TObjectPtr<UMessageInfo> MessageInfo;
 	UPROPERTY(EditDefaultsOnly, Category="Default|MessageData")
 	TObjectPtr<UDataTable> MessageDataTable;
-	
+
 	UFUNCTION()
 	void BroadcastXPToUI(int32 XP = 0) const;
 };

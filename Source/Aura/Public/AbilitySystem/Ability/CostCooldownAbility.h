@@ -8,7 +8,7 @@
 #include "CostCooldownAbility.generated.h"
 
 /**
- * 
+ *
  */
 UCLASS()
 class AURA_API UCostCooldownAbility : public UAuraGameplayAbility
@@ -19,24 +19,17 @@ public:
 	virtual const FGameplayTagContainer* GetCooldownTags() const override;
 	virtual void ApplyCooldown(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
 		const FGameplayAbilityActivationInfo ActivationInfo) const override;
-	
+
 	UPROPERTY(EditDefaultsOnly, Category="Costs|Aura")
 	FScalableFloat ManaCost; // FGameplayEffectModifiedAttribute
 	UPROPERTY(EditDefaultsOnly, Category="Costs|Aura")
 	FScalableFloat HealthCost; // FGameplayEffectModifiedAttribute
-	
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Cooldowns|Aura")
 	FScalableFloat CooldownDuration;
 	UPROPERTY(Transient)
 	FGameplayTagContainer TempCooldownTags; // Temp container used to return * to (CooldownTags + CD-GE's GrantedTags)
 
-protected:
-	virtual void OnAvatarSet(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec) override;
-private:
-	UPROPERTY(EditDefaultsOnly, Category="Default", meta=(GameplayTagFilter="Input"))
-	FGameplayTag StartupInputTag; //TODO: Remove this or replace with HUD->AbilityData -> Input
-
-public:
 	void GetCost(FAbilityDetails& Details) const;
 	void GetCooldownAndReduction(FAbilityDetails& Details) const;
 	void GetAbilityDetailsCostCooldown(FAbilityDetails& Details) const;

@@ -3,9 +3,20 @@
 
 #include "UI/Widget/AuraUserWidget.h"
 
-void UAuraUserWidget::SetWidgetController(UAuraWidgetController* InWidgetController)
-{
-	WidgetControllerSet(InWidgetController); // Call event in blueprint
-}
+#include "Blueprint/SlateBlueprintLibrary.h"
+#include "Blueprint/WidgetLayoutLibrary.h"
+#include "Kismet/KismetMathLibrary.h"
 
-void UAuraUserWidget::WidgetControllerSet_Implementation(UAuraWidgetController* Controller) {}
+FVector2D UAuraUserWidget::GetOffsetToPivot(const FGeometry& MyGeometry, const FVector2D Offset)
+{
+	const FVector2D MousePos = UWidgetLayoutLibrary::GetMousePositionOnViewport(this);
+	FVector2D WidgetPosToTopLeft;
+	USlateBlueprintLibrary::ScreenToWidgetLocal(this, MyGeometry, FVector2D(),
+		WidgetPosToTopLeft); // LocalCoord = ScreenPos - WidgetPos
+	const FVector2D MousePosOnWidget = MousePos + WidgetPosToTopLeft; // MousePos - WidgetPosToTopLeft * -1;
+	const FVector2D WidgetSize = GetDesiredSize();
+
+	const FVector2D MousePercentOnWidget(UKismetMathLibrary::SafeDivide(MousePosOnWidget.X, WidgetSize.X),
+		UKismetMathLibrary::SafeDivide(MousePosOnWidget.Y, WidgetSize.Y));
+	return MousePercentOnWidget - FVector2D(Offset.X, Offset.Y);
+}

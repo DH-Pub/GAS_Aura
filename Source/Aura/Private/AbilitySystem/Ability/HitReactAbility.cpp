@@ -16,31 +16,29 @@ UHitReactAbility::UHitReactAbility()
 	ActivationOwnedTags.AddTag(AuraGameplayTags::Character_State_HitReact);
 	ActivationOwnedTags.AddTag(AuraGameplayTags::Character_State_Block_Movement);
 	ActivationBlockedTags.AddTag(AuraGameplayTags::Character_State_Death);
-	
+
 	bRetriggerInstancedAbility = true;
 	NetExecutionPolicy = EGameplayAbilityNetExecutionPolicy::ServerInitiated;
 	NetSecurityPolicy = EGameplayAbilityNetSecurityPolicy::ServerOnly;
-	
+
 	bStopRotation = true;
-	
+
 	const int32 Idx = AbilityTriggers.Add(FAbilityTriggerData());
 	AbilityTriggers[Idx].TriggerTag = AuraGameplayTags::Character_State_HitReact;
 	AbilityTriggers[Idx].TriggerSource = EGameplayAbilityTriggerSource::GameplayEvent;
 }
 
-void UHitReactAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
-	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo,
-	const FGameplayEventData* TriggerEventData)
+void UHitReactAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
+	const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
 {
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 	if (TriggerEventData == nullptr) return;
-	if (const UDamageAbility* DamageAbility = Cast<UDamageAbility>(
-		TriggerEventData->ContextHandle.GetAbilityInstance_NotReplicated()))
+	if (const FDamageEffectContext* DamageContext = FAuraEffectContext::GetContextStruct<FDamageEffectContext>(
+		TriggerEventData->ContextHandle))
 	{
-		if (FMath::RandRange(0.f, 1.f) > DamageAbility->KnockbackChance) return;
-		const FDamageEffectContext* DamageContext = FAuraEffectContext::GetContextStruct<FDamageEffectContext>(
-			TriggerEventData->ContextHandle);
-		const FVector KnockbackForce = DamageAbility->KnockbackForce * DamageContext->DamageDirection;
+		if (!DamageContext->bKnockback) return;
+		const FVector KnockbackForce = DamageContext->KnockbackForce * DamageContext->DamageDirection;
 		AuraCharacter->LaunchCharacter(KnockbackForce, true, true);
+		// AuraCharacter->GetCharacterMovement()->AddImpulse(KnockbackForce * 100.f);
 	}
 }

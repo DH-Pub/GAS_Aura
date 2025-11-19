@@ -11,7 +11,7 @@ void UAuraCueManager::FlushPendingCues()
 {	// Super::FlushPendingCues();
 	if (PendingExecuteCues.Num() == 0) return;
 	OnFlushPendingCues.Broadcast();
-	
+
 	FGameplayCuePendingExecute BatchExecute;
 	FAuraEffectContext* BatchContext = nullptr;
 	for (int32 i = 0; i < PendingExecuteCues.Num(); i++) // Includes the FirstCueContext
@@ -57,7 +57,7 @@ void UAuraCueManager::FlushPendingCues()
 		}
 	}
 	PendingExecuteCues.Empty();
-	
+
 	if (BatchExecute.OwningComponent == nullptr) return; // BatchExecute is only set if there is a case of bHasAuthority
 	IAbilitySystemReplicationProxyInterface* RepInterface = BatchExecute.OwningComponent->GetReplicationInterface();
 	if (RepInterface == nullptr || BatchExecute.GameplayCueTags.Num() == 0) return;
@@ -83,7 +83,7 @@ void UAuraCueManager::InvokeGameplayCueExecuted_FromSpec(UAbilitySystemComponent
 		return;
 	}
 	if (EnableSuppressCuesOnGameplayCueManager && OwningComponent && OwningComponent->bSuppressGameplayCues) return;
-	
+
 	FGameplayCuePendingExecute PendingCue; // Transform the GE Spec into GameplayCue parameters here (on the server)
 	PendingCue.PayloadType = EGameplayCuePayloadType::CueParameters;
 	PendingCue.OwningComponent = OwningComponent;
@@ -91,7 +91,7 @@ void UAuraCueManager::InvokeGameplayCueExecuted_FromSpec(UAbilitySystemComponent
 	const FGameplayEffectContextHandle& ContextHandle = Spec.GetEffectContext();
 	PendingCue.CueParameters.Location = ContextHandle.HasOrigin() ? ContextHandle.GetOrigin() :
 		ContextHandle.GetEffectCauser()->GetActorLocation();
-	
+
 	// UAbilitySystemGlobals::Get().InitGameplayCueParameters_GESpec(PendingCue.CueParameters, Spec);
 	FAuraEffectContext* AuraContext = FAuraEffectContext::ExtractAuraContext(ContextHandle);
 	AuraContext->GetEffectCuesList().Empty();
@@ -110,9 +110,9 @@ void UAuraCueManager::InvokeGameplayCueExecuted_FromSpec(UAbilitySystemComponent
 		}
 	}
 	if (PendingCue.GameplayCueTags.Num() == 0) return; // After loop, check for valid tag
-	
+
 	if (ContextHandle.IsValid()) PendingCue.CueParameters.EffectContext = ContextHandle;
-	
+
 	AddPendingCueNextTick(PendingCue); // AddPendingCueExecuteInternal(PendingCue)
 }
 void UAuraCueManager::InvokeGameplayCueExecuted(UAbilitySystemComponent* OwningComponent,
@@ -120,7 +120,7 @@ void UAuraCueManager::InvokeGameplayCueExecuted(UAbilitySystemComponent* OwningC
 {
 	if (!GameplayCueTag.IsValid()) return;
 	if (EnableSuppressCuesOnGameplayCueManager && OwningComponent && OwningComponent->bSuppressGameplayCues) return;
-	
+
 	if (OwningComponent)
 	{
 		FGameplayCuePendingExecute PendingCue;
@@ -129,7 +129,7 @@ void UAuraCueManager::InvokeGameplayCueExecuted(UAbilitySystemComponent* OwningC
 		PendingCue.OwningComponent = OwningComponent;
 		UAbilitySystemGlobals::Get().InitGameplayCueParameters(PendingCue.CueParameters, EffectContext);
 		PendingCue.PredictionKey = PredictionKey;
-		
+
 		AddPendingCueNextTick(PendingCue);
 	}
 }
@@ -138,7 +138,7 @@ void UAuraCueManager::InvokeGameplayCueExecuted_WithParams(UAbilitySystemCompone
 {
 	if (!GameplayCueTag.IsValid())return;
 	if (EnableSuppressCuesOnGameplayCueManager && OwningComponent && OwningComponent->bSuppressGameplayCues) return;
-	
+
 	if (OwningComponent)
 	{
 		FGameplayCuePendingExecute PendingCue;
@@ -147,7 +147,7 @@ void UAuraCueManager::InvokeGameplayCueExecuted_WithParams(UAbilitySystemCompone
 		PendingCue.OwningComponent = OwningComponent;
 		PendingCue.CueParameters = GameplayCueParameters;
 		PendingCue.PredictionKey = PredictionKey;
-		
+
 		// AddPendingCueExecuteInternal(PendingCue);
 		AddPendingCueNextTick(PendingCue);
 	}
@@ -158,18 +158,18 @@ void UAuraCueManager::InvokeGameplayCueAddedAndWhileActive_FromSpec(UAbilitySyst
 {	//Super::InvokeGameplayCueAddedAndWhileActive_FromSpec(OwningComponent, Spec, PredictionKey);
 	if (Spec.Def->GameplayCues.Num() == 0) return;
 	if (EnableSuppressCuesOnGameplayCueManager && OwningComponent && OwningComponent->bSuppressGameplayCues) return;
-	
+
 	IAbilitySystemReplicationProxyInterface* ReplicationInterface = OwningComponent->GetReplicationInterface();
 	if (ReplicationInterface == nullptr) // No available Replication Interface, we are going to drop these calls.
 	{	// (By design: someone who wants proxy replication should be ok with GC RPCs being dropped when the proxy is null)
 		return;
 	}
-	
+
 	FGameplayCueParameters Parameters;
 	UAbilitySystemGlobals::Get().InitGameplayCueParameters_GESpec(Parameters, Spec);
-	
+
 	static TArray<FGameplayTag, TInlineAllocator<4>> Tags; Tags.Reset();
-	
+
 	for (const FGameplayEffectCue& EffectCue : Spec.Def->GameplayCues)
 	{
 		for (const FGameplayTag& Tag: EffectCue.GameplayCueTags)
@@ -196,14 +196,14 @@ void UAuraCueManager::AddPendingCueNextTick(FGameplayCuePendingExecute& PendingC
 	if (ProcessPendingCueExecute(PendingCue)) PendingExecuteCues.Add(PendingCue);
 	if (GameplayCueSendContextCount == 0)
 	{	// Not in a context, flush now
-		if (const UWorld* World = PendingCue.OwningComponent->GetWorld())
+		const UWorld* World = PendingCue.OwningComponent->GetWorld();
+		if (World == nullptr || PendingHandle.IsValid()) return;
+		World->GetTimerManager().ClearTimer(PendingHandle);
+		PendingHandle = World->GetTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(
+		PendingCue.OwningComponent, [&]()
 		{
-			World->GetTimerManager().ClearTimer(PendingHandle);
-			PendingHandle = World->GetTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(
-				PendingCue.OwningComponent, [&]()
-			{
-				FlushPendingCues(); // Flush next tick so that we can batch gameplay cue
-			}));
-		}
+			FlushPendingCues(); // Flush next tick so that we can batch gameplay cue
+			PendingHandle.Invalidate();
+		}));
 	}
 }

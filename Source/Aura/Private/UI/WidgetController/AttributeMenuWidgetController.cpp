@@ -14,7 +14,7 @@ void UAttributeMenuWidgetController::BindCallbacksDependencies()
 	GetPlayerState()->OnAttributePointsChangedDelegate.RemoveAll(this);
 	GetPlayerState()->OnAttributePointsChangedDelegate.AddLambda([&](const int32 Points)
 	{AttributePointsToUIDelegate.Broadcast(AttributePoints = Points, GetTotalPointsAllocating());});
-	
+
 	for (const auto& [Tag, AttributeData] : AuraHUD->GetAttributeDataList())
 	{
 		GetASC()->GetGameplayAttributeValueChangeDelegate(AttributeData.GameplayAttribute).RemoveAll(this);
@@ -37,7 +37,7 @@ void UAttributeMenuWidgetController::BroadcastInitialValues()
 		const float AttributeValue = AttributeData.GameplayAttribute.GetNumericValue(GetAttributeSet());
 		AttributeInfoDelegate.Broadcast(Tag, AttributeValue, AttributeData);
 	}
-	
+
 	AttributePoints = GetPlayerState()->GetAttributePoints();
 	PointAllocationList.Reset();
 	AttributePointsToUIDelegate.Broadcast(AttributePoints, 0);

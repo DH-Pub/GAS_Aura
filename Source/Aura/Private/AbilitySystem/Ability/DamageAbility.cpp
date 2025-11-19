@@ -28,6 +28,10 @@ FGameplayEffectSpecHandle UDamageAbility::MakeDamageSpecHandle() const
 	Spec->Period = Spec->Duration + 10.f;
 	if (bStagger) Spec->AddDynamicAssetTag(AuraGameplayTags::Character_State_HitReact);
 	FAuraEffectContext::SetIsShowDamageOnTarget(Spec->GetContext().Get(), true);
+	FDamageEffectContext* DamageContext = FAuraEffectContext::MakeStructInContext<FDamageEffectContext>(
+		SpecHandle.Data->GetContext());
+	DamageContext->bKnockback = FMath::RandRange(UE_SMALL_NUMBER, 1.f) < KnockbackChance; // Target of this Ability does not have pointer access to this Ability
+	DamageContext->KnockbackForce = KnockbackForce;
 	return SpecHandle; // return FGameplayEffectSpec* will cause error
 }
 
@@ -54,7 +58,7 @@ void UDamageAbility::CauseDamageToActors(const TArray<AActor*>& Actors, USoundBa
 		{
 			if (TargetASC->HasMatchingGameplayTag(AuraGameplayTags::Character_State_Death)) continue;
 			FGameplayEffectSpecHandle SpecHandle = MakeDamageSpecHandle();
-			FDamageEffectContext* DamageContext = FAuraEffectContext::MakeStructInContext<FDamageEffectContext>(
+			FDamageEffectContext* DamageContext = FAuraEffectContext::GetOrMakeContextStructPtr<FDamageEffectContext>(
 				SpecHandle.Data->GetContext());
 			SpecHandle.Data->GetContext().AddOrigin(Actor->GetActorLocation());
 			DamageContext->DamageDirection =
@@ -76,7 +80,7 @@ bool UDamageAbility::ExecuteCueShowDamage(const FGameplayCueParameters& Paramete
 	if (PC == nullptr || GEngine == nullptr) return false;
 	const APlayerController* LocalPlayerController = GEngine->GetFirstLocalPlayerController(PC->GetWorld());
 	if (LocalPlayerController == nullptr || LocalPlayerController != PC) return false; // if damage dealer isn't local*/
-	
+
 	const FAuraEffectContext* AuraContext = FAuraEffectContext::ExtractAuraContext(Parameters.EffectContext);
 	if (!AuraContext->IsShowDamageOnTarget()) return false;
 	OutDamage = Parameters.RawMagnitude;
@@ -97,10 +101,10 @@ UDamageGameplayEffect::UDamageGameplayEffect()
 	DurationPolicy = EGameplayEffectDurationType::HasDuration;
 	UDebuffComponent* DebuffComponent = CreateDefaultSubobject<UDebuffComponent>("Debuff");
 	GEComponents.Add(DebuffComponent); // DebuffComponent.OnCompleteDamageDebuff;
-	
+
 	int32 i = Executions.Add(FGameplayEffectExecutionDefinition());
 	Executions[i].CalculationClass = UExecCalc_Damage::StaticClass();
-	
+
 	i = GameplayCues.Add(FGameplayEffectCue(AuraGameplayTags::GameplayCue_Damage, 0.f, 0.f));
 	GameplayCues[i].MagnitudeAttribute = UAuraAttributeSet::GetIncomingDamageAttribute();
 }
@@ -110,10 +114,10 @@ UDebuffDamageEffect::UDebuffDamageEffect()
 	DurationPolicy = EGameplayEffectDurationType::HasDuration;
 	int32 i = Executions.Add(FGameplayEffectExecutionDefinition());
 	Executions[i].CalculationClass = UExecCalc_Debuff::StaticClass();
-	
+
 	i = GameplayCues.Add(FGameplayEffectCue(AuraGameplayTags::GameplayCue_Damage, 0.f, 0.f));
 	GameplayCues[i].MagnitudeAttribute = UAuraAttributeSet::GetIncomingDamageAttribute();
-	
+
 	StackingType = EGameplayEffectStackingType::AggregateByTarget;
 }
 #pragma endregion

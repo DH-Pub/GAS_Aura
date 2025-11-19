@@ -7,7 +7,7 @@
 #include "VitalsResetEffect.generated.h"
 
 /**
- * 
+ *
  */
 UCLASS()
 class AURA_API UVitalsResetEffect : public UGameplayEffect //NOTE: Cannot Start class name with "Reset"

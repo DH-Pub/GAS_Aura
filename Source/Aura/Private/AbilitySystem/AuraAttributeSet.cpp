@@ -12,8 +12,6 @@
 #include "AbilitySystem/Ability/DamageAbility.h"
 #include "AbilitySystem/Effect/VitalsResetEffect.h"
 #include "Character/AuraCharacterBase.h"
-#include "Character/AuraMovementComponent.h"
-#include "GameFramework/CharacterMovementComponent.h"
 #include "Player/AuraPlayerState.h"
 
 FEffectProperties::FEffectProperties(const FGameplayEffectModCallbackData& Data)
@@ -26,7 +24,7 @@ FEffectProperties::FEffectProperties(const FGameplayEffectModCallbackData& Data)
 		if (SourceController && SourceCharacter == nullptr) SourceCharacter = Cast<AAuraCharacterBase>(SourceController->GetPawn());
 		else if (SourceController == nullptr && SourceCharacter) SourceController = SourceCharacter->GetController();
 	}
-	
+
 	// Target should be the owner of this AttributeSet
 	if (const TSharedPtr<FGameplayAbilityActorInfo> TargetAbilityActorInfo = Data.Target.AbilityActorInfo;
 		TargetAbilityActorInfo.IsValid() && TargetAbilityActorInfo->AvatarActor.IsValid())
@@ -45,13 +43,13 @@ UAuraAttributeSet::UAuraAttributeSet()
 void UAuraAttributeSet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	
+
 	// Primary
 	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, Strength, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, Intelligence, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, Resilience, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, Vigor, COND_None, REPNOTIFY_Always);
-	
+
 	// Secondary
 	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, Armor, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, ArmorPenetration, COND_None, REPNOTIFY_Always);
@@ -68,11 +66,12 @@ void UAuraAttributeSet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, LightningResistance, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, ArcaneResistance, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, PhysicalResistance, COND_None, REPNOTIFY_Always);
-	
+
 	// Vital
 	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, Health, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, Mana, COND_None, REPNOTIFY_Always);
-	
+	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, MovementSpeed, COND_None, REPNOTIFY_Always);
+
 	// Meta
 	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, IncomingDamage, COND_None, REPNOTIFY_Always)
 	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, IncomingXP, COND_None, REPNOTIFY_Always)
@@ -101,16 +100,6 @@ void UAuraAttributeSet::PostAttributeChange(const FGameplayAttribute& Attribute,
 	// float CurrentPercent = GetHealth()/OldValue; // If there is a change in MaxValue, Keep percentage of Vitals
 	if (Attribute == GetMaxHealthAttribute()) SetHealth(GetHealth()/OldValue * GetMaxHealth());
 	else if (Attribute == GetMaxManaAttribute()) SetMana(GetMana()/OldValue * GetMaxMana());
-	else if (Attribute == GetMovementSpeedAttribute())
-	{
-		if (const AAuraCharacterBase* AuraCharacter = Cast<AAuraCharacterBase>(GetActorInfo()->AvatarActor))
-		{
-			UAuraMovementComponent* MoveComp = static_cast<UAuraMovementComponent*>(AuraCharacter->GetCharacterMovement());
-			const float NewSpeed = FMath::Max(NewValue, 0.f);
-			MoveComp->MaxWalkSpeed = NewSpeed;
-			MoveComp->ClientSetWalkSpeed(NewSpeed);
-		}
-	}
 }
 
 
@@ -118,7 +107,7 @@ void UAuraAttributeSet::PostAttributeChange(const FGameplayAttribute& Attribute,
 void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data)
 {
 	Super::PostGameplayEffectExecute(Data);
-	
+
 	FEffectProperties Props(Data);
 	if (Data.EvaluatedData.Attribute == GetIncomingDamageAttribute()) HandleIncomingDamage(Data, Props);
 	else if (Data.EvaluatedData.Attribute == GetIncomingXPAttribute()) HandleIncomingXP(Data, Props);
@@ -131,19 +120,18 @@ void UAuraAttributeSet::HandleIncomingDamage(const FGameplayEffectModCallbackDat
 	if (LocalIncomingDamage < UE_KINDA_SMALL_NUMBER) return;
 	const float OldHealth = GetHealth();
 	SetHealth(FMath::Clamp(OldHealth - LocalIncomingDamage, 0.f, GetMaxHealth()));
-	
+
 	FDamageEffectContext* DamageContext = FAuraEffectContext::GetOrMakeContextStructPtr<FDamageEffectContext>(
 		Data.EffectSpec.GetContext());
 	DamageContext->TargetActor = Props.TargetCharacter;
+	FGameplayEventData Payload; Payload.ContextHandle = Data.EffectSpec.GetContext();
 	if (GetHealth() < UE_KINDA_SMALL_NUMBER)
 	{
-		FGameplayEventData DeathData; DeathData.ContextHandle = Data.EffectSpec.GetContext();
-		Data.Target.HandleGameplayEvent(AuraGameplayTags::Character_State_Death, &DeathData);
+		Data.Target.HandleGameplayEvent(AuraGameplayTags::Character_State_Death, &Payload);
 	}
 	else if (Data.EffectSpec.GetDynamicAssetTags().HasTagExact(AuraGameplayTags::Character_State_HitReact))
 	{	// Data.Target.UpdateTagMap(, 1); // AddLooseGameplayTag() SetTagMapCount()
-		FGameplayEventData HitData; HitData.ContextHandle = Data.EffectSpec.GetContext();
-		Data.Target.HandleGameplayEvent(AuraGameplayTags::Character_State_HitReact, &HitData);
+		Data.Target.HandleGameplayEvent(AuraGameplayTags::Character_State_HitReact, &Payload);
 	}
 }
 

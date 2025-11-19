@@ -23,7 +23,7 @@ void UAuraWorldUserWidget::NativeTick(const FGeometry& MyGeometry, const float I
 {
 	if (!IsValid(AttachedActor)) {RemoveFromParent(); return;}
 	Super::NativeTick(MyGeometry, InDeltaTime);
-	
+
 	if (bFollow) SetWorldToScreenTranslation(AttachedActor->GetActorLocation());
 	else SetWorldToScreenTranslation(InitialLocation);
 }

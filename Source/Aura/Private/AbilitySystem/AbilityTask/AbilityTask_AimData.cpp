@@ -65,15 +65,15 @@ void UAbilityTask_AimData::OnTargetDataReplicatedCallback(const FGameplayAbility
 	const FTransform Origin = Data->GetOrigin();
 	Character->AimDirection = Origin.GetTranslation(); // Set AimDirection on Server side
 	const FVector Floats = Origin.GetScale3D();
-	
+
 	const float TimeDifferent = GetWorld()->GetTimeSeconds() - Floats.X; // Server-Client
 	if (TimeDifferent < 1.f && TimeDifferent > UE_KINDA_SMALL_NUMBER)
 	{
 		// can calculate different compared to client's time here
 	}
-	
+
 	AActor* Target = Data->GetActors().Num() > 0 ? Data->GetActors()[0].Get() : nullptr;
-	
+
 	AbilitySystemComponent->AbilityTargetDataSetDelegate(GetAbilitySpecHandle(), GetActivationPredictionKey()).Remove(DelegateHandle);
 	AbilitySystemComponent->ConsumeClientReplicatedTargetData(GetAbilitySpecHandle(), GetActivationPredictionKey());
 	if (ShouldBroadcastAbilityTaskDelegates()) ValidData.Broadcast(Data->GetEndPoint(), Target);

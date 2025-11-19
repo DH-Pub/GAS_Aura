@@ -46,15 +46,6 @@ void UCostCooldownAbility::ApplyCooldown(const FGameplayAbilitySpecHandle Handle
 	ApplyGameplayEffectSpecToOwner(Handle, ActorInfo, ActivationInfo, SpecHandle);
 }
 
-void UCostCooldownAbility::OnAvatarSet(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec)
-{
-	if (StartupInputTag.IsValid())
-	{	// Ability has default input, for testing only
-		GetCurrentAbilitySpec()->GetDynamicSpecSourceTags().AddTagFast(StartupInputTag);
-	}
-	Super::OnAvatarSet(ActorInfo, Spec); // MarkAbilitySpecDirty() is called in this
-}
-
 void UCostCooldownAbility::GetCost(FAbilityDetails& Details) const
 {
 	const UGameplayEffect* CostGE = GetCostGameplayEffect();

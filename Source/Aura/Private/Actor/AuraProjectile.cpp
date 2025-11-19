@@ -22,7 +22,7 @@ AAuraProjectile::AAuraProjectile()
 {
 	PrimaryActorTick.bCanEverTick = false;
 	bReplicates = true; // for the projectile to spawn for all
-	
+
 	Sphere = CreateDefaultSubobject<USphereComponent>("SphereComponent");
 	SetRootComponent(Sphere);
 	Sphere->SetCollisionObjectType(ECC_Projectile);
@@ -31,12 +31,12 @@ AAuraProjectile::AAuraProjectile()
 	Sphere->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Overlap);
 	Sphere->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Overlap);
 	Sphere->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
-	
+
 	ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>("ProjectileMovementComponent");
 	ProjectileMovement->InitialSpeed = 800.f;
 	ProjectileMovement->MaxSpeed = 800.f;
 	ProjectileMovement->ProjectileGravityScale = 0.f;
-	
+
 	SetNetUpdateFrequency(40);
 }
 
@@ -52,14 +52,14 @@ void AAuraProjectile::MulticastSetHomingTarget_Implementation(USceneComponent* C
 	if (AuraCharacterBase == nullptr) return;
 	if (AuraCharacterBase->GetAbilitySystemComponent()
 		->HasMatchingGameplayTag(AuraGameplayTags::Character_State_Death)) return;
-	
+
 	ProjectileMovement->HomingTargetComponent = Comp;
 	if (AccelerationMagnitude > UE_KINDA_SMALL_NUMBER)
 	{
 		ProjectileMovement->HomingAccelerationMagnitude = AccelerationMagnitude;
 	}
 	ProjectileMovement->ProjectileGravityScale = 0.1f;
-	
+
 	if (HasAuthority())
 	{
 		AuraCharacterBase->GetAbilitySystemComponent()->RegisterGameplayTagEvent(AuraGameplayTags::Character_State_Death,
@@ -97,11 +97,11 @@ void AAuraProjectile::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, 
 	SetActorHiddenInGame(true);
 	Sphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	if (MovingSound) MovingSound->Stop();
-	
+
 	/*const FVector Loc = GetActorLocation();
 	UGameplayStatics::PlaySoundAtLocation(this, ImpactSound, Loc);
 	UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, ImpactEffect, Loc);*/
-	
+
 	if (UAbilitySystemComponent* InstigatorASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(GetInstigator()))
 	{
 		FGameplayCueParameters Params;
@@ -121,10 +121,10 @@ void AAuraProjectile::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, 
 	{	// const_cast<FHitResult&>(SweepResult).ImpactPoint = GetActorLocation();
 		ContextHandle.AddOrigin(GetActorLocation());
 	} else ContextHandle.AddOrigin(SweepResult.ImpactPoint);
-	
+
 	if (UAbilitySystemComponent* TargetASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(OtherActor))
 	{	// if hit a character
-		FDamageEffectContext* DamageContext = FAuraEffectContext::MakeStructInContext<FDamageEffectContext>(ContextHandle);
+		FDamageEffectContext* DamageContext = FAuraEffectContext::GetOrMakeContextStructPtr<FDamageEffectContext>(ContextHandle);
 		DamageContext->DamageDirection = GetActorForwardVector();
 		TargetASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data);
 	}

@@ -25,7 +25,7 @@ void UDebuffComponent::OnActiveGameplayEffectRemoved(const FGameplayEffectRemova
 	FActiveGameplayEffectsContainer* ActiveGEContainer) const
 {
 	FScopedActiveGameplayEffectLock ActiveScopeLock(*ActiveGEContainer);
-	
+
 	if (ActiveGEContainer->Owner->HasMatchingGameplayTag(AuraGameplayTags::Character_State_Death)) return;
 	const FGameplayEffectSpec& Spec = RemovalInfo.ActiveEffect->Spec;
 	const UDamageAbility* DamageAbility = Cast<UDamageAbility>(Spec.GetEffectContext().GetAbilityInstance_NotReplicated());

@@ -16,15 +16,14 @@ AAuraEffectActor::AAuraEffectActor()
 
 void AAuraEffectActor::ApplyEffectToTarget(AActor* TargetActor, const FEffectType& EffectType)
 {
-	if (IsNotForEnemy(TargetActor)) return;
 	if (UAbilitySystemComponent* TargetASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(TargetActor))
 	{
 		check(EffectType.GameplayEffectClass);
 		const FGameplayEffectSpecHandle SpecHandle = TargetASC->MakeOutgoingSpec(EffectType.GameplayEffectClass, ActorLevel,
 			FGameplayEffectContextHandle());
-		FGameplayEffectContext* Context = SpecHandle.Data->GetContext().Get();
-		Context->SetEffectCauser(this);
-		FAuraEffectContext::SetIsShowDamageOnTarget(Context, true);
+		FAuraEffectContext* AuraContext = FAuraEffectContext::ExtractAuraContext(SpecHandle.Data->GetContext());
+		AuraContext->SetEffectCauser(this);
+		AuraContext->SetShowDamageOnTarget(true);
 		TargetASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data);
 
 		if (bDestroyOnEffectApplication) Destroy();
@@ -34,34 +33,43 @@ void AAuraEffectActor::ApplyEffectToTarget(AActor* TargetActor, const FEffectTyp
 
 void AAuraEffectActor::OnOverlap(AActor* TargetActor)
 {
-	if (!HasAuthority() || IsNotForEnemy(TargetActor)) return;
-	
+	if (IsNotForEnemy(TargetActor)) return;
+
 	for (const FEffectType& Effect : Effects)
 	{
-		if (Effect.ApplicationPolicy == EEffectApplicationPolicy::ApplyOnOverlap)
+		switch (Effect.ApplicationPolicy)
 		{
+		case EEffectApplicationPolicy::ApplyOnOverlap:
+		case EEffectApplicationPolicy::ApplyOnOverlapAndRemoveOnEnd:
 			ApplyEffectToTarget(TargetActor, Effect);
+		default: break;
 		}
 	}
 }
 void AAuraEffectActor::OnEndOverlap(AActor* TargetActor)
 {
-	if (!HasAuthority() || IsNotForEnemy(TargetActor)) return;
-	
+	if (IsNotForEnemy(TargetActor)) return;
+
 	for (const FEffectType& Effect : Effects)
 	{
-		if (Effect.ApplicationPolicy == EEffectApplicationPolicy::ApplyOnEndOverlap)
+		switch (Effect.ApplicationPolicy)
 		{
+		case EEffectApplicationPolicy::ApplyOnOverlapAndRemoveOnEnd:
+			if (Effect.GameplayEffectClass.GetDefaultObject()->DurationPolicy == EGameplayEffectDurationType::Infinite)
+			{
+				if (UAbilitySystemComponent* TargetAbilitySystem = UAbilitySystemGlobals::
+					GetAbilitySystemComponentFromActor(TargetActor))
+				{
+					TargetAbilitySystem->RemoveActiveGameplayEffectBySourceEffect(Effect.GameplayEffectClass,
+						TargetAbilitySystem, 1);
+				}
+			}
+			break;
+		case EEffectApplicationPolicy::ApplyOnEndOverlap:
 			ApplyEffectToTarget(TargetActor, Effect);
-		}
-		
-		if (Effect.GameplayEffectClass.GetDefaultObject()->DurationPolicy == EGameplayEffectDurationType::Infinite
-			&& Effect.RemovalPolicy == EEffectRemovalPolicy::RemoveOnEndOverlap)
-		{
-			UAbilitySystemComponent* TargetAbilitySystem = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(TargetActor);
-			if (!IsValid(TargetAbilitySystem)) return;
-
-			TargetAbilitySystem->RemoveActiveGameplayEffectBySourceEffect(Effect.GameplayEffectClass, TargetAbilitySystem, 1);
+			break;
+		default:
+			break;
 		}
 	}
 }

@@ -11,7 +11,6 @@
 #include "AbilitySystem/Data/AbilityDataAsset.h"
 #include "Character/AuraPlayer.h"
 #include "Player/AuraPlayerState.h"
-#include "GameplayCueManager.h"
 
 void UAuraAbilitySystemComponent::InitAuraASC(AActor* InOwnerActor, AAuraCharacterBase* AuraCharacter)
 {
@@ -35,54 +34,52 @@ void UAuraAbilitySystemComponent::AddCharacterAbilities(const TArray<TSubclassOf
 	for (const TSubclassOf AbilityClass : StartupActives) GiveAbility(FGameplayAbilitySpec(AbilityClass, 1));
 }
 
-void UAuraAbilitySystemComponent::UnlockAbilityByLevel(const int32 CharacterLevel)
+// ===================================== Input =====================================================================
+#pragma region Activate Ability by Input =============================
+void UAuraAbilitySystemComponent::AbilityInputPressed(const int8 InputID)
 {
-	for (const FAuraAbilityData& Data : UAbilityDataAsset::GetFromGameState(this)->AbilityDataList)
-	{	 /* not enough lv or already has ability */
-		if (CharacterLevel < Data.LevelRequirement || GetSpecFromAbilityTag(Data.GetAuraAbilityTag())) continue;
-		FGameplayAbilitySpec AbilitySpec(Data.AbilityClass, 1);
-		AbilitySpec.GetDynamicSpecSourceTags().AddTag(AuraGameplayTags::Ability_Status_Eligible);
-		GiveAbility(AbilitySpec);
+	if (GameplayTagCountContainer.HasMatchingGameplayTag(AuraGameplayTags::Character_State_Block_Input)) return;
+
+	ABILITYLIST_SCOPE_LOCK()
+	for (FGameplayAbilitySpec& AbilitySpec : ActivatableAbilities.Items)
+	{
+		if (AbilitySpec.InputID != InputID) continue;
+		const UAuraGameplayAbility* InputAbility = static_cast<UAuraGameplayAbility*>(AbilitySpec.Ability);
+		if (InputAbility->ActivationPolicy == EAuraActivationPolicy::InputHolding)
+		{
+			InputHeldHandles.AddUnique(AbilitySpec.Handle);
+		}
+		else if (InputAbility->ActivationPolicy == EAuraActivationPolicy::InputStart)
+		{
+			if (AbilitySpec.IsActive()) // Use GenericReplicatedEvent, not bReplicateInputDirectly for AT_WaitInputPress
+			{	// InputPressed event. Not replicated here. If someone is listening, they may replicate to the server.
+				const UGameplayAbility* Instance = AbilitySpec.GetPrimaryInstance(); // Instance->InputPressed()
+				const FPredictionKey OriginalPredictionKey = Instance ?
+					Instance->GetCurrentActivationInfo().GetActivationPredictionKey() : FPredictionKey();
+				/* Send to ASC->AbilityReplicatedEventDelegate & ASC->CallReplicatedEventDelegateIfSet */
+				InvokeReplicatedEvent(EAbilityGenericReplicatedEvent::InputPressed, AbilitySpec.Handle, OriginalPredictionKey);
+			}
+			else TryActivateAbility(AbilitySpec.Handle);
+		}
+	}
+}
+void UAuraAbilitySystemComponent::ProcessAbilityInput(const float DeltaTime, bool bGamePaused)
+{
+	for (const FGameplayAbilitySpecHandle SpecHandle : InputHeldHandles)
+	{
+		TryActivateAbility(SpecHandle);
 	}
 }
 
-// ===================================== Input =====================================================================
-#pragma region Activate Ability by Input =============================
-void UAuraAbilitySystemComponent::AbilityInputTagPressed(const FGameplayTag& InputTag)
+void UAuraAbilitySystemComponent::AbilityInputReleased(const int8 InputID)
 {
-	FScopedAbilityListLock AbilityListLock(*this);
+	if (GameplayTagCountContainer.HasMatchingGameplayTag(AuraGameplayTags::Character_State_Block_Input)) return;
+
+	ABILITYLIST_SCOPE_LOCK()
 	for (FGameplayAbilitySpec& AbilitySpec : ActivatableAbilities.Items)
 	{
-		if (!AbilitySpec.GetDynamicSpecSourceTags().HasTagExact(InputTag)) continue;
-		if (AbilitySpec.InputPressed)
-		{	// Already pressed and is now holding
-			const UAuraGameplayAbility* InputAbility = static_cast<UAuraGameplayAbility*>(AbilitySpec.Ability);
-			if (InputAbility->ActivationPolicy == EAuraActivationPolicy::InputHolding)
-			{
-				TryActivateAbility(AbilitySpec.Handle);
-			}
-			continue;
-		} // else start pressed
-		AbilitySpec.InputPressed = true; // AbilitySpecInputPressed(AbilitySpec);
-		if (AbilitySpec.IsActive())
-		{	// Use Generic Replicated Events instead of bReplicateInputDirectly for WaitInputPress AbilityTask to works.
-			const UGameplayAbility* Instance = AbilitySpec.GetPrimaryInstance(); // Instance->InputPressed()
-			const FPredictionKey OriginalPredictionKey = Instance ?
-				Instance->GetCurrentActivationInfo().GetActivationPredictionKey() : FPredictionKey();
-			// InputPressed event. Not replicated here. If someone is listening, they may replicate the event to the server.
-			/* Send to ASC->AbilityReplicatedEventDelegate & ASC->CallReplicatedEventDelegateIfSet */
-			InvokeReplicatedEvent(EAbilityGenericReplicatedEvent::InputPressed, AbilitySpec.Handle, OriginalPredictionKey);
-		}
-		else TryActivateAbility(AbilitySpec.Handle);
-	}
-}
-void UAuraAbilitySystemComponent::AbilityInputTagReleased(const FGameplayTag& InputTag)
-{
-	FScopedAbilityListLock AbilityListLock(*this);
-	for (FGameplayAbilitySpec& AbilitySpec : ActivatableAbilities.Items)
-	{
-		if (!AbilitySpec.GetDynamicSpecSourceTags().HasTagExact(InputTag)) continue;
-		AbilitySpec.InputPressed = false; // AbilitySpecInputReleased(AbilitySpec);
+		if (AbilitySpec.InputID != InputID) continue;
+		InputHeldHandles.Remove(AbilitySpec.Handle);
 		if (!AbilitySpec.IsActive()) continue;
 		const UGameplayAbility* Instance = AbilitySpec.GetPrimaryInstance();
 		const FPredictionKey OriginalPredictionKey = Instance ?
@@ -96,20 +93,12 @@ void UAuraAbilitySystemComponent::AbilityInputTagReleased(const FGameplayTag& In
 
 FGameplayAbilitySpec* UAuraAbilitySystemComponent::GetSpecFromAbilityTag(const FGameplayTag& AbilityTag)
 {
-	FScopedAbilityListLock AbilityListLock(*this);
+	ABILITYLIST_SCOPE_LOCK()
 	for (FGameplayAbilitySpec& ActivatableSpec : ActivatableAbilities.Items)
 	{
 		if (ActivatableSpec.GetDynamicSpecSourceTags().HasTagExact(AbilityTag)) return &ActivatableSpec;
 	}
 	return nullptr;
-}
-const FGameplayTag& UAuraAbilitySystemComponent::GetInputFromSpec(const FGameplayAbilitySpec* Spec)
-{
-	for (const FGameplayTag& Tag : Spec->GetDynamicSpecSourceTags())
-	{
-		if (Tag.MatchesTag(AuraGameplayTags::Input)) return Tag;
-	}
-	return FGameplayTag::EmptyTag;
 }
 
 /*=============================================================================================================*/
@@ -118,7 +107,7 @@ void UAuraAbilitySystemComponent::ReduceCooldownByTag(const FGameplayTagContaine
 {
 	if (!IsOwnerActorAuthoritative()) return; // if (!GetAvatarActor()->HasAuthority()) return;
 	const FGameplayEffectQuery Query = FGameplayEffectQuery::MakeQuery_MatchAnyOwningTags(TagContainer);
-	for (const FActiveGameplayEffectHandle& ActiveHandle : ActiveGameplayEffects.GetActiveEffects(Query))
+	for (const FActiveGameplayEffectHandle ActiveHandle : ActiveGameplayEffects.GetActiveEffects(Query))
 	{
 		FActiveGameplayEffect* ActiveEffect = ActiveGameplayEffects.GetActiveGameplayEffect(ActiveHandle);
 		const float TimeRemaining = ActiveEffect->GetTimeRemaining(GetWorld()->GetTimeSeconds());
@@ -129,12 +118,12 @@ void UAuraAbilitySystemComponent::ReduceCooldownByTag(const FGameplayTagContaine
 			Percent = FMath::Min(Percent, 0.6); /*Max CD 60%*/
 			NewTime = FMath::Max(NewTime * (1 - Percent), MinFrame);
 		}
-		
+
 		FGameplayEffectSpec& OldSpec = ActiveEffect->Spec;
 		FGameplayEffectSpec Spec(OldSpec.Def, OldSpec.GetEffectContext(), OldSpec.GetLevel());
 		Spec.SetDuration(NewTime, true);
 		Spec.DynamicGrantedTags = OldSpec.DynamicGrantedTags; // DO NOT copy SetByCallerTagMagnitudes
-		
+
 		RemoveActiveGameplayEffect(ActiveEffect->Handle);
 		ApplyGameplayEffectSpecToSelf(Spec);
 	}
@@ -147,14 +136,19 @@ void UAuraAbilitySystemComponent::ReduceCooldownByTag(const FGameplayTagContaine
  */
 #pragma region Activate/Give/Remove Ability
 void UAuraAbilitySystemComponent::OnTagUpdated(const FGameplayTag& Tag, bool TagExists)
-{
-	Super::OnTagUpdated(Tag, TagExists);
-	//TODO: Find something to do with this
+{	// Super::OnTagUpdated(Tag, TagExists); // Parent function is empty and only for override
+	if (Tag.MatchesTagExact(AuraGameplayTags::Character_State_Block_Input))
+	{
+		if (GameplayTagCountContainer.HasMatchingGameplayTag(AuraGameplayTags::Character_State_Block_Input))
+		{
+			InputHeldHandles.Reset();
+		}
+	}
 }
 void UAuraAbilitySystemComponent::OnGiveAbility(FGameplayAbilitySpec& AbilitySpec)
 {
 	Super::OnGiveAbility(AbilitySpec);
-	if (const AAuraCharacterBase* Character = Cast<AAuraCharacterBase>(GetAvatarActor()))
+	if (const AAuraCharacterBase* Character = Cast<AAuraCharacterBase>(AbilityActorInfo->AvatarActor))
 	{
 		if (Character->IsPlayerControlled()) ClientUpdateAbilityData(AbilitySpec);
 	}
@@ -162,7 +156,7 @@ void UAuraAbilitySystemComponent::OnGiveAbility(FGameplayAbilitySpec& AbilitySpe
 void UAuraAbilitySystemComponent::OnRemoveAbility(FGameplayAbilitySpec& AbilitySpec)
 {
 	Super::OnRemoveAbility(AbilitySpec);
-	if (const AAuraCharacterBase* Character = Cast<AAuraCharacterBase>(GetAvatarActor()))
+	if (const AAuraCharacterBase* Character = Cast<AAuraCharacterBase>(AbilityActorInfo->AvatarActor))
 	{
 		if (Character->IsPlayerControlled())
 		{
@@ -177,7 +171,7 @@ void UAuraAbilitySystemComponent::OnRemoveAbility(FGameplayAbilitySpec& AbilityS
 /*
  * ===============================================================================================================
 */
-void UAuraAbilitySystemComponent::ClientUpdateAbilityData_Implementation(const FGameplayAbilitySpec& AbilitySpec) const
+void UAuraAbilitySystemComponent::ClientUpdateAbilityData_Implementation(const FGameplayAbilitySpec& AbilitySpec)
 {
 	UpdateAbilityData(AbilitySpec);
 }
@@ -187,41 +181,50 @@ void UAuraAbilitySystemComponent::UpdateAbilityData(const FGameplayAbilitySpec& 
 		AbilitySpec.GetDynamicSpecSourceTags()))
 	{
 		FPlayerAbilityData PlayerData;
+		PlayerData.AbilityID = AbilitySpec.InputID;
 		for (const FGameplayTag& Tag : AbilitySpec.GetDynamicSpecSourceTags())
 		{
-			if (Tag.MatchesTag(AuraGameplayTags::Input)) {PlayerData.InputTag = Tag;}
-			else if (Tag.MatchesTag(AuraGameplayTags::Ability_Status)) {PlayerData.StatusTag = Tag;}
+			if (Tag.MatchesTag(AuraGameplayTags::Ability_Status)) PlayerData.StatusTag = Tag;
 		}
 		AbilityDataDelegate.Broadcast(*Data, PlayerData);
 	}
 }
 void UAuraAbilitySystemComponent::BroadcastAllAbilityData()
 {
-	FScopedAbilityListLock AbilityListLock(*this);
-	for (const FGameplayAbilitySpec& AbilitySpec : ActivatableAbilities.Items)
-	{
-		UpdateAbilityData(AbilitySpec);
-	}
+	const UWorld* World = GetWorld();
+	if (World == nullptr || BroadcastDelegate.IsValid()) return;
+	if (BroadcastDelegate.IsValid()) World->GetTimerManager().ClearTimer(BroadcastDelegate);
+	BroadcastDelegate = World->GetTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(
+	this, [&]()
+	{	// Wait for next tick so that Delegate receivers can finish loading
+		BroadcastDelegate.Invalidate();
+		for (const FGameplayAbilitySpec& AbilitySpec : ActivatableAbilities.Items)
+		{
+			UpdateAbilityData(AbilitySpec);
+		}
+	}));
 }
 
 #pragma region Client Upgrade
 void UAuraAbilitySystemComponent::ServerUpgradeAttribute_Implementation(const TArray<FPointAllocation>& PointsAllocated)
 {
-	AAuraPlayerState* AuraPS = Cast<AAuraPlayerState>(GetOwner());
-	FGameplayEventData Payload;
-	FGameplayAbilityTargetData_AttributeData* Data = new FGameplayAbilityTargetData_AttributeData();
-	for (const auto& [AttributeTag, AddedPoints] : PointsAllocated)
+	if (AAuraPlayerState* AuraPS = Cast<AAuraPlayerState>(GetOwner()))
 	{
-		if (AddedPoints > AuraPS->GetAttributePoints() || AddedPoints < 1) break;
-		Data->AttributeTags.Add(AttributeTag);
-		Data->AttributeMagnitudes.Add(AddedPoints);
-		AuraPS->AddToAttributePoints(-AddedPoints);
-		/*Payload.EventTag = AttributeTag; Payload.EventMagnitude = AddedPoints;
-		UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(GetAvatarActor(), Payload.EventTag, Payload);*/
+		FGameplayEventData Payload;
+		FGameplayAbilityTargetData_AttributeData* Data = new FGameplayAbilityTargetData_AttributeData();
+		for (const auto& [AttributeTag, AddedPoints] : PointsAllocated)
+		{
+			if (AddedPoints > AuraPS->GetAttributePoints() || AddedPoints < 1) break;
+			Data->AttributeTags.Add(AttributeTag);
+			Data->AttributeMagnitudes.Add(AddedPoints);
+			AuraPS->AddToAttributePoints(-AddedPoints);
+			/*Payload.EventTag = AttributeTag; Payload.EventMagnitude = AddedPoints;
+			UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(GetAvatarActor(), Payload.EventTag, Payload);*/
+		}
+		Payload.TargetData = FGameplayAbilityTargetDataHandle(Data);
+		HandleGameplayEvent(AuraGameplayTags::Attributes, &Payload);
+		ClientFinishUpgradeAttribute();
 	}
-	Payload.TargetData = FGameplayAbilityTargetDataHandle(Data);
-	HandleGameplayEvent(AuraGameplayTags::Attributes, &Payload);
-	ClientFinishUpgradeAttribute();
 }
 void UAuraAbilitySystemComponent::ClientFinishUpgradeAttribute_Implementation()
 {
@@ -231,47 +234,56 @@ void UAuraAbilitySystemComponent::ClientFinishUpgradeAttribute_Implementation()
 
 void UAuraAbilitySystemComponent::ServerSpendSpellPoints_Implementation(const FGameplayTag& AbilityTag)
 {
-	AAuraPlayerState* AuraPS = Cast<AAuraPlayerState>(GetOwner());
 	if (FGameplayAbilitySpec* Spec = GetSpecFromAbilityTag(AbilityTag))
 	{
-		if (AuraPS->GetSpellPoints() < 1) return;
-		AuraPS->AddToSpellPoints(-1);
-		
-		if (!Spec->GetDynamicSpecSourceTags().RemoveTag(AuraGameplayTags::Ability_Status_Eligible))
-		{	// ability already equipable
-			Spec->Level++; // without MarkAbilitySpecDirty() to replicate, client Spec's won't change
-		} // else consume 1 point to remove Ability_Status_Eligible
-		MarkAbilitySpecDirty(*Spec);
-		ClientUpdateAbilityData(*Spec);
+		if (AAuraPlayerState* AuraPS = Cast<AAuraPlayerState>(GetOwner()))
+		{
+			if (AuraPS->GetSpellPoints() < 1) return;
+			AuraPS->AddToSpellPoints(-1);
+
+			if (!Spec->GetDynamicSpecSourceTags().RemoveTag(AuraGameplayTags::Ability_Status_Eligible))
+			{	// ability already equipable
+				Spec->Level++; // without MarkAbilitySpecDirty() to replicate, client Spec's won't change
+			} // else consume 1 point to remove Ability_Status_Eligible
+			MarkAbilitySpecDirty(*Spec);
+			ClientUpdateAbilityData(*Spec);
+		}
 	}
 }
-// Change to SlotTag
-void UAuraAbilitySystemComponent::ServerChangeAbilitySlot_Implementation(const FGameplayTag& AbilityTag, const FGameplayTag& SlotTag)
+
+void UAuraAbilitySystemComponent::ServerChangeAbilitySlot_Implementation(const FGameplayTag& AbilityTag, const int32 AbilityID)
 {
 	FGameplayAbilitySpec* Spec = GetSpecFromAbilityTag(AbilityTag);
 	if (Spec == nullptr) return;
-	if (Spec->GetDynamicSpecSourceTags().HasTag(AuraGameplayTags::Ability_Status)) return;
-	const FGameplayTag& SlotToSwap = GetInputFromSpec(Spec); // Store Spec's input if there is any, else EmptyTag
-	if (SlotToSwap.MatchesTagExact(SlotTag)) return; // if Ability is moved to the same Slot
-	if (SlotTag.MatchesTag(AuraGameplayTags::Input_Combat_Passive) /*Server side check valid type*/
-		!= (Cast<UAuraGameplayAbility>(Spec->Ability)->ActivationPolicy == EAuraActivationPolicy::OnSpawn)) return;
-	if (SlotTag.IsValid()) // if not, Slot will just be removed
+	if (AbilityID == Spec->InputID) return; /* server check if moving to the same Slot */
+	if (AbilityID != INDEX_NONE)
 	{
-		FScopedAbilityListLock AbilityListLock(*this);
+		const int32 SlotToSwap = Spec->InputID; // Store Spec's input if there is any, else EmptyTag
+		const bool bIsPassive = Cast<UAuraGameplayAbility>(Spec->Ability)->ActivationPolicy == EAuraActivationPolicy::OnSpawn;
+		if (Spec->GetDynamicSpecSourceTags().HasTag(AuraGameplayTags::Ability_Status)
+			|| AbilityID < -1 != bIsPassive /* Server side check if Ability is the same type as slot */)
+		{
+			ClientRefreshAbilityData(); // tell client to refresh data to clear UI change
+			return;
+		}
+		ABILITYLIST_SCOPE_LOCK()
 		for (FGameplayAbilitySpec& OtherSpec : ActivatableAbilities.Items)
-		{	// Swap out previous Ability in this SlotTag if there is any
-			if (OtherSpec.GetDynamicSpecSourceTags().RemoveTag(SlotTag))
-			{	// true if had SlotTag existed and removed
-				if (SlotToSwap.IsValid()) OtherSpec.GetDynamicSpecSourceTags().AddTag(SlotToSwap);
+		{	// Swap out previous Ability in this slot if there is any
+			if (OtherSpec.InputID == AbilityID)
+			{
+				OtherSpec.InputID = SlotToSwap;
 				MarkAbilitySpecDirty(OtherSpec);
-				ClientUpdateAbilityData(OtherSpec);
 			}
 		}
-		Spec->GetDynamicSpecSourceTags().AddTag(SlotTag); // Can Assign to SlotTag after loop clear all SlotTag
 	}
-	Spec->GetDynamicSpecSourceTags().RemoveTag(SlotToSwap); // Remove Input and use SlotToSwap from here on
+	Spec->InputID = AbilityID; // can be INDEX_NONE (UNEQUIP)
 	MarkAbilitySpecDirty(*Spec);
-	ClientUpdateAbilityData(*Spec);
+	ClientRefreshAbilityData();
+}
+void UAuraAbilitySystemComponent::ClientRefreshAbilityData_Implementation()
+{
+	InputHeldHandles.Reset();
+	BroadcastAllAbilityData();
 }
 #pragma endregion
 
@@ -283,7 +295,7 @@ bool UAuraAbilitySystemComponent::TryActivateAbilityByDynamicTag(const FGameplay
 	const bool bAllowRemoteActivation)
 {
 	if (!Tag.IsValid()) return false;
-	FScopedAbilityListLock AbilityListLock(*this);
+	ABILITYLIST_SCOPE_LOCK()
 	for (const FGameplayAbilitySpec& Spec : ActivatableAbilities.Items)
 	{	// GetActivatableGameplayAbilitySpecsByAllMatchingTags
 		if (Spec.Ability && Spec.GetDynamicSpecSourceTags().HasTag(Tag))
@@ -298,7 +310,7 @@ void UAuraAbilitySystemComponent::NetMulticast_InvokeGameplayCueExecuted_WithPar
 	const FGameplayTag GameplayCueTag, FPredictionKey PredictionKey, FGameplayCueParameters GameplayCueParameters)
 {
 	if (!IsOwnerActorAuthoritative() && PredictionKey.IsLocalClientKey()) return;
-	
+
 	InvokeGameplayCueEvent(GameplayCueTag, EGameplayCueEvent::Executed, GameplayCueParameters);
 	FAuraEffectContext* AuraContext = FAuraEffectContext::ExtractAuraContext(GameplayCueParameters.EffectContext);
 	if (AuraContext == nullptr) return;
@@ -308,11 +320,11 @@ void UAuraAbilitySystemComponent::NetMulticast_InvokeGameplayCueExecuted_WithPar
 		CueParameters.RawMagnitude = EffectCue.RawMagnitude;
 		InvokeGameplayCueEvent(EffectCue.CueTag, EGameplayCueEvent::Executed, CueParameters);
 	}
-	
+
 	for (FCoreCueParams& Cue : AuraContext->GetCueParamsBatched())
 	{
 		Cue.UnpackAndInvokeGameplayCueEvent(this);
-		
+
 		FGameplayCueParameters Params(Cue.EffectContext);
 		FAuraEffectContext* Context = FAuraEffectContext::ExtractAuraContext(Cue.EffectContext);
 		for (const FEffectCues& EffectCue : Context->GetEffectCuesList())

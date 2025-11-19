@@ -9,7 +9,7 @@
 
 class UAbilitySystemComponent;
 /**
- * 
+ *
  */
 UCLASS()
 class AURA_API UDebuffNiagaraComponent : public UNiagaraComponent
@@ -19,7 +19,7 @@ public:
 	UDebuffNiagaraComponent();
 	void SetASC(UAbilitySystemComponent* InASC);
 	void DisableNiagara(UAbilitySystemComponent* InASC);
-	
+
 	UPROPERTY(VisibleAnywhere, Category="Default", meta=(GameplayTagFilter="Debuff.Type."))
 	FGameplayTag DebuffTag;
 protected:

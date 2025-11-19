@@ -7,7 +7,7 @@
 #include "MeleeDamageAbility.generated.h"
 
 /**
- * 
+ *
  */
 UCLASS()
 class AURA_API UMeleeDamageAbility : public UDamageAbility

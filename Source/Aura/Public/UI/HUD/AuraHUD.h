@@ -11,9 +11,8 @@ class UAttributeMenuWidgetController;
 class UAuraUserWidget;
 class UOverlayWidgetController;
 
-
 /**
- * 
+ *
  */
 UCLASS()
 class AURA_API AAuraHUD : public AHUD
@@ -30,25 +29,25 @@ public:
 	TObjectPtr<class UAuraAbilitySystemComponent> AbilitySystemComponent;
 	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<class UAuraAttributeSet> AttributeSet;
-	
+
 	UPROPERTY()
 	TObjectPtr<UAuraUserWidget> OverlayWidget;
-	
+
 	UPROPERTY() // Overlay is always available with this
 	TObjectPtr<UOverlayWidgetController> OverlayController;
 	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<UAttributeMenuWidgetController> AttributeMenuController; // Widget created in OverlayWidget BP
 	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<USpellMenuWidgetController> SpellMenuController;
-	
+
 	UPROPERTY(EditDefaultsOnly, Category="Default")
 	TObjectPtr<class UAttributeDataAsset> AttributeData;
 	const TMap<struct FGameplayTag, struct FAuraAttributeData>& GetAttributeDataList() const;
-	
+
 	UFUNCTION(BlueprintImplementableEvent)
 	FText GetLockedDescription(const int32 LevelRequirement);
-	
-	
+
+
 #pragma region UIFunctions
 	// HUD exist on local only so this return nullptr others
 	static AAuraHUD* GetAuraHUD(const UObject* WorldContextObject);

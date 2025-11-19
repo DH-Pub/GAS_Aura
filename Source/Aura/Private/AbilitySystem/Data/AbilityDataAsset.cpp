@@ -4,6 +4,7 @@
 #include "AbilitySystem/Data/AbilityDataAsset.h"
 
 #include "AuraGameplayTags.h"
+#include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/Ability/AuraGameplayAbility.h"
 #include "Game/AuraGameState.h"
 #include "Kismet/GameplayStatics.h"
@@ -40,25 +41,19 @@ const FAuraAbilityData* UAbilityDataAsset::GetAbilityFromGameState(const UObject
 	}
 	return nullptr;
 }
-const FAuraAbilityData* UAbilityDataAsset::GetAbilityFromGameState(const UObject* WorldContextObject,
-	const TSubclassOf<UAuraGameplayAbility> AbilityClass)
+
+void UAbilityDataAsset::UnlockAbilityByLevel(const UObject* WorldContextObject, UAuraAbilitySystemComponent* ASC,
+	const int32 CharacterLevel)
 {
-	if (const UAbilityDataAsset* DA = GetFromGameState(WorldContextObject))
-	{
-		for (const FAuraAbilityData& Data : DA->AbilityDataList) {if (AbilityClass == Data.AbilityClass) return &Data;}
+	for (const FAuraAbilityData& Data : GetFromGameState(WorldContextObject)->AbilityDataList)
+	{	/* not enough lv or already has ability */
+		if (CharacterLevel < Data.LevelRequirement || ASC->GetSpecFromAbilityTag(Data.GetAuraAbilityTag())) continue;
+		FGameplayAbilitySpec AbilitySpec(Data.AbilityClass, 1);
+		AbilitySpec.GetDynamicSpecSourceTags().AddTagFast(AuraGameplayTags::Ability_Status_Eligible);
+		ASC->GiveAbility(AbilitySpec);
 	}
-	return nullptr;
 }
 
-const FGameplayTag& UAbilityDataAsset::GetAbilityTagFromClass(const UObject* WorldContextObject,
-	const TSubclassOf<UAuraGameplayAbility> AbilityClass)
-{
-	if (const FAuraAbilityData* Data = GetAbilityFromGameState(WorldContextObject, AbilityClass))
-	{
-		return Data->GetAuraAbilityTag();
-	}
-	return FGameplayTag::EmptyTag;
-}
 
 #if WITH_EDITOR
 EDataValidationResult UAbilityDataAsset::IsDataValid(FDataValidationContext& Context) const

@@ -16,7 +16,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FCooldownChanged, float, TimeRemain
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FCooldownEnd);
 
 /**
- * 
+ *
  */
 // UCLASS(MinimalAPI, meta=(ExposedAsyncProxy=AsyncTask))
 UCLASS(meta=(ExposedAsyncProxy=AsyncTask))
@@ -28,14 +28,14 @@ public:
 	FCooldownChanged CooldownChanged;
 	UPROPERTY(BlueprintAssignable)
 	FCooldownEnd CooldownEnd;
-	
+
 	UFUNCTION(BlueprintCallable, meta=(BlueprintInternalUseOnly="true"))
 	static UAsync_CooldownChange* WaitForCooldownChange(UAbilitySystemComponent* InASC,
 		const FGameplayTagContainer& InCooldownTags, bool InUseServerCooldown = false);
-	
+
 	UFUNCTION(BlueprintCallable)
 	void EndTask();
-	
+
 	UFUNCTION(BlueprintCallable)
 	void BroadcastInitialCooldown() const;
 private:
@@ -43,14 +43,14 @@ private:
 	TObjectPtr<UAbilitySystemComponent> ASC;
 	FGameplayTagContainer CooldownTags;
 	bool bUseServerCooldown = false; // whether to wait for server to send cooldown information, not "predicted"
-	
+
 	float CooldownDuration = 0.f;
 	float CooldownTime = 0.f;
-	
+
 	void OnActiveEffectAdded(UAbilitySystemComponent* TargetASC, const FGameplayEffectSpec& SpecApplied, FActiveGameplayEffectHandle ActiveEffectHandle);
 	void OnGameplayEffectRemoved(const FActiveGameplayEffect& ActiveEffect);
 	// void CooldownTagChanged(const FGameplayTag InCooldownTag, int32 NewCount);
-	
+
 	FActiveGameplayEffectHandle EffectHandle;
 	FDelegateHandle OnEffectRemovedDelegate;
 	void OnEffectRemoved(const struct FGameplayEffectRemovalInfo& Info);

@@ -6,7 +6,7 @@
 #include "Character/AuraEnemy.h"
 #include "StateTreeNodeDescriptionHelpers.h" // UE::StateTree::DescHelpers::GetInvertText
 
-// MUST be #undef before end of file 
+// MUST be #undef before end of file
 #define LOCTEXT_NAMESPACE "StateTreeCombatCondition"
 
 bool FStateTreeCombatCondition::TestCondition(FStateTreeExecutionContext& Context) const
@@ -28,7 +28,7 @@ FText FStateTreeCombatCondition::GetDescription(const FGuid& ID, FStateTreeDataV
 	check(InstanceData);
 	const FText InvertText = UE::StateTree::DescHelpers::GetInvertText(bInvert, Formatting);
 	FText Range = BindingLookup.GetBindingSourceDisplayName(FPropertyBindingPath(ID, GET_MEMBER_NAME_CHECKED(FInstanceDataType, LostTargetRange)), Formatting);
-	
+
 	const FText Format = (Formatting == EStateTreeNodeFormatting::RichText)
 		? LOCTEXT("CombatRich", "{EmptyOrNot} is valid and in range {Range}")
 		: LOCTEXT("Combat", "{EmptyOrNot} Is EmptyOrNot");

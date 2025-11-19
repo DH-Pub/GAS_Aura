@@ -28,7 +28,7 @@ public:
 	virtual void ExternalCancel() override;
 	virtual FString GetDebugString() const override;
 	virtual void OnDestroy(bool AbilityEnded) override;
-	
+
 	UPROPERTY(BlueprintAssignable)
 	FMontageWaitForEventDelegate OnCompleted;
 	UPROPERTY(BlueprintAssignable)
@@ -37,11 +37,11 @@ public:
 	FMontageWaitForEventDelegate OnInterrupted;
 	UPROPERTY(BlueprintAssignable)
 	FMontageWaitForEventDelegate OnCancelled; /*Task explicitly cancelled by another ability*/
-	
+
 	/** One of the triggering gameplay events happened */
 	UPROPERTY(BlueprintAssignable)
 	FMontageWaitForEventDelegate EventReceived;
-	
+
 	/**
 	 * Play a montage and wait for finish.
 	 * If a gameplay event happens that matches EventTags (or EventTags is empty), EventReceived will fire.
@@ -66,30 +66,30 @@ public:
 private:
 	UPROPERTY()
 	UAnimMontage* MontageToPlay;
-	
+
 	UPROPERTY()
 	FGameplayTagContainer EventTags; /** List of tags to match against gameplay events */
 	UPROPERTY()
 	float Rate; /** Playback rate */
 	UPROPERTY()
 	FName StartSection; /** Section to start montage from */
-	
+
 	UPROPERTY()
 	float AnimRootMotionTranslationScale; /** Modifies how root motion movement to apply */
 	UPROPERTY()
 	bool bStopWhenAbilityEnds; /** Rather montage should be aborted if ability ends */
-	
+
 	/** Checks if the ability is playing a montage and stops that montage, returns true if a montage was stopped, false if not. */
 	bool StopPlayingMontage();
-	
+
 	void OnMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 	void OnMontageBlendingOut(UAnimMontage* Montage, bool bInterrupted);
 	void OnAbilityCancelled();
-	
+
 	FOnMontageEnded MontageEndedDelegate;
 	FOnMontageBlendingOutStarted BlendingOutDelegate;
 	FDelegateHandle CancelledHandle;
-	
+
 	void OnGameplayEvent(FGameplayTag EventTag, const FGameplayEventData* Payload);
 	FDelegateHandle EventHandle;
 };

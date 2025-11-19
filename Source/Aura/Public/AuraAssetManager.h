@@ -9,9 +9,9 @@
 /**
  * //TODO: Delete this someday
  * This is to load old AuraGameplayTags from the course inside StartInitialLoading()
- * 
+ *
  * Project Settings -> Engine -> General -> Default Classes -> Advanced -> Asset Manager Class
- * 
+ *
  * in Config/DefaultEngine.ini will show the following
  * [/Script/Engine.Engine]
  * AssetManagerClassName=/Script/Aura.AuraAssetManager

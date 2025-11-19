@@ -16,10 +16,10 @@ class AURA_API UAuraCueManager : public UGameplayCueManager
 	GENERATED_BODY()
 public:
 	virtual void FlushPendingCues() override;
-	
+
 	virtual bool ShouldSyncLoadMissingGameplayCues() const override {return false;}
 	virtual bool ShouldAsyncLoadMissingGameplayCues() const override {return true;}
-	
+
 	// Called in ApplyGameplayEffectSpecToSelf()
 	virtual void InvokeGameplayCueExecuted_FromSpec(UAbilitySystemComponent* OwningComponent,
 		const FGameplayEffectSpec& Spec, FPredictionKey PredictionKey) override;
@@ -27,7 +27,7 @@ public:
 		FPredictionKey PredictionKey, FGameplayEffectContextHandle EffectContext) override;
 	virtual void InvokeGameplayCueExecuted_WithParams(UAbilitySystemComponent* OwningComponent,
 		const FGameplayTag GameplayCueTag, FPredictionKey PredictionKey, FGameplayCueParameters GameplayCueParameters) override;
-	
+
 	virtual void InvokeGameplayCueAddedAndWhileActive_FromSpec(UAbilitySystemComponent* OwningComponent,
 		const FGameplayEffectSpec& Spec, FPredictionKey PredictionKey) override;
 

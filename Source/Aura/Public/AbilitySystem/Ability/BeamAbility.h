@@ -7,7 +7,7 @@
 #include "BeamAbility.generated.h"
 
 /**
- * 
+ *
  */
 UCLASS()
 class AURA_API UBeamAbility : public UDamageAbility

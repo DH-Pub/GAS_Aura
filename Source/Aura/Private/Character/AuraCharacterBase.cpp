@@ -17,7 +17,7 @@ AAuraCharacterBase::AAuraCharacterBase(const FObjectInitializer& ObjectInitializ
 	.SetDefaultSubobjectClass<UAuraMovementComponent>(ACharacter::CharacterMovementComponentName))
 {
 	PrimaryActorTick.bCanEverTick = false; // disable TickActor()
-	
+
 	GetCapsuleComponent()->SetGenerateOverlapEvents(true);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Projectile, ECR_Overlap);
@@ -28,15 +28,15 @@ AAuraCharacterBase::AAuraCharacterBase(const FObjectInitializer& ObjectInitializ
 	// Dedicated servers don't render the meshes
 	// Skeletal meshes do not update their sockets or bones while not being rendered by default on the server part
 	GetMesh()->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
-	
+
 	bUseControllerRotationPitch = bUseControllerRotationRoll = bUseControllerRotationYaw = false;
-	
+
 	Weapon = CreateDefaultSubobject<USkeletalMeshComponent>("Weapon");
 	Weapon->SetupAttachment(GetMesh(), FName(TEXT("WeaponHandSocket")));
 	Weapon->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	Weapon->SetCollisionObjectType(ECC_PhysicsBody);
 	Weapon->SetCollisionResponseToAllChannels(ECR_Ignore);
-	
+
 	BurnDebuffComponent = CreateDefaultSubobject<UDebuffNiagaraComponent>("BurnDebuff");
 	BurnDebuffComponent->SetupAttachment(GetRootComponent());
 	BurnDebuffComponent->DebuffTag = AuraGameplayTags::Debuff_Type_Burn;
@@ -81,15 +81,10 @@ void AAuraCharacterBase::SetCombatTarget(AActor* InTarget)
 	if (CombatTarget == InTarget) return;
 	if (UAuraAbilitySystemComponent* AuraASC = UAuraAbilitySystemGlobals::GetAuraASC(InTarget))
 	{
-		if (AuraASC->HasMatchingGameplayTag(AuraGameplayTags::Character_State_Death))
-		{
-			CombatTarget = nullptr;
-			return;
-		}
 		AuraASC->RegisterGameplayTagEvent(AuraGameplayTags::Character_State_Death,
 			EGameplayTagEventType::NewOrRemoved).RemoveAll(this);
 		AuraASC->RegisterGameplayTagEvent(AuraGameplayTags::Character_State_Death,
-			EGameplayTagEventType::NewOrRemoved).AddWeakLambda(this, 
+			EGameplayTagEventType::NewOrRemoved).AddWeakLambda(this,
 		[&](const FGameplayTag, const int32 NewCount)
 		{
 			if (NewCount > 0) CombatTarget = nullptr;
@@ -120,7 +115,7 @@ void AAuraCharacterBase::MulticastHandleDeath_Implementation(const FVector& HitI
 	GetMesh()->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
 	GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECR_Ignore);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
-	
+
 	if (!HitImpulse.IsNearlyZero())
 	{
 		if (Weapon->GetSkeletalMeshAsset()) Weapon->AddImpulseToAllBodiesBelow(HitImpulse, NAME_None, true);
@@ -133,7 +128,8 @@ void AAuraCharacterBase::MulticastHandleDeath_Implementation(const FVector& HitI
 
 bool AAuraCharacterBase::IsDead_Implementation() const
 {
-	return GetAbilitySystemComponent()->HasMatchingGameplayTag(AuraGameplayTags::Character_State_Death);
+	return AbilitySystemComponent ?
+		AbilitySystemComponent->HasMatchingGameplayTag(AuraGameplayTags::Character_State_Death) : true;
 }
 
 void AAuraCharacterBase::BeginPlay()
@@ -160,6 +156,7 @@ void AAuraCharacterBase::AddCharacterStartupAbilities() const
 	if (!HasAuthority()) return; // Grant ability from server
 	AbilitySystemComponent->AddCharacterAbilities(StartupAbilities);
 }
+
 
 void AAuraCharacterBase::Dissolve()
 {

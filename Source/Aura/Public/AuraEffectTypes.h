@@ -16,9 +16,9 @@ struct FCoreCueParams
 	GENERATED_BODY()
 	FCoreCueParams(){};
 	explicit FCoreCueParams(const FGameplayTag& Tag, const FGameplayCueParameters& Params);
-	
+
 	void UnpackAndInvokeGameplayCueEvent(UAbilitySystemComponent* ASC) const;
-	
+
 	UPROPERTY()
 	FGameplayTag CueTag;
 	float RawMagnitude = 0.f;
@@ -32,7 +32,7 @@ struct FCoreCueParams
 	TWeakObjectPtr<AActor> Instigator; // Actor that owns the ability system component
 	UPROPERTY()
 	TWeakObjectPtr<AActor> EffectCauser; // Can be weapon/projectile
-	
+
 	bool operator==(const FCoreCueParams& Other) const
 	{
 		return CueTag == Other.CueTag
@@ -43,7 +43,7 @@ struct FCoreCueParams
 		&& Instigator == Other.Instigator
 		&& EffectCauser == Other.EffectCauser;
 	}
-	
+
 	/** Optimized serializer */
 	bool NetSerialize(FArchive& Ar, class UPackageMap* Map, bool& bOutSuccess);
 };
@@ -57,16 +57,16 @@ struct FEffectCues
 	FEffectCues(){}
 	explicit FEffectCues(const FGameplayTag& CueTag, const float RawMagnitude)
 		: CueTag(CueTag), RawMagnitude(RawMagnitude) {}
-	
+
 	UPROPERTY()
 	FGameplayTag CueTag;
 	float RawMagnitude = 0.f;
-	
+
 	bool operator==(const FEffectCues& Other) const
 	{
 		return (CueTag == Other.CueTag) && (RawMagnitude == Other.RawMagnitude);
 	}
-	
+
 	/** Optimized serializer */
 	bool NetSerialize(FArchive& Ar, class UPackageMap* Map, bool& bOutSuccess)
 	{
@@ -85,10 +85,10 @@ USTRUCT(BlueprintType)
 struct FAuraEffectContext : public FGameplayEffectContext
 {
 	GENERATED_BODY()
-	
+
 	static FAuraEffectContext* ExtractAuraContext(FGameplayEffectContextHandle ContextHandle)
 	{return static_cast<FAuraEffectContext*>(ContextHandle.Get());}
-	
+
 	bool IsShowDamageOnTarget() const {return bShowDamageOnTarget;}
 	bool SetShowDamageOnTarget(const bool bIn) {return bShowDamageOnTarget = bIn;}
 	static void SetIsShowDamageOnTarget(FGameplayEffectContext* EffectContext, const bool bValue)
@@ -96,7 +96,7 @@ struct FAuraEffectContext : public FGameplayEffectContext
 		if (FAuraEffectContext* AuraEffectContext =  static_cast<FAuraEffectContext*>(EffectContext))
 		{AuraEffectContext->SetShowDamageOnTarget(bValue);}
 	}
-	
+
 	FInstancedStruct* GetInstancedStruct() const {return InstancedStruct.Get();}
 	void SetInstancedStruct(const FInstancedStruct& InStruct)
 	{InstancedStruct = MakeShared<FInstancedStruct>(InStruct);}
@@ -113,7 +113,7 @@ struct FAuraEffectContext : public FGameplayEffectContext
 		{return InstancedStruct->GetPtr<T>();}
 		return nullptr;
 	}
-	
+
 	template<typename T>
 	static T* MakeStructInContext(FGameplayEffectContextHandle ContextHandle)
 	{
@@ -133,8 +133,8 @@ struct FAuraEffectContext : public FGameplayEffectContext
 		return AuraEffectContext->GetInstancedStruct()->GetMutablePtr<T>();
 	}
 #pragma endregion
-	
-	
+
+
 	TArray<FCoreCueParams>& GetCueParamsBatched() {return CueParamsBatched;}
 	// Add CueParams to CueParamsBatched, check if Cue.EffectContext.Get() is NOT self (this) before adding
 	int32 BatchCuesParams(const FGameplayTag& Tag, const FGameplayCueParameters& Cue, const bool bReset = false)
@@ -143,7 +143,7 @@ struct FAuraEffectContext : public FGameplayEffectContext
 		if (bReset && CueParamsBatched.Num()) CueParamsBatched.Reset();
 		return CueParamsBatched.AddUnique(FCoreCueParams(Tag, Cue));
 	}
-	
+
 	TArray<FEffectCues>& GetEffectCuesList() {return EffectCuesList;}
 	// Batch all FGameplayEffectCue in effect
 	FEffectCues& AddToEffectCuesList(const FGameplayTag& Cue, const float Magnitude, const bool bReset = false)
@@ -154,11 +154,11 @@ struct FAuraEffectContext : public FGameplayEffectContext
 protected:
 	UPROPERTY()
 	bool bShowDamageOnTarget = false;
-	
+
 	// This will show a drop-down in the editor, containing only MyStruct and its children structs
 	/*UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BaseStruct = "/Script/MyModule.MyStruct"))*/
 	TSharedPtr<FInstancedStruct> InstancedStruct; // TSharedPtr cannot be UPROPERTY
-	
+
 	UPROPERTY()
 	TArray<FCoreCueParams> CueParamsBatched;
 	UPROPERTY()
@@ -167,7 +167,7 @@ protected:
 public: //REQUIRED: override section
 	/** Returns the actual struct used for serialization, subclasses must override this! */
 	virtual UScriptStruct* GetScriptStruct() const override {return StaticStruct();}
-	
+
 	/** Creates a copy of this context, used to duplicate for later modifications */
 	virtual FAuraEffectContext* Duplicate() const override
 	{
@@ -177,7 +177,7 @@ public: //REQUIRED: override section
 		{	// Does a deep copy of the hit result
 			NewContext->AddHitResult(*GetHitResult(), true);
 		}
-		
+
 		// Custom Start ~ =========================================================
 		if (GetInstancedStruct())
 		{

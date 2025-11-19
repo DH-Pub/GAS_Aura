@@ -5,6 +5,7 @@
 
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/AuraAttributeSet.h"
+#include "AbilitySystem/Data/AbilityDataAsset.h"
 #include "AbilitySystem/Data/LevelUpDataAsset.h"
 #include "Character/AuraPlayer.h"
 #include "Net/UnrealNetwork.h"
@@ -14,16 +15,16 @@ AAuraPlayerState::AAuraPlayerState()
 	AbilitySystemComponent = CreateDefaultSubobject<UAuraAbilitySystemComponent>("AbilitySystemComponent");
 	AbilitySystemComponent->SetIsReplicated(true);
 	AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Mixed);
-	
+
 	AttributeSet = CreateDefaultSubobject<UAuraAttributeSet>("AttributeSet");
-	
+
 	SetNetUpdateFrequency(120.f); // Update per second
 }
 
 void AAuraPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	
+
 	DOREPLIFETIME(AAuraPlayerState, Level);
 	DOREPLIFETIME(AAuraPlayerState, XP);
 	DOREPLIFETIME(AAuraPlayerState, AttributePoints);
@@ -50,7 +51,7 @@ void AAuraPlayerState::SetXP(const int32 NewXP)
 		AddToAttributePoints(AttributePointsToAdd);
 		AddToSpellPoints(SpellPointsToAdd);
 		SetLevel(i);
-		AbilitySystemComponent->UnlockAbilityByLevel(Level);
+		UAbilityDataAsset::UnlockAbilityByLevel(this, AbilitySystemComponent, Level);
 		if (AAuraPlayer* Character = Cast<AAuraPlayer>(GetPawn())) Character->MulticastLevelUpEffects(Level);
 	}
 	OnXPChangedDelegate.Broadcast(XP);

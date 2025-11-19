@@ -8,64 +8,38 @@ namespace AuraGameplayTags
 {
 #pragma region Attributes
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes,"Attributes","==PARENT==")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Primary_Strength,"Attributes.Primary.Strength","Increases physical damage")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Primary_Intelligence,"Attributes.Primary.Intelligence","Increases magical damage")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Primary_Resilience,"Attributes.Primary.Resilience","Increases armor and armor penetration")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Primary_Strength,"Attributes.Primary.Strength","Increases physical Dmg")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Primary_Intelligence,"Attributes.Primary.Intelligence","Increases magical Dmg")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Primary_Resilience,"Attributes.Primary.Resilience","Increases Armor")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Primary_Vigor,"Attributes.Primary.Vigor","Increases Health")
 
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Secondary_Armor,"Attributes.Secondary.Armor","Reduces damage taken, improves Block Chance")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Secondary_ArmorPenetration,"Attributes.Secondary.ArmorPenetration","Ignore percentage of armor, increases crit chance")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Secondary_Armor,"Attributes.Secondary.Armor","Reduces Dmg taken, +BlockChance")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Secondary_ArmorPenetration,"Attributes.Secondary.ArmorPenetration","Ignore % of armor, +CritChance")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Secondary_BlockChance,"Attributes.Secondary.BlockChance","Chance to cut incoming damage in half")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Secondary_CriticalHitChance,"Attributes.Secondary.CriticalHitChance","Chance to double damage plus crit bonus")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Secondary_CriticalHitDamage,"Attributes.Secondary.CriticalHitDamage","Bonus damage added when a critical hit is scored")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Secondary_CriticalHitResistance,"Attributes.Secondary.CriticalHitResistance","Reduce Critical Hit Chance of attacking enemies")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Secondary_HealthRegeneration,"Attributes.Secondary.HealthRegeneration","Amount of Health regenerated every 1 second")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Secondary_ManaRegeneration,"Attributes.Secondary.ManaRegeneration","Amount of Mana regenerated every 1 second")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Secondary_MaxHealth,"Attributes.Secondary.MaxHealth","Maximum amount of health")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Secondary_MaxMana,"Attributes.Secondary.MaxMana","Maximum amount of mana")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Secondary_CriticalHitChance,"Attributes.Secondary.CriticalHitChance","")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Secondary_CriticalHitDamage,"Attributes.Secondary.CriticalHitDamage","")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Secondary_CriticalHitResistance,"Attributes.Secondary.CriticalHitResistance","Reduce CritChance of incoming atk")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Secondary_HealthRegeneration,"Attributes.Secondary.HealthRegeneration","Periodical HP Regen")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Secondary_ManaRegeneration,"Attributes.Secondary.ManaRegeneration","Periodical MP Regen")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Secondary_MaxHealth,"Attributes.Secondary.MaxHealth","")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Secondary_MaxMana,"Attributes.Secondary.MaxMana","")
 
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Vital_Health, "Attributes.Vital.Health", "Amount of damage a player can take before death")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Vital_Mana, "Attributes.Vital.Mana", "Amount of energy used to cast spells")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Vital_Health, "Attributes.Vital.Health", "")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Vital_Mana, "Attributes.Vital.Mana", "")
 
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Vital_MovementSpeed, "Attributes.Vital.MovementSpeed", "Character MovementSpeed")
 
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Resistance_Fire, "Attributes.Resistance.Fire", "Resistance to Fire")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Resistance_Lightning, "Attributes.Resistance.Lightning", "Resistance to Lightning")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Resistance_Arcane, "Attributes.Resistance.Arcane", "Resistance to Arcane")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Resistance_Physical, "Attributes.Resistance.Physical", "Resistance to Physical")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Resistance_Fire, "Attributes.Resistance.Fire", "")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Resistance_Lightning, "Attributes.Resistance.Lightning", "")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Resistance_Arcane, "Attributes.Resistance.Arcane", "")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Resistance_Physical, "Attributes.Resistance.Physical", "")
 
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Meta_IncomingXP, "Attributes.Meta.IncomingXP", "Receive XP")
 #pragma endregion
 
-
-#pragma region Input
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input, "Input", "") // ==PARENT==
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_UI_AttributeMenu, "Input.UI.AttributeMenu", "")
-
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_Move_Directional, "Input.Move.Directional", "Keyboard, Gamepad")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_Move_Mouse, "Input.Move.Mouse", "")
-
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_Combat_Ability_1, "Input.Combat.Ability.1", "")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_Combat_Ability_2, "Input.Combat.Ability.2", "")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_Combat_Ability_3, "Input.Combat.Ability.3", "")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_Combat_Ability_4, "Input.Combat.Ability.4", "")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_Combat_Ability_5, "Input.Combat.Ability.5", "")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_Combat_Ability_6, "Input.Combat.Ability.6", "")
-
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_Combat_Passive, "Input.Combat.Passive", "PARENT Tag to check with ActivationPolicy = OnSpawn")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_Combat_Passive_1, "Input.Combat.Passive.1", "")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_Combat_Passive_2, "Input.Combat.Passive.2", "")
-#pragma endregion
-
-
 #pragma region Ability
 	// Abilities
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability, "Ability", "Parent Tag") // ==PARENT==
-
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Move, "Ability.Move", "CharacterMovement Ability parent")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Move_Directional, "Ability.Move.Directional", "CharacterMovement Ability using keyboard, gamepad")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Move_Mouse, "Ability.Move.Mouse", "CharacterMovement Ability using mouse")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Move_Auto, "Ability.Move.Auto", "For AI, on player, Mouse will activate this")
 
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Attack, "Ability.Attack", "")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Summon, "Ability.Summon", "")
@@ -79,10 +53,7 @@ namespace AuraGameplayTags
 
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Status, "Ability.Status", "")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Status_Locked, "Ability.Status.Locked", "")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Status_Eligible, "Ability.Status.Eligible", "Reached Level Requirement to unlock this Ability")
-
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Type_Activatable, "Ability.Type.Activatable", "")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Type_Passive, "Ability.Type.Passive", "")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Status_Eligible, "Ability.Status.Eligible", "Reached Lv Requirement to unlock")
 #pragma endregion
 
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Generic_Ability, "Generic.Ability", "")
@@ -97,13 +68,15 @@ namespace AuraGameplayTags
 		"Block other Abilities, ... Added in ActivationOwnedTags(To Block others including self) and ActivationBlockedTags(To be Blocked)")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Character_State_HitReact, "Character.State.HitReact", "")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Character_State_Death, "Character.State.Death", "")
-	
+
 	// PlayerTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Character_State_Block_Movement, "Character.State.Block.Movement", "Block Movement")
+
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Character_State_Block_Input, "Character.State.Block.Input", "Block Player's Input")
 #pragma endregion
 
 #pragma region Combat
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Damage, "Damage", "Incoming Damage pass from UAuraGameplayAbility (UAuraProjectileAbility,...) to GE_Damage: ExecCalc_Damage")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Damage, "Damage", "Incoming Damage from GE_Damage: ExecCalc_Damage")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Damage_Fire, "Damage.Fire", "Fire type damage")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Damage_Lightning, "Damage.Lightning", "Lightning type damage")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Damage_Arcane, "Damage.Arcane", "Arcane type damage")

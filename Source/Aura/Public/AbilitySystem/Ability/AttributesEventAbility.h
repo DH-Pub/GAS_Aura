@@ -11,18 +11,18 @@ struct FGameplayAbilityTargetData_AttributeData : public FGameplayAbilityTargetD
 {
 	GENERATED_BODY()
 	FGameplayAbilityTargetData_AttributeData() {}
-	
+
 	UPROPERTY()
 	TArray<FGameplayTag> AttributeTags;
 	UPROPERTY()
 	TArray<int32> AttributeMagnitudes;
-	
+
 	/** Returns all actors targeted, almost always overridden */
 	virtual TArray<TWeakObjectPtr<AActor>> GetActors() const
 	{
 		return TArray<TWeakObjectPtr<AActor>>();
 	}
-	
+
 	// Required for all child structs of FGameplayAbilityTargetData
 	virtual UScriptStruct* GetScriptStruct() const override { return StaticStruct();}
 	// Required for all child structs of FGameplayAbilityTargetData

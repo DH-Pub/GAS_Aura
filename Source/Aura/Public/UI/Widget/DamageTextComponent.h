@@ -22,7 +22,7 @@ class UE_DEPRECATED(5.4, "Use AuraWorldUserWidget") AURA_API UDamageTextComponen
 	GENERATED_BODY()
 public:
 	UDamageTextComponent();
-	
+
 	// BlueprintImplementableEvent can't be NetMulticast so we have to call BP function through a NetMulticast function
 	UFUNCTION(NetMulticast, Unreliable)
 	void SetDamageText(float Damage);

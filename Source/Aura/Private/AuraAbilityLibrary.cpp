@@ -18,7 +18,7 @@ bool UAuraAbilityLibrary::YawActorToRotation(AActor* InActor, const FVector InAi
 		InActor->GetRootComponent()->SetWorldRotation(CurrentRot);
 		return true;
 	}
-	
+
 	const float DeltaRot = DeltaTime * InterpSpeed * 3.f;
 	CurrentRot.Yaw = FMath::FixedTurn(CurrentRot.Yaw, TargetRot.Yaw, DeltaRot);
 	// CurrentRot.Yaw = FMath::FInterpTo(CurrentRot.Yaw, TargetRot.Yaw, DeltaTime, InterpSpeed * .05f); // For top-down view
@@ -41,7 +41,7 @@ void UAuraAbilityLibrary::GetLivePlayersInRadius(const UObject* WorldContextObje
 	{
 		OutActors.AddUnique(Overlap.GetActor());
 	}
-	
+
 	if (bShowDebug) UKismetSystemLibrary::DrawDebugSphere(WorldContextObject, Origin, Radius, 12, FColor::Red, 1.f);
 }
 

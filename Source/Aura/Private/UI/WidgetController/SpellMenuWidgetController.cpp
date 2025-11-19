@@ -8,7 +8,7 @@
 #include "AbilitySystem/Data/AbilityDataAsset.h"
 #include "Player/AuraPlayerState.h"
 #include "UI/HUD/AuraHUD.h"
-#include "UI/Widget/SpellGlobeButtonWidget.h"
+#include "UI/Widget/Spells/SpellGlobeButtonWidget.h"
 #include "UI/WidgetController/OverlayWidgetController.h"
 
 void USpellMenuWidgetController::BindCallbacksDependencies()
@@ -39,7 +39,7 @@ void USpellMenuWidgetController::UpdateButtonsAndDescriptions(const bool bClick)
 	const FGameplayTag& StatusTag = FocusSpellGlobe ? FocusSpellGlobe->StatusTag : FGameplayTag();
 	const bool bSpendEnabled = SpellPoints > 0 && !StatusTag.MatchesTagExact(AuraGameplayTags::Ability_Status_Locked);
 	const bool bEquipEnabled = !StatusTag.MatchesTag(AuraGameplayTags::Ability_Status);
-	
+
 	FText Description;
 	FText NextLvDescription;
 	if (const FGameplayAbilitySpec* Spec = GetASC()->GetSpecFromAbilityTag(AbilityTag))
@@ -86,14 +86,13 @@ bool USpellMenuWidgetController::EquipAbility()
 	return false;
 }
 
-void USpellMenuWidgetController::ChangeSpellInputSlot(const FGameplayTag& AbilityTag, const FGameplayTag NewSlotTag,
-	const bool bIsPassive)
+void USpellMenuWidgetController::ChangeSpellInputSlot(const FGameplayTag& AbilityTag, const int32 AbilityID)
 {
-	if (const FAuraAbilityData* Data = UAbilityDataAsset::GetAbilityFromGameState(this, AbilityTag))
-	{	// Check Wrong type (Active != Passive Slots)
-		if (const UAuraGameplayAbility* AuraAbility = Data->AbilityClass->GetDefaultObject<UAuraGameplayAbility>();
-			bIsPassive != (AuraAbility->ActivationPolicy == EAuraActivationPolicy::OnSpawn)) return;
+	if (const FGameplayAbilitySpec* Spec = GetASC()->GetSpecFromAbilityTag(AbilityTag))
+	{
+		if (Spec->InputID == AbilityID) return; // "Change" to the same slot
+
 		ClearSelected();
-		GetASC()->ServerChangeAbilitySlot(AbilityTag, NewSlotTag);
+		GetASC()->ServerChangeAbilitySlot(AbilityTag, AbilityID);
 	}
 }

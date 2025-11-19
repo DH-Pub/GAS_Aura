@@ -31,15 +31,15 @@ void USummonAbility::SetSpawnLocations()
 	if (NumMinions == 0) return;
 	const FVector Forward = AuraCharacter->GetActorForwardVector();
 	const FVector Location = AuraCharacter->GetActorLocation();
-	
+
 	const float DeltaSpread = SpawnSpread / NumMinions;
 	const FVector LeftOfSpread = Forward.RotateAngleAxis(-SpawnSpread / 2.f, FVector::UpVector);
-	
+
 	for (int32 i = 0; i < NumMinions; i++)
 	{
 		const FVector Direction = LeftOfSpread.RotateAngleAxis(DeltaSpread * (i + 0.5) , FVector::UpVector);
 		FVector ChosenSpawnLocation = Location + Direction * FMath::FRandRange(MinSpawnDistance, MaxSpawnDistance);
-		
+
 		// Prevent Spawning below ground
 		FHitResult Hit; FCollisionObjectQueryParams Params(ECC_WorldStatic);
 		GetWorld()->LineTraceSingleByObjectType(Hit, ChosenSpawnLocation + FVector(0.f, 0.f, 500.f),
@@ -62,7 +62,7 @@ void USummonAbility::PreActivate(const FGameplayAbilitySpecHandle Handle,
 	FOnGameplayAbilityEnded::FDelegate* OnGameplayAbilityEndedDelegate, const FGameplayEventData* TriggerEventData)
 {
 	Super::PreActivate(Handle, ActorInfo, ActivationInfo, OnGameplayAbilityEndedDelegate, TriggerEventData);
-	
+
 	SetSpawnLocations();
 	// Shuffle Locations
 	const int32 LastIndex = SummonInfo.Locations.Num() - 1;
@@ -78,14 +78,14 @@ void USummonAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, const F
 {
 	SummonInfo.Locations.Reset();
 	SpawnLocationIndex = 0;
-	
+
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }
 
 bool USummonAbility::SpawnEnemiesByLocations()
 {
 	if (SpawnLocationIndex >= SummonInfo.Locations.Num()) return false;
-	
+
 	FVector SpawnLocation = SummonInfo.Locations[SpawnLocationIndex++];
 	SpawnLocation.Z += 70.f; // Above ground
 	FTransform SpawnTransform;
@@ -93,7 +93,7 @@ bool USummonAbility::SpawnEnemiesByLocations()
 	FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(AuraCharacter->GetActorLocation(), SpawnLocation);
 	LookAtRotation.Pitch = LookAtRotation.Roll = 0.f;
 	SpawnTransform.SetRotation(LookAtRotation.Quaternion());
-	
+
 	AAuraCharacterBase* SpawnedCharacter = GetWorld()->SpawnActorDeferred<AAuraCharacterBase>(GetRandomMinionsClass(), SpawnTransform,
 		AuraCharacter, /*Cast<Pawn>*/AuraCharacter, ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn);
 	AuraCharacter->AddNewSummon(SpawnedCharacter);

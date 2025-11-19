@@ -19,13 +19,13 @@ void UExecCalc_Debuff::Execute_Implementation(const FGameplayEffectCustomExecuti
 	/* Boilerplate ~ */
 	const UAbilitySystemComponent* TargetASC = ExecutionParams.GetTargetAbilitySystemComponent();
 	AActor* TargetAvatar = TargetASC ? TargetASC->GetAvatarActor() : nullptr;
-	
+
 	const FGameplayEffectSpec& Spec = ExecutionParams.GetOwningSpec();
 	FAggregatorEvaluateParameters EvaluateParameters;
 	EvaluateParameters.SourceTags = Spec.CapturedSourceTags.GetAggregatedTags();
 	EvaluateParameters.TargetTags = Spec.CapturedTargetTags.GetAggregatedTags();
 	/* ~ End Boilerplate */
-	
+
 	if (const UDamageAbility* DamageAbility = Cast<UDamageAbility>(Spec.GetEffectContext().GetAbilityInstance_NotReplicated()))
 	{
 		Spec.GetContext().AddOrigin(TargetAvatar->GetActorLocation());

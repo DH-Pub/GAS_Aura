@@ -16,6 +16,6 @@ void UAuraButtonWidget::NativePreConstruct()
 	Super::NativePreConstruct();
 	SizeBox_Root->SetWidthOverride(ButtonWidthHeight.X);
 	SizeBox_Root->SetHeightOverride(ButtonWidthHeight.Y);
-	
+
 	Button->SetStyle(InnerStyle);
 }

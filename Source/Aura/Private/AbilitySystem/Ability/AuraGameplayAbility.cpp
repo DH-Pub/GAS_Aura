@@ -7,7 +7,6 @@
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "Character/AuraCharacterBase.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "Player/AuraPlayerController.h"
 
 UAuraGameplayAbility::UAuraGameplayAbility()
 {
@@ -17,7 +16,27 @@ UAuraGameplayAbility::UAuraGameplayAbility()
 bool UAuraGameplayAbility::CanActivateAbility(const FGameplayAbilitySpecHandle Handle,
 	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayTagContainer* SourceTags,
 	const FGameplayTagContainer* TargetTags, FGameplayTagContainer* OptionalRelevantTags) const
-{	// bool bNotUnlocked = GetCurrentAbilitySpec()->GetDynamicSpecSourceTags().HasTagExact();
+{
+	const FGameplayAbilitySpec* Spec = GetCurrentAbilitySpec();
+	const FGameplayTagContainer& SpecTags = Spec->GetDynamicSpecSourceTags();
+	if (!SpecTags.IsEmpty())
+	{
+		switch (ActivationPolicy)
+		{
+		case EAuraActivationPolicy::InputHolding:
+		case EAuraActivationPolicy::InputStart:
+			if (ActorInfo->AbilitySystemComponent->HasMatchingGameplayTag(
+				AuraGameplayTags::Character_State_Block_Input)) return false;
+			if (Spec->InputID == INDEX_NONE) return false; // Invalid input set on an Input Ability
+			break;
+		default: break;
+		}
+		for (const FGameplayTag& Tag : SpecTags)
+		{
+			if (Tag.MatchesTagExact(AuraGameplayTags::Ability_Status_Eligible) ||
+				Tag.MatchesTagExact(AuraGameplayTags::Ability_Status_Locked)) return false;
+		}
+	}
 	return Super::CanActivateAbility(Handle, ActorInfo, SourceTags, TargetTags, OptionalRelevantTags);
 }
 
@@ -26,42 +45,47 @@ void UAuraGameplayAbility::PreActivate(const FGameplayAbilitySpecHandle Handle,
 	FOnGameplayAbilityEnded::FDelegate* OnGameplayAbilityEndedDelegate, const FGameplayEventData* TriggerEventData)
 {
 	Super::PreActivate(Handle, ActorInfo, ActivationInfo, OnGameplayAbilityEndedDelegate, TriggerEventData);
-	EnableMovement(false); // Change movement here because C++ ActivateAbility() runs after BP
+	// if using ActivateAbility, beware that Super::ActivateAbility calls BP_ActivateAbility inside so do it before Super
+	if (bStopRotation) AuraCharacter->GetCharacterMovement()->RotationRate = FRotator();
 }
 
 void UAuraGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
 	const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
 {
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
-	EnableMovement(true);
+	if (bStopRotation) AuraCharacter->GetCharacterMovement()->RotationRate = AuraCharacter->BaseRotationRate;
 }
 
-// Subclasses of this call anything that requires MarkAbilitySpecDirty() before Super::
+// "BeginPlay" logic here, Subclasses of this call anything that requires MarkAbilitySpecDirty() before Super::
 void UAuraGameplayAbility::OnAvatarSet(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec)
-{	// "BeginPlay" logic
-	// Super::OnAvatarSet(ActorInfo, Spec); // this is empty in base class
-	
+{	// Super::OnAvatarSet(ActorInfo, Spec); // Parent function is empty
 	AuraCharacter = Cast<AAuraCharacterBase>(ActorInfo->AvatarActor);
-	switch (ActivationPolicy)
-	{
-	case EAuraActivationPolicy::InputStart: break; // TODO: Can add Tag to spec's Dynamic or SetByCaller here
-	case EAuraActivationPolicy::InputHolding: break;
-	case EAuraActivationPolicy::OnSpawn:
-		ActorInfo->AbilitySystemComponent->TryActivateAbility(Spec.Handle, false);
-		break;
-	}
-	
+
 	FGameplayAbilitySpec* AbilitySpec = GetCurrentAbilitySpec();
+	if (ActivationPolicy == EAuraActivationPolicy::OnSpawn)
+	{
+		ActorInfo->AbilitySystemComponent->TryActivateAbility(Spec.Handle, false);
+		switch (PassiveID)
+		{
+		case EAuraAbilityPassiveID::None: break;
+		default:
+			AbilitySpec->InputID = -1 * static_cast<uint32>(PassiveID); // Negative InputID for Passives
+			break;
+		}
+	}
+	else
+	{
+		switch (StartupInputID)
+		{
+		case EAuraAbilityInputID::None: break;
+		default:
+			AbilitySpec->InputID = static_cast<uint32>(StartupInputID);
+			break;
+		}
+	}
+
 	if (AuraAbilityTag.IsValid()) AbilitySpec->GetDynamicSpecSourceTags().AddTag(AuraAbilityTag);
 	ActorInfo->AbilitySystemComponent->MarkAbilitySpecDirty(*AbilitySpec);
-}
-
-void UAuraGameplayAbility::EnableMovement(const bool bEnable)
-{
-	if (bStopRotation)
-	{
-		AuraCharacter->GetCharacterMovement()->RotationRate = bEnable ? AuraCharacter->BaseRotationRate : FRotator();
-	}
 }
 
 FGameplayTagContainer& UAuraGameplayAbility::AddGenericAssetTags(FGameplayTagContainer& Tags)
@@ -76,4 +100,12 @@ void UAuraGameplayAbility::SetBaseCancelBlock()
 	// BlockAbilitiesWithTag.AddTag(AuraGameplayTags::Generic_Ability_Blockable);
 	ActivationOwnedTags.AddTag(AuraGameplayTags::Character_State_Ability);
 	ActivationBlockedTags.AddTag(AuraGameplayTags::Character_State_Ability);
+}
+
+int32 UAuraGameplayAbility::ConvertInputAndPassiveEnumToAbilityID(const EAuraAbilityInputID InInputID,
+	const EAuraAbilityPassiveID InPassiveID)
+{
+	if (InInputID != EAuraAbilityInputID::None) return static_cast<int32>(InInputID);
+	if (InPassiveID != EAuraAbilityPassiveID::None) return -static_cast<int32>(InPassiveID);
+	return INDEX_NONE;
 }

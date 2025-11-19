@@ -8,7 +8,7 @@
 
 class UImage;
 /**
- * 
+ *
  */
 UCLASS()
 class AURA_API UGlobeWidget : public UAuraUserWidget
@@ -18,16 +18,21 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Default|Properties")
 	FSlateBrush RingBrush = FSlateBrush(); // Decorate Ring
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Default|Properties")
-	FSlateBrush DefaultBackground = FSlateBrush(); // For Empty Spell Globes
-	
+	FSlateBrush DefaultBackground = FSlateBrush(); // For Empty Spell Globes, can be nothing
+
+	UPROPERTY(EditAnywhere, Category="Default|Properties")
+	FVector2D WidthHeight = FVector2D(40., 40.);
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Default|Properties")
 	FMargin InPadding = FMargin(30.f); // Background, Glass, SpellIcon
 protected:
 	virtual void NativePreConstruct() override;
+
+	UPROPERTY(BlueprintReadWrite, meta=(BindWidgetOptional))
+	TObjectPtr<class USizeBox> SizeBox_Root;
 	UPROPERTY(BlueprintReadWrite, meta=(BindWidget))
 	TObjectPtr<UImage> Image_Background;
-	UPROPERTY(BlueprintReadWrite, meta=(BindWidget))
+	UPROPERTY(BlueprintReadWrite, meta=(BindWidgetOptional))
 	TObjectPtr<UImage> Image_Glass;
-	UPROPERTY(BlueprintReadWrite, meta=(BindWidget))
+	UPROPERTY(BlueprintReadWrite, meta=(BindWidgetOptional))
 	TObjectPtr<UImage> Image_Ring;
 };

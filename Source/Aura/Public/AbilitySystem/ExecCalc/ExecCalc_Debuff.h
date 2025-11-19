@@ -8,7 +8,7 @@
 #include "ExecCalc_Debuff.generated.h"
 
 /**
- * 
+ *
  */
 UCLASS()
 class AURA_API UExecCalc_Debuff : public UGameplayEffectExecutionCalculation

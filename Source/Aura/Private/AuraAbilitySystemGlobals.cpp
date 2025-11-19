@@ -36,7 +36,7 @@ UGameplayCueManager* UAuraAbilitySystemGlobals::GetGameplayCueManager()
 					*DeveloperSettings->GlobalGameplayCueManagerName.ToString());
 			}
 		}
-		
+
 		// Load specific GameplayCueManager class if specified
 		if ( GlobalGameplayCueManager == nullptr && DeveloperSettings->GlobalGameplayCueManagerClass.IsValid() )
 		{
@@ -45,14 +45,14 @@ UGameplayCueManager* UAuraAbilitySystemGlobals::GetGameplayCueManager()
 				nullptr, LOAD_None, nullptr);
 			if (GCMClass) GlobalGameplayCueManager = NewObject<UAuraCueManager>(this, GCMClass);
 		}
-		
+
 		if ( GlobalGameplayCueManager == nullptr)
 		{	// Fallback to base native class
 			GlobalGameplayCueManager = NewObject<UAuraCueManager>(this, UAuraCueManager::StaticClass());
 		}
-		
+
 		GlobalGameplayCueManager->OnCreated();
-		
+
 		if (GetGameplayCueNotifyPaths().IsEmpty())
 		{
 			AddGameplayCueNotifyPath(TEXT("/Game"));
@@ -60,13 +60,13 @@ UGameplayCueManager* UAuraAbilitySystemGlobals::GetGameplayCueManager()
 				"[/Script/GameplayAbilities.AbilitySystemGlobals]. Falling back to using all of /Game/. "
 				"This may be slow on large projects. Consider specifying which paths are to be searched."));
 		}
-		
+
 		if (GlobalGameplayCueManager->ShouldAsyncLoadObjectLibrariesAtStart())
 		{
 			StartAsyncLoadingObjectLibraries();
 		}
 	}
-	
+
 	check(GlobalGameplayCueManager);
 	return GlobalGameplayCueManager;
 }

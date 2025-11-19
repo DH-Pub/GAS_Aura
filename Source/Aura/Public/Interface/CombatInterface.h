@@ -6,9 +6,7 @@
 #include "UObject/Interface.h"
 #include "CombatInterface.generated.h"
 
-class AAuraCharacterBase;
 enum class ECharacterClass : uint8;
-class UNiagaraSystem;
 
 UENUM(BlueprintType)
 enum class ECombatSocket : uint8
@@ -23,13 +21,13 @@ USTRUCT(BlueprintType)
 struct FTaggedMontage
 {
 	GENERATED_BODY()
-	
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<UAnimMontage> Montage = nullptr;
-	
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	ECombatSocket SocketEnum = ECombatSocket::Weapon;
-	
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<USoundBase> ImpactSound = nullptr;
 };
@@ -55,8 +53,8 @@ public:
 	/*UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	int32 GetCharacterLevel();*/
 	UFUNCTION(BlueprintNativeEvent)
-	UNiagaraSystem* GetBloodEffect();
-	
+	class UNiagaraSystem* GetBloodEffect();
+
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	bool IsDead() const;
 	/*

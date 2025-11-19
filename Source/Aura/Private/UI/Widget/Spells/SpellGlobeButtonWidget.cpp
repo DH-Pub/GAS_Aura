@@ -1,7 +1,7 @@
 // Copyright Hung
 
 
-#include "UI/Widget/SpellGlobeButtonWidget.h"
+#include "UI/Widget/Spells/SpellGlobeButtonWidget.h"
 
 #include "AuraGameplayTags.h"
 #include "AbilitySystem/Data/AbilityDataAsset.h"
@@ -23,7 +23,7 @@ void USpellGlobeButtonWidget::SetWidgetController(UAuraWidgetController* InWidge
 void USpellGlobeButtonWidget::ReceiveAbilityData(const FAuraAbilityData& AbilityData, const FPlayerAbilityData& PlayerData)
 {
 	if (!AbilityData.GetAuraAbilityTag().MatchesTagExact(AbilityTag)) return;
-	
+
 	StatusTag = PlayerData.StatusTag;
 	if (StatusTag.MatchesTagExact(AuraGameplayTags::Ability_Status_Locked))
 	{
@@ -43,7 +43,7 @@ void USpellGlobeButtonWidget::ReceiveAbilityData(const FAuraAbilityData& Ability
 		Image_SpellIcon->SetBrushFromTexture(AbilityData.Icon);
 		Image_Background->SetBrushFromMaterial(AbilityData.BackgroundMaterial);
 	}
-	
+
 	// Order: GiveAbility => Updating SpellPoints, but AbilityDataDelegate broadcast slower than OnSpellPointChangedDelegate
 	// Equipped Spell will not activate this on SpellPointsChanged
 	if (SpellMenuWC->FocusSpellGlobe == this) SpellMenuWC->UpdateButtonsAndDescriptions();
@@ -54,11 +54,11 @@ void USpellGlobeButtonWidget::NativePreConstruct()
 	Super::NativePreConstruct();
 	SizeBox_Root->SetWidthOverride(ButtonWidthHeight.X);
 	SizeBox_Root->SetHeightOverride(ButtonWidthHeight.Y);
-	
+
 	Cast<UOverlaySlot>(Image_Glass->Slot)->SetPadding(InPadding);
 	Cast<UOverlaySlot>(Image_Background->Slot)->SetPadding(InPadding);
 	Cast<UOverlaySlot>(Image_SpellIcon->Slot)->SetPadding(InPadding);
-	
+
 	Image_Background->SetBrushFromMaterial(LockedMaterial);
 	Border->SetBrush(BorderNormal);
 	Image_Selection->SetVisibility(ESlateVisibility::Collapsed);

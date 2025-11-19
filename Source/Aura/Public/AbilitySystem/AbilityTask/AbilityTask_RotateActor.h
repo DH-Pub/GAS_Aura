@@ -14,7 +14,7 @@ UCLASS()
 class AURA_API UAbilityTask_RotateActor : public UAbilityTask
 {
 	GENERATED_BODY()
-	
+
 	UPROPERTY(BlueprintAssignable)
 	FFinishDelegate OnFinish;
 	/**
@@ -23,7 +23,7 @@ class AURA_API UAbilityTask_RotateActor : public UAbilityTask
 	 */
 	UFUNCTION(BlueprintCallable, meta=(HidePin="OwningAbility", DefaultToSelf="OwningAbility", BlueprintInternalUseOnly="TRUE"))
 	static UAbilityTask_RotateActor* WaitSpecInputPressed(class UAuraGameplayAbility* OwningAbility);
-	
+
 	virtual void Activate() override;
 	virtual void TickTask(float DeltaTime) override;
 protected:

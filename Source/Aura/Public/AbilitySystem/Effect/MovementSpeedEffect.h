@@ -15,13 +15,3 @@ class AURA_API UStartingMovementSpeedEffect : public UGameplayEffect
 	GENERATED_BODY()
 	UStartingMovementSpeedEffect();
 };
-
-/**
- * 
- */
-UCLASS()
-class AURA_API UDisableMovementEffect : public UGameplayEffect
-{
-	GENERATED_BODY()
-	UDisableMovementEffect();
-};

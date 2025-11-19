@@ -50,7 +50,7 @@ private:
 
 
 /**
- * 
+ *
  */
 UCLASS()
 class AURA_API UCostEffect : public UGameplayEffect
@@ -61,7 +61,7 @@ public:
 };
 
 /**
- * 
+ *
  */
 UCLASS()
 class AURA_API UCooldownEffect : public UGameplayEffect

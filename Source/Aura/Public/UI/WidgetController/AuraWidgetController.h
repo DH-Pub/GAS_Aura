@@ -6,17 +6,12 @@
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AuraWidgetController.generated.h"
 
-struct FGameplayAttribute;
-class AAuraPlayerState;
-class AAuraPlayerController;
-class UAuraAttributeSet;
-
 /* TODO: Next proj: For some Widgets, just put logic inside them directly
  * use BlueprintImplementableEvent/BlueprintNativeEvent instead of DynamicDelegate */
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnVitalAttributeChanged, float, NewValue);
 
 /**
- * 
+ *
  */
 UCLASS(Blueprintable, BlueprintType)
 class AURA_API UAuraWidgetController : public UObject
@@ -31,7 +26,7 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable)
 	virtual void BroadcastInitialValues() {}; // If SetWidgetController is not called, call this
-	
+
 	// Create WidgetController if none and BindCallbacksDependencies()
 	template <typename ControllerT = UAuraWidgetController>
 	static ControllerT* CreateOrGetWidgetController(UObject* Outer, AAuraCharacterBase* InCharacter,
@@ -49,18 +44,18 @@ public:
 	UFUNCTION(BlueprintPure, meta=(CompactNodeTitle="PlayerController"))
 	AController* GetPlayerController() const;
 	UFUNCTION(BlueprintPure, meta=(CompactNodeTitle="PlayerState"))
-	AAuraPlayerState* GetPlayerState() const; // Do not call this in AI's WidgetController
+	class AAuraPlayerState* GetPlayerState() const; // Do not call this in AI's WidgetController
 	UFUNCTION(BlueprintPure, meta=(CompactNodeTitle="ASC"))
 	UAuraAbilitySystemComponent* GetASC() const;
 	UFUNCTION(BlueprintPure, meta=(CompactNodeTitle="AttributeSet"))
-	UAuraAttributeSet* GetAttributeSet() const;
-	
+	class UAuraAttributeSet* GetAttributeSet() const;
+
 	UPROPERTY()
 	TObjectPtr<class AAuraHUD> AuraHUD;
 protected:
-	// Bind AbilitySystemComponent's FOnGameplayAttributeValueChange to 
+	// Bind AbilitySystemComponent's FOnGameplayAttributeValueChange to
 	template<typename DelegateT = TBaseDynamicMulticastDelegate>
-	void BindGameplayAttributeToBroadcast(const FGameplayAttribute& Attribute, const DelegateT& AttributeChanged)
+	void BindGameplayAttributeToBroadcast(const struct FGameplayAttribute& Attribute, const DelegateT& AttributeChanged)
 	{
 		GetASC()->GetGameplayAttributeValueChangeDelegate(Attribute).RemoveAll(this);
 		GetASC()->GetGameplayAttributeValueChangeDelegate(Attribute)

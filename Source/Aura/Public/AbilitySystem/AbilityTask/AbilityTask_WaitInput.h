@@ -16,7 +16,7 @@ UCLASS()
 class AURA_API UAbilityTask_WaitSpecInputPressed : public UAbilityTask
 {	// Based on UAbilityTask_WaitInputPress
 	GENERATED_BODY()
-	
+
 	UPROPERTY(BlueprintAssignable)
 	FSpecInputDelegate OnPress;
 	/**
@@ -25,7 +25,7 @@ class AURA_API UAbilityTask_WaitSpecInputPressed : public UAbilityTask
 	 */
 	UFUNCTION(BlueprintCallable, meta=(HidePin="OwningAbility", DefaultToSelf="OwningAbility", BlueprintInternalUseOnly="TRUE"))
 	static UAbilityTask_WaitSpecInputPressed* WaitSpecInputPressed(class UAuraGameplayAbility* OwningAbility);
-	
+
 	virtual void Activate() override;
 protected:
 	UFUNCTION()
@@ -44,7 +44,7 @@ UCLASS()
 class AURA_API UAbilityTask_WaitSpecInputReleased : public UAbilityTask
 {	// Based on UAbilityTask_WaitInputRelease
 	GENERATED_BODY()
-	
+
 	UPROPERTY(BlueprintAssignable)
 	FSpecInputDelegate OnReleased;
 	/**
@@ -53,7 +53,7 @@ class AURA_API UAbilityTask_WaitSpecInputReleased : public UAbilityTask
 	 */
 	UFUNCTION(BlueprintCallable, meta=(HidePin="OwningAbility", DefaultToSelf="OwningAbility", BlueprintInternalUseOnly="TRUE"))
 	static UAbilityTask_WaitSpecInputReleased* WaitSpecInputReleased(class UAuraGameplayAbility* OwningAbility);
-	
+
 	virtual void Activate() override;
 protected:
 	UFUNCTION()

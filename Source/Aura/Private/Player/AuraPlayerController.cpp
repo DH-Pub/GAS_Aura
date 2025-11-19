@@ -32,7 +32,7 @@ void AAuraPlayerController::PlayerTick(const float DeltaTime)
 	Super::PlayerTick(DeltaTime);
 	if (AuraPawn == nullptr) return;
 	CursorTick();
-	
+
 	switch (MovementState)
 	{
 	case Stop: break;
@@ -67,13 +67,13 @@ void AAuraPlayerController::BeginPlay()
 {
 	check(InputMappingContext); // check/verify/ensure
 	Super::BeginPlay();
-	
+
 	if (UEnhancedInputLocalPlayerSubsystem* InputSystem =
 		ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
 	{
 		InputSystem->AddMappingContext(InputMappingContext, 0);
 	}
-	
+
 	// Mouse Cursor Settings
 	bShowMouseCursor = true;
 	DefaultMouseCursor = EMouseCursor::Default;
@@ -81,21 +81,28 @@ void AAuraPlayerController::BeginPlay()
 	InputModeData.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
 	InputModeData.SetHideCursorDuringCapture(false);
 	SetInputMode(InputModeData);
-	
+
 	NavSystem = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
 }
 void AAuraPlayerController::SetupInputComponent()
 {	// AuraInputComponent->BindActionValue(InputAction).GetValue();
 	Super::SetupInputComponent();
-	
+
 	UAuraInputComponent* InputComp = CastChecked<UAuraInputComponent>(InputComponent);
 	InputComp->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AAuraPlayerController::Move);
-	
+
 	InputComp->BindAction(MoveMouseAction, ETriggerEvent::Triggered, this, &AAuraPlayerController::MoveMouseTriggered);
 	InputComp->BindAction(MoveMouseAction, ETriggerEvent::Completed, this, &AAuraPlayerController::MoveMouseComplete);
-	
+
 	InputComp->BindAbilityActions(InputConfig, InputMappingContext,this,
 		&AAuraPlayerController::PlayerInputPressed, &AAuraPlayerController::PlayerInputReleased);
+}
+
+void AAuraPlayerController::PostProcessInput(const float DeltaTime, const bool bGamePaused)
+{
+	if (AuraASC) AuraASC->ProcessAbilityInput(DeltaTime, bGamePaused);
+
+	Super::PostProcessInput(DeltaTime, bGamePaused);
 }
 
 
@@ -164,8 +171,8 @@ void AAuraPlayerController::Move(const FInputActionValue& InputActionValue)
 	const FVector2D InputAxisVector = InputActionValue.Get<FVector2D>();
 	//TODO: No need to run this every tick because this project's camera is static
 	// const FRotator Rotation = GetControlRotation(); // Camera->bUsePawnControlRotation has to be true for this to work
-	
-	// GetPlayerViewPoint(); // Called in APawn::GetBaseAimRotation() 
+
+	// GetPlayerViewPoint(); // Called in APawn::GetBaseAimRotation()
 	const FRotator Rotation = PlayerCameraManager->GetCameraRotation();
 	const FRotator YawRotation(0., Rotation.Yaw, 0.);
 	// Camera to player leveled to the ground
@@ -232,7 +239,7 @@ void AAuraPlayerController::CursorTick()
 		if (LastEnemy) LastEnemy->UnHighlightActor();
 		if (CursorHitEnemy) CursorHitEnemy->HighlightActor();
 	}
-	
+
 	const FVector CharacterLocation = GetPawn()->GetActorLocation();
 	/*
 	 * We use a point at the same plane as character location:
@@ -244,7 +251,7 @@ void AAuraPlayerController::CursorTick()
 		CharacterLocation, FVector::UpVector, TIntersection, Intersection);
 	AuraPawn->AimDirection = (Intersection - CharacterLocation).GetSafeNormal();
 	ServerSetCharacterAimDirection(AuraPawn->AimDirection);
-	
+
 	if (CursorHitEnemy) return; // Has valid Hit to end here
 	TArray<FHitResult> Hits;
 	UKismetSystemLibrary::SphereTraceMultiForObjects(this,
@@ -268,14 +275,14 @@ void AAuraPlayerController::CursorTick()
 	/*GetWorld()->OverlapMultiByObjectType();*/
 }
 
-void AAuraPlayerController::PlayerInputPressed(const FGameplayTag InputTag)
+void AAuraPlayerController::PlayerInputPressed(const int8 InputID)
 {
-	if (AuraASC) AuraASC->AbilityInputTagPressed(InputTag);
+	if (AuraASC) AuraASC->AbilityInputPressed(InputID);
 	else if (AuraPawn) AuraASC = AuraPawn->GetAuraAbilitySystemComponent();
 }
-void AAuraPlayerController::PlayerInputReleased(const FGameplayTag InputTag)
+void AAuraPlayerController::PlayerInputReleased(const int8 InputID)
 {
-	if (AuraASC) AuraASC->AbilityInputTagReleased(InputTag);
+	if (AuraASC) AuraASC->AbilityInputReleased(InputID);
 	else if (AuraPawn) AuraASC = AuraPawn->GetAuraAbilitySystemComponent();
 }
 

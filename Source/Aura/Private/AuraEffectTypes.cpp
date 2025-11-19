@@ -184,7 +184,7 @@ bool FAuraEffectContext::NetSerialize(FArchive& Ar, class UPackageMap* Map, bool
 	{
 		SafeNetSerializeTArray_WithNetSerialize<31>(Ar, CueLocations, Map);
 		/#1#/ Must add NetCore in Build.cs
-		bOutSuccess &= SafeNetSerializeTArray_WithNetSerialize<31>(Ar, CueLocations, Map); // Or modify bOutSuccess #1# 
+		bOutSuccess &= SafeNetSerializeTArray_WithNetSerialize<31>(Ar, CueLocations, Map); // Or modify bOutSuccess #1#
 	}*/
 	// End ====================================================================================================
 

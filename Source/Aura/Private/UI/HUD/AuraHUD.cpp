@@ -17,7 +17,7 @@ void AAuraHUD::InitAuraHUD(AAuraPlayerController* PC, AAuraPlayerState* PS, AAur
 	PlayerState = PS;
 	AbilitySystemComponent = Character->GetAuraAbilitySystemComponent();
 	AttributeSet = Character->GetAttributeSet();
-	
+
 	// Create and add HUD widget to viewport
 	OverlayWidget = CreateWidget<UAuraUserWidget>(GetWorld(), OverlayWidgetClass);
 	OverlayWidget->AddToViewport();
@@ -25,7 +25,7 @@ void AAuraHUD::InitAuraHUD(AAuraPlayerController* PC, AAuraPlayerState* PS, AAur
 	UAuraWidgetController::CreateOrGetWidgetController<UOverlayWidgetController>(this, Character,
 		OverlayController, OverlayWidgetControllerClass);
 	OverlayWidget->SetWidgetController(OverlayController);
-	
+
 	UAuraWidgetController::CreateOrGetWidgetController<UAttributeMenuWidgetController>(this, Character,
 		AttributeMenuController, AttributeMenuWidgetControllerClass);
 	UAuraWidgetController::CreateOrGetWidgetController<USpellMenuWidgetController>(this, Character,
