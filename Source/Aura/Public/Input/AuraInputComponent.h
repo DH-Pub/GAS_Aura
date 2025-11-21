@@ -22,7 +22,7 @@ class AURA_API UAuraInputComponent : public UEnhancedInputComponent
 public:
 	// Bind UAuraInputConfig's InputAction:
 	template<class UserClassT, typename PressedFuncT, typename ReleasedFuncT>
-	void BindAbilityActions(const UAuraInputConfig* InputConfig, UInputMappingContext* InputMappingContext,
+	void BindAbilityActions(const UAuraInputConfig* InputConfig, const UInputMappingContext* InputMappingContext,
 		UserClassT* Object, PressedFuncT PressedFunc, ReleasedFuncT ReleasedFunc)
 	{
 		check(InputConfig);

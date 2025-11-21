@@ -40,13 +40,16 @@ namespace AuraGameplayTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Attributes_Meta_IncomingXP)
 #pragma endregion
 
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Cooldown) // Generic Grant Tags for CooldownEffect, replaced in GetCooldownTags()
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Cooldown_Duration) // Store original Duration during cooldown as SetByCaller
+
 #pragma region Ability
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability)
 
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Attack)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Summon)
 
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Cooldown_Reduce)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Cooldown_Reduce) // Activate this to reduce remaining cooldown of abilities
 	// Abilities with CD =============================================================================================
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Fire_FireBolt)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Lightning_Electrocute)

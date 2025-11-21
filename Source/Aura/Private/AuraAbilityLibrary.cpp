@@ -3,6 +3,7 @@
 
 #include "AuraAbilityLibrary.h"
 
+#include "Engine/OverlapResult.h"
 #include "Kismet/GameplayStatics.h"
 
 bool UAuraAbilityLibrary::YawActorToRotation(AActor* InActor, const FVector InAimDirection, const float DeltaTime,

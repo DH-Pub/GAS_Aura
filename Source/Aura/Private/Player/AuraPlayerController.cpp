@@ -8,6 +8,7 @@
 #include "NavigationSystem.h"
 #include "NiagaraFunctionLibrary.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
+#include "AbilitySystem/Data/AuraInputDataAsset.h"
 #include "AI/NavigationSystemBase.h"
 #include "Aura/Aura.h"
 #include "Character/AuraEnemy.h"
@@ -65,13 +66,12 @@ void AAuraPlayerController::SetPawn(APawn* InPawn)
 
 void AAuraPlayerController::BeginPlay()
 {
-	check(InputMappingContext); // check/verify/ensure
 	Super::BeginPlay();
 
-	if (UEnhancedInputLocalPlayerSubsystem* InputSystem =
-		ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
+	if (UEnhancedInputLocalPlayerSubsystem* InputSystem = ULocalPlayer::GetSubsystem
+		<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
 	{
-		InputSystem->AddMappingContext(InputMappingContext, 0);
+		InputSystem->AddMappingContext(AuraInputDA->InputMappingContext, 0);
 	}
 
 	// Mouse Cursor Settings
@@ -89,13 +89,9 @@ void AAuraPlayerController::SetupInputComponent()
 	Super::SetupInputComponent();
 
 	UAuraInputComponent* InputComp = CastChecked<UAuraInputComponent>(InputComponent);
-	InputComp->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AAuraPlayerController::Move);
-
-	InputComp->BindAction(MoveMouseAction, ETriggerEvent::Triggered, this, &AAuraPlayerController::MoveMouseTriggered);
-	InputComp->BindAction(MoveMouseAction, ETriggerEvent::Completed, this, &AAuraPlayerController::MoveMouseComplete);
-
-	InputComp->BindAbilityActions(InputConfig, InputMappingContext,this,
-		&AAuraPlayerController::PlayerInputPressed, &AAuraPlayerController::PlayerInputReleased);
+	InputComp->BindAction(AuraInputDA->MoveAction, ETriggerEvent::Triggered, this, &AAuraPlayerController::Move);
+	InputComp->BindAction(AuraInputDA->MouseInputAction, ETriggerEvent::Triggered, this, &AAuraPlayerController::MoveMouseTriggered);
+	InputComp->BindAction(AuraInputDA->MouseInputAction, ETriggerEvent::Completed, this, &AAuraPlayerController::MoveMouseComplete);
 }
 
 void AAuraPlayerController::PostProcessInput(const float DeltaTime, const bool bGamePaused)
@@ -273,17 +269,6 @@ void AAuraPlayerController::CursorTick()
 	// if (AActor* Nearest = UGameplayStatics::FindNearestActor(Intersection, HitActors, NearestDistance))
 	if (CursorHitEnemy) CursorHitEnemy->HighlightActor();
 	/*GetWorld()->OverlapMultiByObjectType();*/
-}
-
-void AAuraPlayerController::PlayerInputPressed(const int8 InputID)
-{
-	if (AuraASC) AuraASC->AbilityInputPressed(InputID);
-	else if (AuraPawn) AuraASC = AuraPawn->GetAuraAbilitySystemComponent();
-}
-void AAuraPlayerController::PlayerInputReleased(const int8 InputID)
-{
-	if (AuraASC) AuraASC->AbilityInputReleased(InputID);
-	else if (AuraPawn) AuraASC = AuraPawn->GetAuraAbilitySystemComponent();
 }
 
 // Change on server for UPROPERTY(Replicated/ReplicatedUsing) to work, else use AbilityTask_AimData

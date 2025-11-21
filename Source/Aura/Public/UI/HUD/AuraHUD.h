@@ -41,7 +41,7 @@ public:
 	TObjectPtr<USpellMenuWidgetController> SpellMenuController;
 
 	UPROPERTY(EditDefaultsOnly, Category="Default")
-	TObjectPtr<class UAttributeDataAsset> AttributeData;
+	TObjectPtr<const class UAttributeDataAsset> AttributeData;
 	const TMap<struct FGameplayTag, struct FAuraAttributeData>& GetAttributeDataList() const;
 
 	UFUNCTION(BlueprintImplementableEvent)

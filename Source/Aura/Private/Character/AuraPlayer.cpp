@@ -10,7 +10,9 @@
 #include "NiagaraComponent.h"
 #include "AbilitySystem/Ability/AttributesEventAbility.h"
 #include "AbilitySystem/Data/CharacterClassDataAsset.h"
+#include "Character/AuraHeroComponent.h"
 #include "Components/WidgetComponent.h"
+#include "Input/AuraInputComponent.h"
 #include "Player/AuraPlayerController.h"
 #include "Player/AuraPlayerState.h"
 #include "UI/HUD/AuraHUD.h"
@@ -53,6 +55,13 @@ AAuraPlayer::AAuraPlayer()
 	LevelUpWidgetComponent->SetDrawAtDesiredSize(true);
 }
 
+void AAuraPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+{	// Super::SetupPlayerInputComponent(PlayerInputComponent); // Super only check(PlayerInputComponent);
+	if (UAuraHeroComponent* HeroComp = FindComponentByClass<UAuraHeroComponent>())
+	{
+		HeroComp->SetAuraHeroInputComponent(Cast<UAuraInputComponent>(PlayerInputComponent));
+	}
+}
 
 void AAuraPlayer::PossessedBy(AController* NewController) // SERVER
 {
@@ -102,12 +111,14 @@ void AAuraPlayer::InitAuraCharacter()
 	{	// Only Local Client can get HUD
 		if (AAuraHUD* AuraHUD = AuraPC->GetHUD<AAuraHUD>()) AuraHUD->InitAuraHUD(AuraPC, AuraPS, this);
 	}
-	// Initialize Default Attributes
-	constexpr float Level = 1.f;
+
 	if (const UCharacterClassDataAsset* ClassData = UCharacterClassDataAsset::GetFromGameMode(this))
-	{
+	{	// HasAuthority() -> This scope because Only Server can access GameMode
+		constexpr float Level = 1.f;
 		ClassData->InitializeDefaultAttributes(CharacterClass, Level, AbilitySystemComponent);
 		ClassData->GiveStartupAbilities(this);
+
+		// For Character to receive level up and upgrade Attributes, Skills
 		AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(UAttributesEventAbility::StaticClass(), 1));
 	}
 }

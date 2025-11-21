@@ -3,6 +3,7 @@
 #include "AI/StateTree/Task/StateTreeCirclingLocationTask.h"
 
 #include "NavigationSystem.h"
+#include "NavFilters/NavigationQueryFilter.h"
 
 EStateTreeRunStatus FStateTree_CirclingLocation_Task::EnterState(FStateTreeExecutionContext& Context,
 	const FStateTreeTransitionResult& Transition) const
@@ -16,8 +17,8 @@ EStateTreeRunStatus FStateTree_CirclingLocation_Task::EnterState(FStateTreeExecu
 		{
 			if (ANavigationData* UseNavData = NavSys->GetDefaultNavDataInstance(FNavigationSystem::DontCreate))
 			{
-				if (FNavLocation RandomPoint;
-					NavSys->GetRandomPointInNavigableRadius(Origin, Radius, RandomPoint, UseNavData,
+				FNavLocation RandomPoint;
+				if (NavSys->GetRandomPointInNavigableRadius(Origin, Radius, RandomPoint, UseNavData,
 					UNavigationQueryFilter::GetQueryFilter(*UseNavData, TargetActor, nullptr)))
 				{
 					*Result.GetMutablePtr<FVector>(Context) = RandomPoint;

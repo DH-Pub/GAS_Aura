@@ -37,6 +37,9 @@ namespace AuraGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes_Meta_IncomingXP, "Attributes.Meta.IncomingXP", "Receive XP")
 #pragma endregion
 
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Cooldown, "Ability.Cooldown", "Generic Grant Tags for CooldownEffect")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Cooldown_Duration, "Ability.Cooldown.Duration", "Store original Duration for UI during cooldown as SetByCaller")
+
 #pragma region Ability
 	// Abilities
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability, "Ability", "Parent Tag") // ==PARENT==
@@ -44,8 +47,7 @@ namespace AuraGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Attack, "Ability.Attack", "")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Summon, "Ability.Summon", "")
 
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Cooldown_Reduce, "Ability.Cooldown.Reduce", "")
-
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Cooldown_Reduce, "Ability.Cooldown.Reduce", "Reduce remaining cooldown")
 	// Abilities with Cooldown ============================================================================================
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Fire_FireBolt, "Ability.Fire.FireBolt", "FireBolt Gameplay Ability")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Lightning_Electrocute, "Ability.Lightning.Electrocute", "")

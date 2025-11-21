@@ -36,9 +36,6 @@ public:
 	virtual void PlayerTick(float DeltaTime) override; // Processes player input
 	virtual void SetPawn(APawn* InPawn) override;
 
-	UPROPERTY(EditDefaultsOnly, Category="Default|Input")
-	TObjectPtr<class UAuraInputConfig> InputConfig;
-
 	UFUNCTION(BlueprintGetter)
 	FORCEINLINE FHitResult& GetCursorHitResult() { return CursorHitResult; }
 
@@ -84,17 +81,13 @@ protected:
 // =====================================================================================================================
 
 
-private:
+private: //TODO: Move all below to AuraHeroComponent
 	UPROPERTY(EditDefaultsOnly, Category="Default|Input")
-	TObjectPtr<class UInputMappingContext> InputMappingContext;
+	TObjectPtr<const class UAuraInputDataAsset> AuraInputDA;
 
-	UPROPERTY(EditDefaultsOnly, Category="Default|Input")
-	TObjectPtr<UInputAction> MoveAction;
 	void Move(const FInputActionValue& InputActionValue);
 
 #pragma region Click Movement Nav =================================
-	UPROPERTY(EditDefaultsOnly, Category="Default|Input")
-	TObjectPtr<UInputAction> MoveMouseAction;
 	EMovementState MovementState = Stop;
 	float MoveHoldTime = 0.f;
 	float HoldTimeThreshold = .4f;
@@ -114,9 +107,6 @@ private:
 	UPROPERTY(BlueprintGetter=GetCursorHitResult, meta=(AllowPrivateAccess))
 	FHitResult CursorHitResult;
 	void CursorTick(); // Cursor HitResult
-
-	void PlayerInputPressed(const int8 InputID);
-	void PlayerInputReleased(const int8 InputID);
 
 	UFUNCTION(Server, Reliable)
 	void ServerSetCharacterAimDirection(const FVector_NetQuantizeNormal& Aim);

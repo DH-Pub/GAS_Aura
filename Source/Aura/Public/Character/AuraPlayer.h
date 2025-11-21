@@ -17,6 +17,8 @@ class AURA_API AAuraPlayer : public AAuraCharacterBase
 	GENERATED_BODY()
 public:
 	AAuraPlayer();
+
+	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void OnRep_PlayerState() override;
 

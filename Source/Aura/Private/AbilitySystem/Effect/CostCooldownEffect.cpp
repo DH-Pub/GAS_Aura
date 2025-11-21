@@ -3,8 +3,10 @@
 
 #include "AbilitySystem/Effect/CostCooldownEffect.h"
 
+#include "AuraGameplayTags.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "AbilitySystem/Ability/CostCooldownAbility.h"
+#include "GameplayEffectComponents/TargetTagsGameplayEffectComponent.h"
 
 /*====================================================================================================================*/
 UMMC_AbilityManaCost::UMMC_AbilityManaCost()
@@ -77,12 +79,4 @@ UCostEffect::UCostEffect()
 	CustomCalculation.Coefficient = -1.f;
 	AURA_ADD_CUSTOM_CALCULATION_MODIFIER(GetManaAttribute(), AddBase, UMMC_AbilityManaCost)
 	AURA_ADD_CUSTOM_CALCULATION_MODIFIER(GetHealthAttribute(), AddBase, UMMC_AbilityHealthCost)
-}
-UCooldownEffect::UCooldownEffect()
-{
-	DurationPolicy = EGameplayEffectDurationType::HasDuration;
-	FGameplayModifierInfo Info;
-	FCustomCalculationBasedFloat CustomCalculation;
-	CustomCalculation.CalculationClassMagnitude = UMMC_CooldownDuration::StaticClass();
-	DurationMagnitude = FGameplayEffectModifierMagnitude(CustomCalculation);
 }

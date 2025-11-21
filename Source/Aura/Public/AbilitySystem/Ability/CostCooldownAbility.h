@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "AuraGameplayAbility.h"
-#include "Input/AuraInputComponent.h"
 #include "CostCooldownAbility.generated.h"
 
 /**
@@ -28,7 +27,7 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Cooldowns|Aura")
 	FScalableFloat CooldownDuration;
 	UPROPERTY(Transient)
-	FGameplayTagContainer TempCooldownTags; // Temp container used to return * to (CooldownTags + CD-GE's GrantedTags)
+	FGameplayTagContainer TempCooldownTags; // Used to return FGameplayTagContainer* in GetCooldownTags()
 
 	void GetCost(FAbilityDetails& Details) const;
 	void GetCooldownAndReduction(FAbilityDetails& Details) const;

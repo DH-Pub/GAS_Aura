@@ -50,7 +50,7 @@ void UAuraAbilitySystemComponent::AbilityInputPressed(const int8 InputID)
 			InputHeldHandles.AddUnique(AbilitySpec.Handle);
 		}
 		else if (InputAbility->ActivationPolicy == EAuraActivationPolicy::InputStart)
-		{
+		{	// We don't use bRetriggerInstancedAbility = true bc Input is converted to ReplicatedEvent if IsActive()
 			if (AbilitySpec.IsActive()) // Use GenericReplicatedEvent, not bReplicateInputDirectly for AT_WaitInputPress
 			{	// InputPressed event. Not replicated here. If someone is listening, they may replicate to the server.
 				const UGameplayAbility* Instance = AbilitySpec.GetPrimaryInstance(); // Instance->InputPressed()
@@ -65,10 +65,7 @@ void UAuraAbilitySystemComponent::AbilityInputPressed(const int8 InputID)
 }
 void UAuraAbilitySystemComponent::ProcessAbilityInput(const float DeltaTime, bool bGamePaused)
 {
-	for (const FGameplayAbilitySpecHandle SpecHandle : InputHeldHandles)
-	{
-		TryActivateAbility(SpecHandle);
-	}
+	for (const FGameplayAbilitySpecHandle SpecHandle : InputHeldHandles) TryActivateAbility(SpecHandle);
 }
 
 void UAuraAbilitySystemComponent::AbilityInputReleased(const int8 InputID)
@@ -122,7 +119,11 @@ void UAuraAbilitySystemComponent::ReduceCooldownByTag(const FGameplayTagContaine
 		FGameplayEffectSpec& OldSpec = ActiveEffect->Spec;
 		FGameplayEffectSpec Spec(OldSpec.Def, OldSpec.GetEffectContext(), OldSpec.GetLevel());
 		Spec.SetDuration(NewTime, true);
-		Spec.DynamicGrantedTags = OldSpec.DynamicGrantedTags; // DO NOT copy SetByCallerTagMagnitudes
+		Spec.DynamicGrantedTags = OldSpec.DynamicGrantedTags; // DON'T copy SetByCaller if DurMag is SetByCaller
+
+		const float* OriginCD = OldSpec.SetByCallerTagMagnitudes.Find(AuraGameplayTags::Ability_Cooldown_Duration);
+		Spec.SetByCallerTagMagnitudes.Add(AuraGameplayTags::Ability_Cooldown_Duration) =
+			OriginCD ? *OriginCD : OldSpec.GetDuration();
 
 		RemoveActiveGameplayEffect(ActiveEffect->Handle);
 		ApplyGameplayEffectSpecToSelf(Spec);
@@ -194,8 +195,7 @@ void UAuraAbilitySystemComponent::BroadcastAllAbilityData()
 	const UWorld* World = GetWorld();
 	if (World == nullptr || BroadcastDelegate.IsValid()) return;
 	if (BroadcastDelegate.IsValid()) World->GetTimerManager().ClearTimer(BroadcastDelegate);
-	BroadcastDelegate = World->GetTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(
-	this, [&]()
+	BroadcastDelegate = World->GetTimerManager().SetTimerForNextTick(FTimerDelegate::CreateLambda([&]()
 	{	// Wait for next tick so that Delegate receivers can finish loading
 		BroadcastDelegate.Invalidate();
 		for (const FGameplayAbilitySpec& AbilitySpec : ActivatableAbilities.Items)

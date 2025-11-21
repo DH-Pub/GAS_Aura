@@ -8,12 +8,12 @@ public class Aura : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore",
+		PublicDependencyModuleNames.AddRange(["Core", "CoreUObject", "Engine", "InputCore",
 			"EnhancedInput",
 			"GameplayAbilities", // GameplayAbilitySystem
-		});
+		]);
 
-		PrivateDependencyModuleNames.AddRange(new string[] {
+		PrivateDependencyModuleNames.AddRange([
 			"GameplayTags", "GameplayTasks", // GameplayAbilitySystem
 			"NavigationSystem",
 			"Niagara",
@@ -22,10 +22,10 @@ public class Aura : ModuleRules
 			"GameplayStateTreeModule", // Tasks/StateTreeAITask.h
 			"PropertyBindingUtils", // FStateTreePropertyRef -> ... -> StateTreePropertyBindings.h
 			"NetCore", // for sending SafeNetSerializeTArray_WithNetSerialize
-		});
+		]);
 
 		// Uncomment if you are using Slate UI
-		PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
+		PrivateDependencyModuleNames.AddRange(["Slate", "SlateCore"]);
 
 		// Uncomment if you are using online features
 		// PrivateDependencyModuleNames.Add("OnlineSubsystem");

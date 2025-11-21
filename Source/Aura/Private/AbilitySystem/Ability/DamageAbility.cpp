@@ -74,7 +74,7 @@ void UDamageAbility::CauseDamageToActors(const TArray<AActor*>& Actors, USoundBa
 bool UDamageAbility::ExecuteCueShowDamage(const FGameplayCueParameters& Parameters,
 	float& OutDamage, FDamageEffectContext& OutDamageContext, FVector& OutLoc)
 {
-	AActor* Instigator = Parameters.GetInstigator();
+	const AActor* Instigator = Parameters.GetInstigator();
 	/*const AActor* SourcePS = Parameters.EffectContext.GetInstigator(); if (SourcePS == nullptr) return false;
 	const AAuraPlayerController* PC = Cast<AAuraPlayerController>(SourcePS->GetOwner());
 	if (PC == nullptr || GEngine == nullptr) return false;
@@ -117,7 +117,5 @@ UDebuffDamageEffect::UDebuffDamageEffect()
 
 	i = GameplayCues.Add(FGameplayEffectCue(AuraGameplayTags::GameplayCue_Damage, 0.f, 0.f));
 	GameplayCues[i].MagnitudeAttribute = UAuraAttributeSet::GetIncomingDamageAttribute();
-
-	StackingType = EGameplayEffectStackingType::AggregateByTarget;
 }
 #pragma endregion

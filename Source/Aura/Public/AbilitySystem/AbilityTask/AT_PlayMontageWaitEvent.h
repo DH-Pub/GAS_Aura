@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Abilities/Tasks/AbilityTask.h"
-#include "AT_PlayMontageAndWaitEvent.generated.h"
+#include "AT_PlayMontageWaitEvent.generated.h"
 
 /** Delegate type used, EventTag and Payload may be empty if it came from the montage callbacks
  * This has to be used for all Delegates in Task to be able to send Params
@@ -16,7 +16,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FMontageWaitForEventDelegate, FGame
  * use FGameplayTagContainer so you can wait for multiple types of activations such as from a melee combo
  */
 UCLASS()
-class AURA_API UAT_PlayMontageAndWaitEvent : public UAbilityTask
+class AURA_API UAT_PlayMontageWaitEvent : public UAbilityTask
 {
 	GENERATED_BODY()
 public:
@@ -57,8 +57,8 @@ public:
 	 * @param AnimRootMotionTranslationScale Change to modify size of root motion or set to 0 to block it entirely
 	 */
 	UFUNCTION(BlueprintCallable, meta=(HidePin="OwningAbility", DefaultToSelf="OwningAbility", BlueprintInternalUseOnly="TRUE"))
-	static UAT_PlayMontageAndWaitEvent* PlayMontageAndWaitForEvent(
-		class UAuraGameplayAbility* OwningAbility, UAnimMontage* MontageToPlay,
+	static UAT_PlayMontageWaitEvent* PlayMontageWaitEvent(class UAuraGameplayAbility* OwningAbility,
+		UAnimMontage* MontageToPlay,
 		UPARAM(meta=(GameplayTagFilter="GameplayEventTagsCategory.Montage")) FGameplayTagContainer EventTags,
 		const float Rate = 1.f, const FName StartSection = NAME_None,
 		const bool bStopWhenAbilityEnds = true, const float AnimRootMotionTranslationScale = 1.f);

@@ -17,7 +17,6 @@ UCostCooldownAbility::UCostCooldownAbility()
 	ActivationBlockedTags.AddTag(AuraGameplayTags::Character_State_Death);
 	// ActivationRequiredTags.AddTag();
 
-	CooldownGameplayEffectClass = UCooldownEffect::StaticClass();
 	CostGameplayEffectClass = UCostEffect::StaticClass();
 }
 
@@ -26,10 +25,10 @@ const FGameplayTagContainer* UCostCooldownAbility::GetCooldownTags() const
 	if (!AuraAbilityTag.IsValid()) return Super::GetCooldownTags();
 	FGameplayTagContainer* MutableTags = const_cast<FGameplayTagContainer*>(&TempCooldownTags);
 	MutableTags->Reset(); // MutableTags writes to the TempCooldownTags on the CDO so clear it in case the CD tags change (to another slot)
-	if (const FGameplayTagContainer* ParentTags = Super::GetCooldownTags())
+	/*if (const FGameplayTagContainer* ParentTags = Super::GetCooldownTags())
 	{	// if GetCooldownGameplayEffect() exists, GE->GetGrantedTags()
 		MutableTags->AppendTags(*ParentTags);
-	}
+	}*/
 	MutableTags->AddTag(AuraAbilityTag);
 	return MutableTags;
 }
@@ -37,13 +36,19 @@ const FGameplayTagContainer* UCostCooldownAbility::GetCooldownTags() const
 void UCostCooldownAbility::ApplyCooldown(const FGameplayAbilitySpecHandle Handle,
 	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo) const
 {
-	if (!AuraAbilityTag.IsValid()) {Super::ApplyCooldown(Handle, ActorInfo, ActivationInfo); return;}
-	if (CooldownGameplayEffectClass == nullptr) return; // Using UMMC_CooldownDuration for DurMag
-	if (CooldownDuration.GetValueAtLevel(GetAbilityLevel()) < UE_KINDA_SMALL_NUMBER) return;
-	const FGameplayEffectSpecHandle SpecHandle = MakeOutgoingGameplayEffectSpec(CooldownGameplayEffectClass, GetAbilityLevel());
-	SpecHandle.Data->DynamicGrantedTags.AddTag(AuraAbilityTag); // if DurMag:SetByCaller ->SetByCallerMagnitudes
-	// ReSharper disable once CppExpressionWithoutSideEffects
-	ApplyGameplayEffectSpecToOwner(Handle, ActorInfo, ActivationInfo, SpecHandle);
+	if (AuraAbilityTag.IsValid())
+	{
+		if (CooldownGameplayEffectClass == nullptr) return; // Using UMMC_CooldownDuration for DurMag
+		if (CooldownDuration.GetValueAtLevel(GetAbilityLevel()) < UE_KINDA_SMALL_NUMBER) return;
+		const FGameplayEffectSpecHandle SpecHandle = MakeOutgoingGameplayEffectSpec(CooldownGameplayEffectClass, GetAbilityLevel());
+		SpecHandle.Data->DynamicGrantedTags.AddTag(AuraAbilityTag); // if DurMag:SetByCaller ->SetByCallerMagnitudes
+		if (HasAuthorityOrPredictionKey(ActorInfo, &ActivationInfo))
+		{	// ApplyGameplayEffectSpecToOwner(Handle, ActorInfo, ActivationInfo, SpecHandle)
+			UAbilitySystemComponent* const ASC = ActorInfo->AbilitySystemComponent.Get();
+			ASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get(), ASC->GetPredictionKeyForNewAction());
+		}
+	}
+	else Super::ApplyCooldown(Handle, ActorInfo, ActivationInfo);
 }
 
 void UCostCooldownAbility::GetCost(FAbilityDetails& Details) const

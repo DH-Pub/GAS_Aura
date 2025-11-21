@@ -197,13 +197,12 @@ void UAuraCueManager::AddPendingCueNextTick(FGameplayCuePendingExecute& PendingC
 	if (GameplayCueSendContextCount == 0)
 	{	// Not in a context, flush now
 		const UWorld* World = PendingCue.OwningComponent->GetWorld();
-		if (World == nullptr || PendingHandle.IsValid()) return;
-		World->GetTimerManager().ClearTimer(PendingHandle);
-		PendingHandle = World->GetTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(
-		PendingCue.OwningComponent, [&]()
+		if (World == nullptr) return;
+		if (PendingHandle.IsValid()) World->GetTimerManager().ClearTimer(PendingHandle);
+		PendingHandle = World->GetTimerManager().SetTimerForNextTick(FTimerDelegate::CreateLambda([&]()
 		{
-			FlushPendingCues(); // Flush next tick so that we can batch gameplay cue
 			PendingHandle.Invalidate();
+			FlushPendingCues(); // Flush next tick so that we can batch gameplay cues
 		}));
 	}
 }

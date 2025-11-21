@@ -59,14 +59,3 @@ class AURA_API UCostEffect : public UGameplayEffect
 public:
 	UCostEffect();
 };
-
-/**
- *
- */
-UCLASS()
-class AURA_API UCooldownEffect : public UGameplayEffect
-{
-	GENERATED_BODY()
-public:
-	UCooldownEffect();
-};

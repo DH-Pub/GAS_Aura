@@ -23,6 +23,9 @@ enum class EAuraAbilityInputID : uint8
 	Ability4,
 	Ability5,
 	Ability6,
+
+	Ctrl, // Testing
+	Shift, // Testing
 };
 
 // this will be set as negative index for FGameplayAbilitySpec::InputID

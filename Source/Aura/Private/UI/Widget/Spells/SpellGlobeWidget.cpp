@@ -39,8 +39,8 @@ void USpellGlobeWidget::NativeDestruct()
 	if (WaitCDTask) WaitCDTask->EndTask();
 }
 
-bool USpellGlobeWidget::SuccessUpdateAbilityData(const FAuraAbilityData& InAbilityData, const FPlayerAbilityData& InPlayerData,
-	FGameplayTagContainer& OutCooldownTags)
+bool USpellGlobeWidget::SuccessUpdateAbilityData(const FAuraAbilityData& InAbilityData,
+	const FPlayerAbilityData& InPlayerData, FGameplayTagContainer& OutCooldownTags)
 {
 	if (AbilityID != InPlayerData.AbilityID)
 	{	// Not this Slot
@@ -61,9 +61,14 @@ bool USpellGlobeWidget::SuccessUpdateAbilityData(const FAuraAbilityData& InAbili
 	ResourceImage.SetResourceObject(InAbilityData.BackgroundMaterial);
 	Image_Background->SetBrush(ResourceImage);
 	// Image_Background->SetBrushFromMaterial(InAbilityData.BackgroundMaterial);
+	if (bOnCooldown)
+	{	// Gray out Ability
+		Image_Background->SetBrushTintColor(FSlateColor(FLinearColor(.1f, .1f, .1f, .5f)));
+		// Image_WheelProgress->SetVisibility(ESlateVisibility::Visible);
+	}
 
 	if (const FGameplayTagContainer* CooldownTags = InAbilityData.AbilityClass.GetDefaultObject()->GetCooldownTags())
-	{
+	{	// Check if Ability has Cooldown
 		OutCooldownTags = *CooldownTags;
 		if (!OutCooldownTags.IsValid()) return false;
 	}
@@ -72,9 +77,10 @@ bool USpellGlobeWidget::SuccessUpdateAbilityData(const FAuraAbilityData& InAbili
 
 void USpellGlobeWidget::UpdateCooldown(const float InTime, const float InDuration)
 {
-	if (!bOnCooldown) // Gray out Ability
+	if (FMath::IsNearlyZero(InDuration)) return;
+	if (!bOnCooldown)
 	{
-		Image_Background->SetBrushTintColor(FSlateColor(FLinearColor(.1f, .1f, .1f, .5f)));
+		Image_Background->SetBrushTintColor(FSlateColor(FLinearColor(.1f, .1f, .1f, .5f))); // Gray out Ability
 		Image_WheelProgress->SetVisibility(ESlateVisibility::Visible);
 		WheelMaterialInstance->SetScalarParameterValue(WheelPercentParam, 1.f);
 	}
@@ -118,8 +124,8 @@ void USpellGlobeWidget::UpdateByTimerHandle()
 	const float CooldownPercent = TimeRemaining / CooldownDuration;
 	Progress_Cooldown->SetPercent(CooldownPercent);
 	WheelMaterialInstance->SetScalarParameterValue(WheelPercentParam, CooldownPercent);
-	Text_Cooldown->SetText(UKismetTextLibrary::Conv_DoubleToText(TimeRemaining, HalfToEven, false, true,
-		1, 2, 1, 1));
+	Text_Cooldown->SetText(UKismetTextLibrary::Conv_DoubleToText(TimeRemaining, HalfToEven, false,
+		true, 1, 2, 1, 1));
 }
 
 void USpellGlobeWidget::ClearGlobe()

@@ -8,7 +8,6 @@
 #include "Kismet/BlueprintAsyncActionBase.h"
 #include "Async_CooldownChange.generated.h"
 
-struct FActiveGameplayEffect;
 struct FActiveGameplayEffectHandle;
 struct FGameplayEffectSpec;
 class UAbilitySystemComponent;
@@ -31,27 +30,25 @@ public:
 
 	UFUNCTION(BlueprintCallable, meta=(BlueprintInternalUseOnly="true"))
 	static UAsync_CooldownChange* WaitForCooldownChange(UAbilitySystemComponent* InASC,
-		const FGameplayTagContainer& InCooldownTags, bool InUseServerCooldown = false);
+		const FGameplayTagContainer& InCooldownTags, const bool InUseServerCooldown = false);
 
 	UFUNCTION(BlueprintCallable)
 	void EndTask();
 
 	UFUNCTION(BlueprintCallable)
-	void BroadcastInitialCooldown() const;
+	void InitWaitCooldown();
 private:
 	UPROPERTY()
 	TObjectPtr<UAbilitySystemComponent> ASC;
 	FGameplayTagContainer CooldownTags;
 	bool bUseServerCooldown = false; // whether to wait for server to send cooldown information, not "predicted"
 
-	float CooldownDuration = 0.f;
+	float CooldownDuration = 0.f; // Original (or first) duration used to keep percentage of
 	float CooldownTime = 0.f;
 
-	void OnActiveEffectAdded(UAbilitySystemComponent* TargetASC, const FGameplayEffectSpec& SpecApplied, FActiveGameplayEffectHandle ActiveEffectHandle);
-	void OnGameplayEffectRemoved(const FActiveGameplayEffect& ActiveEffect);
-	// void CooldownTagChanged(const FGameplayTag InCooldownTag, int32 NewCount);
+	void OnActiveEffectAdded(UAbilitySystemComponent* TargetASC, const FGameplayEffectSpec& SpecApplied,
+		FActiveGameplayEffectHandle ActiveEffectHandle);
+	void CooldownTagChanged(const FGameplayTag InCooldownTag, int32 NewCount); // for when Effect is removed
 
-	FActiveGameplayEffectHandle EffectHandle;
-	FDelegateHandle OnEffectRemovedDelegate;
-	void OnEffectRemoved(const struct FGameplayEffectRemovalInfo& Info);
+	void CheckCooldown(const FActiveGameplayEffectHandle ActiveHandle);
 };

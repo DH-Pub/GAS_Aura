@@ -33,7 +33,7 @@ public:
 	// End Interface ===================================================================================================
 
 	UPROPERTY(EditDefaultsOnly, Category="Default")
-	TObjectPtr<class ULevelUpDataAsset> LevelUpDataAsset;
+	TObjectPtr<const class ULevelUpDataAsset> LevelUpDataAsset;
 
 	FOnPlayerStatChanged OnLevelChangedDelegate;
 	FOnPlayerStatChanged OnXPChangedDelegate;

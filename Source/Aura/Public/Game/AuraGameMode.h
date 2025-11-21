@@ -22,5 +22,5 @@ public:
 
 
 	UPROPERTY(EditDefaultsOnly, Category=Default)
-	const TObjectPtr<class UCharacterClassDataAsset> CharacterClassData;
+	const TObjectPtr<const class UCharacterClassDataAsset> CharacterClassData;
 };
