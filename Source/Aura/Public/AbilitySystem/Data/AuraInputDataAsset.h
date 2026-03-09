@@ -11,20 +11,23 @@ class UInputAction;
  * Store Common input
  */
 UCLASS()
-class AURA_API UAuraInputDataAsset : public UDataAsset
+class AURA_API UAuraInputDataAsset : public UDataAsset /*UPrimaryDataAsset*/
 {
 	GENERATED_BODY()
 public:
-	UPROPERTY(EditDefaultsOnly, Category="Default|Input")
+	UPROPERTY(EditDefaultsOnly, Category="Aura|Input")
 	TObjectPtr<const class UAuraInputConfig> InputConfig;
-	UPROPERTY(EditDefaultsOnly, Category="Default|Input")
+	UPROPERTY(EditDefaultsOnly, Category="Aura|Input")
 	TObjectPtr<const class UInputMappingContext> InputMappingContext;
 
-	UPROPERTY(EditDefaultsOnly, Category="Default|Input")
+	UPROPERTY(EditDefaultsOnly, Category="Aura|Input")
 	TObjectPtr<const UInputAction> MoveAction;
 
-	UPROPERTY(EditDefaultsOnly, Category="Default|Input")
+	UPROPERTY(EditDefaultsOnly, Category="Aura|Input")
 	TObjectPtr<const UInputAction> MouseInputAction;
 
-	static const UAuraInputDataAsset* GetFromGameState(const UObject* WorldContextObject);
+	/*virtual FPrimaryAssetId GetPrimaryAssetId() const override
+	{
+		return FPrimaryAssetId("AuraInputDataAsset", GetFName());
+	}*/
 };

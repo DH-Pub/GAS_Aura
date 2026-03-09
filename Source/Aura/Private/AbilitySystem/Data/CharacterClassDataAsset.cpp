@@ -9,16 +9,12 @@
 #include "AbilitySystem/Ability/AuraGameplayAbility.h"
 #include "Character/AuraCharacterBase.h"
 #include "Game/AuraGameMode.h"
-#include "Kismet/GameplayStatics.h"
 #include "Player/AuraPlayerController.h"
 
 const UCharacterClassDataAsset* UCharacterClassDataAsset::GetFromGameMode(const UObject* WorldContextObject)
 {
-	if (const AAuraGameMode* AuraGameMode = Cast<AAuraGameMode>(UGameplayStatics::GetGameMode(WorldContextObject)))
-	{
-		return AuraGameMode->CharacterClassData;
-	}
-	return nullptr;
+	const AAuraGameMode* AuraGameMode = AAuraGameMode::Get(WorldContextObject);
+	return AuraGameMode ? AuraGameMode->CharacterClassData : nullptr;
 }
 
 /* Make sure to check HasAuthority before calling this */
@@ -54,7 +50,7 @@ void UCharacterClassDataAsset::GiveStartupAbilities(const AAuraCharacterBase* Au
 
 void UCharacterClassDataAsset::SendXPToDeathCauser(UAbilitySystemComponent* Causer, const AAuraCharacterBase* DeadCharacter) const
 {
-	if (Causer->GetAvatarActor() == DeadCharacter) return; // cause is not itself
+	if (Causer == nullptr || Causer->GetAvatarActor() == DeadCharacter) return; // cause is not itself
 	FGameplayEventData Payload;
 	const FCharacterClassDefaultInfo* Info = GetClassDefaultInfo(DeadCharacter->CharacterClass);
 	Payload.EventMagnitude = Info ? Info->XPReward.GetValueAtLevel(DeadCharacter->GetCharacterLevel()) : 0;
@@ -66,7 +62,7 @@ void UCharacterClassDataAsset::SendXPToDeathCauser(UAbilitySystemComponent* Caus
 	for (const AAuraGameMode* GameMode = Cast<AAuraGameMode>(Causer->GetWorld()->GetAuthGameMode());
 		const AAuraPlayerController* AuraController : GameMode->PlayerControllers)
 	{
-		if (AuraController->AuraASC == Causer) continue;
+		if (AuraController->AuraASC == nullptr || AuraController->AuraASC == Causer) continue;
 		AuraController->AuraASC->HandleGameplayEvent(Payload.EventTag, &Payload);
 	}
 }

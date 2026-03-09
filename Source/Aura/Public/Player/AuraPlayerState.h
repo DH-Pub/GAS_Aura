@@ -32,7 +32,7 @@ public:
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 	// End Interface ===================================================================================================
 
-	UPROPERTY(EditDefaultsOnly, Category="Default")
+	UPROPERTY(EditDefaultsOnly, Category="Aura")
 	TObjectPtr<const class ULevelUpDataAsset> LevelUpDataAsset;
 
 	FOnPlayerStatChanged OnLevelChangedDelegate;
@@ -42,7 +42,7 @@ public:
 	FOnPlayerStatChanged OnSpellPointsChangedDelegate;
 
 	FORCEINLINE int32 GetPlayerLevel() const {return Level;}
-	void SetLevel(const int32 NewLevel) {Level = NewLevel; OnLevelChangedDelegate.Broadcast(Level);}
+	void SetLevel(const int32 NewLevel);
 	void AddLevel(const int32 PlusLevel) {SetLevel(Level + PlusLevel);}
 
 	FORCEINLINE int32 GetPlayerXP() const {return XP;}
@@ -50,11 +50,16 @@ public:
 	void AddToXP(const int32 PlusXP) {SetXP(XP + PlusXP);}
 
 	FORCEINLINE int32 GetAttributePoints() const {return AttributePoints;}
-	void SetAttributePoints(const int32 NewPoints) {AttributePoints = NewPoints; OnAttributePointsChangedDelegate.Broadcast(AttributePoints);}
-	void AddToAttributePoints(const int32 InPoints) {SetAttributePoints(AttributePoints + InPoints);}
+	bool SetAttributePoints(const int32 NewPoints)
+	{
+		if (NewPoints < 0) return false;
+		AttributePoints = NewPoints; OnRep_AttributePoints();
+		return true;
+	} // Call OnRep for Server
+	bool AddToAttributePoints(const int32 InPoints) {return SetAttributePoints(AttributePoints + InPoints);}
 
 	FORCEINLINE int32 GetSpellPoints() const {return SpellPoints;}
-	void SetSpellPoints(const int32 NewPoints) {SpellPoints = NewPoints; OnSpellPointsChangedDelegate.Broadcast(SpellPoints);}
+	void SetSpellPoints(const int32 NewPoints) {SpellPoints = NewPoints; OnRep_SpellPoints();}
 	void AddToSpellPoints(const int32 InPoints) {SetSpellPoints(SpellPoints + InPoints);}
 protected:
 	UPROPERTY(VisibleAnywhere)
@@ -63,23 +68,23 @@ protected:
 	TObjectPtr<UAuraAttributeSet> AttributeSet;
 
 private:
-	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_Level, Category="Default")
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_Level, Category="Aura")
 	int32 Level = 1;
 	UFUNCTION()
-	void OnRep_Level(const int32 OldLevel) const {if (Level != OldLevel) OnLevelChangedDelegate.Broadcast(Level);}
+	void OnRep_Level(int32 OldLevel) const;
 
-	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_XP, Category="Default")
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_XP, Category="Aura")
 	int32 XP = 0;
 	UFUNCTION()
-	void OnRep_XP(const int32 OldXP) const {OnXPChangedDelegate.Broadcast(XP);}
+	void OnRep_XP(int32 OldXP) const {OnXPChangedDelegate.Broadcast(XP);}
 
-	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_AttributePoints, Category="Default")
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_AttributePoints, Category="Aura")
 	int32 AttributePoints = 0;
 	UFUNCTION()
-	void OnRep_AttributePoints(int32 OldAttributePoints) const {OnAttributePointsChangedDelegate.Broadcast(AttributePoints);}
+	void OnRep_AttributePoints() const {OnAttributePointsChangedDelegate.Broadcast(AttributePoints);}
 
-	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_SpellPoints, Category="Default")
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_SpellPoints, Category="Aura")
 	int32 SpellPoints = 0;
 	UFUNCTION()
-	void OnRep_SpellPoints(int32 OldSpellPoints) const {OnSpellPointsChangedDelegate.Broadcast(SpellPoints);}
+	void OnRep_SpellPoints() const {OnSpellPointsChangedDelegate.Broadcast(SpellPoints);}
 };

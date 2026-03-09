@@ -3,6 +3,7 @@
 
 #include "Game/AuraGameMode.h"
 
+#include "Kismet/GameplayStatics.h"
 #include "Player/AuraPlayerController.h"
 
 void AAuraGameMode::PostLogin(APlayerController* NewPlayer)
@@ -14,4 +15,9 @@ void AAuraGameMode::Logout(AController* Exiting)
 {
 	if (AAuraPlayerController* PC = Cast<AAuraPlayerController>(Exiting)) PlayerControllers.Remove(PC);
 	Super::Logout(Exiting);
+}
+
+AAuraGameMode* AAuraGameMode::Get(const UObject* WorldContextObject)
+{
+	return static_cast<AAuraGameMode*>(UGameplayStatics::GetGameMode(WorldContextObject));
 }

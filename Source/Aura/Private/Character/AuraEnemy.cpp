@@ -17,9 +17,6 @@ AAuraEnemy::AAuraEnemy()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
-	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Projectile, ECR_Block);
-
 	AbilitySystemComponent = CreateDefaultSubobject<UAuraAbilitySystemComponent>("AbilitySystemComponent");
 	AbilitySystemComponent->SetIsReplicated(true);
 	AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Minimal); // Save bandwidth
@@ -62,8 +59,8 @@ void AAuraEnemy::UnHighlightActor()
 void AAuraEnemy::MulticastHandleDeath_Implementation(const FVector& HitImpulse)
 {
 	Super::MulticastHandleDeath_Implementation(HitImpulse);
-	HealthBar->DetachFromComponent(FDetachmentTransformRules(EDetachmentRule::KeepWorld, true));
-	// HealthBar->SetVisibility(false);
+	// HealthBar->DetachFromComponent(FDetachmentTransformRules(EDetachmentRule::KeepWorld, true));
+	HealthBar->SetVisibility(false);
 }
 
 void AAuraEnemy::BeginPlay()
@@ -78,7 +75,7 @@ void AAuraEnemy::BeginPlay()
 
 void AAuraEnemy::InitAuraCharacter()
 {
-	AbilitySystemComponent->InitAuraASC(this, this);
+	AbilitySystemComponent->InitAbilityActorInfo(this, this);
 
 	if (const UCharacterClassDataAsset* ClassData = UCharacterClassDataAsset::GetFromGameMode(this))
 	{

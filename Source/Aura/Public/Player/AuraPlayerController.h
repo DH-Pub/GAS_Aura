@@ -41,7 +41,7 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	TObjectPtr<class USplineComponent> Spline;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(AllowPrivateAccess), Category = "Default|Input")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(AllowPrivateAccess), Category = "Aura|Input")
 	float AutoRunAcceptanceRadius = 25.f;
 
 	UPROPERTY()
@@ -64,9 +64,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<class UCapsuleComponent> CameraCapsule;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Default")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Aura")
 	TObjectPtr<UMaterialInterface> FadeMaterial;
-	UPROPERTY(EditDefaultsOnly, Category="Default")
+	UPROPERTY(EditDefaultsOnly, Category="Aura")
 	float FadeIntensity = .25f;
 	UPROPERTY()
 	TMap<TObjectPtr<UStaticMeshComponent>, FCameraOccludedStaticMesh> OccludedMeshes; // <Mesh, >
@@ -82,7 +82,7 @@ protected:
 
 
 private: //TODO: Move all below to AuraHeroComponent
-	UPROPERTY(EditDefaultsOnly, Category="Default|Input")
+	UPROPERTY(EditDefaultsOnly, Category="Aura|Input")
 	TObjectPtr<const class UAuraInputDataAsset> AuraInputDA;
 
 	void Move(const FInputActionValue& InputActionValue);
@@ -91,23 +91,22 @@ private: //TODO: Move all below to AuraHeroComponent
 	EMovementState MovementState = Stop;
 	float MoveHoldTime = 0.f;
 	float HoldTimeThreshold = .4f;
-	UPROPERTY()
-	TObjectPtr<class UNavigationSystemV1> NavSystem;
 	void MoveMouseTriggered(const FInputActionValue& InputActionValue);
 	void MoveMouseComplete(const FInputActionValue& InputActionValue);
-	UPROPERTY(EditDefaultsOnly, Category="Default|Mouse")
+	UPROPERTY(EditDefaultsOnly, Category="Aura|Mouse")
 	bool bDrawNavBox = false;
-	UPROPERTY(EditDefaultsOnly, Category="Default|Mouse")
-	FVector NavExtent = FVector(300.f, 300.f, 600.f);
+	UPROPERTY(EditDefaultsOnly, Category="Aura|Mouse")
+	FVector NavExtent = FVector(500.f, 500.f, 600.f);
 #pragma endregion
 
-	UPROPERTY(EditDefaultsOnly, Category="Default|Click")
+	UPROPERTY(EditDefaultsOnly, Category="Aura|Click")
 	TObjectPtr<class UNiagaraSystem> ClickNiagara;
 
 	UPROPERTY(BlueprintGetter=GetCursorHitResult, meta=(AllowPrivateAccess))
 	FHitResult CursorHitResult;
 	void CursorTick(); // Cursor HitResult
 
+	void UpdateAim();
 	UFUNCTION(Server, Reliable)
 	void ServerSetCharacterAimDirection(const FVector_NetQuantizeNormal& Aim);
 };

@@ -3,13 +3,11 @@
 
 #include "Character/AuraCharacterBase.h"
 
-#include "AuraAbilitySystemGlobals.h"
+#include "AbilitySystemGlobals.h"
 #include "Components/CapsuleComponent.h"
 #include "AuraGameplayTags.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
-#include "AbilitySystem/Debuff/DebuffNiagaraComponent.h"
-#include "Aura/Aura.h"
-#include "Character/AuraMovementComponent.h"
+#include "Character/Component/AuraMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 
@@ -18,12 +16,6 @@ AAuraCharacterBase::AAuraCharacterBase(const FObjectInitializer& ObjectInitializ
 {
 	PrimaryActorTick.bCanEverTick = false; // disable TickActor()
 
-	GetCapsuleComponent()->SetGenerateOverlapEvents(true);
-	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
-	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Projectile, ECR_Overlap);
-	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Mouse, ECR_Overlap);
-	GetMesh()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
-	GetMesh()->SetGenerateOverlapEvents(false);
 	GetMesh()->SetRelativeRotation(FRotator(0., -90., 0.));
 	// Dedicated servers don't render the meshes
 	// Skeletal meshes do not update their sockets or bones while not being rendered by default on the server part
@@ -36,22 +28,24 @@ AAuraCharacterBase::AAuraCharacterBase(const FObjectInitializer& ObjectInitializ
 	Weapon->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	Weapon->SetCollisionObjectType(ECC_PhysicsBody);
 	Weapon->SetCollisionResponseToAllChannels(ECR_Ignore);
-
-	BurnDebuffComponent = CreateDefaultSubobject<UDebuffNiagaraComponent>("BurnDebuff");
-	BurnDebuffComponent->SetupAttachment(GetRootComponent());
-	BurnDebuffComponent->DebuffTag = AuraGameplayTags::Debuff_Type_Burn;
 }
 
 void AAuraCharacterBase::Tick(const float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-	if (CombatTarget) AimDirection = CombatTarget->GetActorLocation() - GetActorLocation();
+	if (CombatTarget)
+	{
+		AimDirection = (CombatTarget->GetActorLocation() - GetActorLocation()).GetSafeNormal();
+		if (CombatTarget->Implements<UCombatInterface>() && ICombatInterface::Execute_IsDead(CombatTarget))
+		{
+			CombatTarget = nullptr;
+		}
+	}
 }
 
-void AAuraCharacterBase::FinishedAbilitySystemCompInit(UAuraAbilitySystemComponent* ASC)
+UAuraMovementComponent* AAuraCharacterBase::GetAuraMovementComponent() const
 {
-	static_cast<UAuraMovementComponent*>(GetCharacterMovement())->SetASC(ASC);
-	BurnDebuffComponent->SetASC(ASC);
+	return static_cast<UAuraMovementComponent*>(GetCharacterMovement());
 }
 
 void AAuraCharacterBase::GetRandomAttackMontage(FTaggedMontage& TaggedMontage)
@@ -70,32 +64,62 @@ FVector AAuraCharacterBase::GetCombatSocketLocation(const ECombatSocket SocketEn
 	default: return GetActorLocation();
 	}
 }
+FName AAuraCharacterBase::GetCombatSocketName(const ECombatSocket SocketEnum)
+{
+	switch (SocketEnum)
+	{
+	case ECombatSocket::Weapon: return "Attack_Socket";
+	case ECombatSocket::LeftHand: return "Hand_L_Socket";
+	case ECombatSocket::RightHand: return "Hand_R_Socket";
+	case ECombatSocket::Tail: return "Tail_Socket";
+	default: return "";
+	}
+}
+
+USceneComponent* AAuraCharacterBase::GetCombatComponent() const
+{
+	return Weapon->GetSkeletalMeshAsset() ? Weapon : nullptr;
+}
 
 // Define in .cpp or we need to #include "AbilitySystem/AuraAbilitySystemComponent.h" in header
 UAbilitySystemComponent* AAuraCharacterBase::GetAbilitySystemComponent() const {return AbilitySystemComponent;}
+
+bool AAuraCharacterBase::IsDead_Implementation() const
+{
+	return AbilitySystemComponent ?
+		AbilitySystemComponent->HasMatchingGameplayTag(AuraGameplayTags::State_Death) : true;
+}
 
 int32 AAuraCharacterBase::GetCharacterLevel_Implementation() const {return 1;}
 
 void AAuraCharacterBase::SetCombatTarget(AActor* InTarget)
 {
 	if (CombatTarget == InTarget) return;
-	if (UAuraAbilitySystemComponent* AuraASC = UAuraAbilitySystemGlobals::GetAuraASC(InTarget))
-	{
-		AuraASC->RegisterGameplayTagEvent(AuraGameplayTags::Character_State_Death,
-			EGameplayTagEventType::NewOrRemoved).RemoveAll(this);
-		AuraASC->RegisterGameplayTagEvent(AuraGameplayTags::Character_State_Death,
-			EGameplayTagEventType::NewOrRemoved).AddWeakLambda(this,
-		[&](const FGameplayTag, const int32 NewCount)
-		{
-			if (NewCount > 0) CombatTarget = nullptr;
-		});
-	}
 	CombatTarget = InTarget;
+	GetWorld()->GetTimerManager().ClearTimer(TargetCheckTimer);
+	if (CombatTarget)
+	{
+		GetWorld()->GetTimerManager().SetTimer(TargetCheckTimer, this, &AAuraCharacterBase::CheckCombatTarget,
+			TargetCheckTick, true, .1f);
+	}
+}
+void AAuraCharacterBase::CheckCombatTarget()
+{
+	if (!CombatTarget)
+	{
+		GetWorld()->GetTimerManager().ClearTimer(TargetCheckTimer);
+		return;
+	}
+	if (CombatTarget->Implements<UCombatInterface>() && ICombatInterface::Execute_IsDead(CombatTarget))
+	{
+		GetWorld()->GetTimerManager().ClearTimer(TargetCheckTimer);
+		SetCombatTarget(nullptr);
+	}
 }
 
 void AAuraCharacterBase::SetTracking(const bool bEnable)
 {
-	static_cast<UAuraMovementComponent*>(GetCharacterMovement())->bRotationTracking = bEnable;
+	bTracking = bEnable;
 }
 
 
@@ -123,13 +147,12 @@ void AAuraCharacterBase::MulticastHandleDeath_Implementation(const FVector& HitI
 	}
 	Dissolve();
 	UGameplayStatics::PlaySoundAtLocation(this, DeathSound, GetActorLocation(), GetActorRotation());
-	BurnDebuffComponent->DisableNiagara(AbilitySystemComponent);
 }
 
-bool AAuraCharacterBase::IsDead_Implementation() const
+FOnGameplayEffectTagCountChanged& AAuraCharacterBase::GetOnDeathDelegate() const
 {
-	return AbilitySystemComponent ?
-		AbilitySystemComponent->HasMatchingGameplayTag(AuraGameplayTags::Character_State_Death) : true;
+	return AbilitySystemComponent->RegisterGameplayTagEvent(AuraGameplayTags::State_Death,
+		EGameplayTagEventType::NewOrRemoved);
 }
 
 void AAuraCharacterBase::BeginPlay()
@@ -141,13 +164,16 @@ void AAuraCharacterBase::BeginPlay()
 void AAuraCharacterBase::PreReplication(IRepChangedPropertyTracker& ChangedPropertyTracker)
 {
 	Super::PreReplication(ChangedPropertyTracker);
-	DOREPLIFETIME_ACTIVE_OVERRIDE_FAST(AAuraCharacterBase, AimDirection, IsPlayerControlled())
+	// DOREPLIFETIME_ACTIVE_OVERRIDE_FAST(AAuraCharacterBase, AimDirection, IsPlayerControlled())
 	// DOREPLIFETIME_ACTIVE_OVERRIDE(AAuraCharacterBase, AimDirection, IsPlayerControlled()) // Only replicates for player
 }
 void AAuraCharacterBase::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME_CONDITION_NOTIFY(AAuraCharacterBase, AimDirection, COND_SkipOwner, REPNOTIFY_Always)
+	DOREPLIFETIME_CONDITION_NOTIFY(AAuraCharacterBase, AimDirection, COND_SkipOwner, REPNOTIFY_OnChanged)
+	DOREPLIFETIME_CONDITION_NOTIFY(AAuraCharacterBase, Summons, COND_None, REPNOTIFY_OnChanged)
+	// DOREPLIFETIME_WITH_PARAMS_FAST(AAuraCharacterBase, Summons, Params)
+	// DOREPLIFETIME_CONDITION_NOTIFY(AAuraCharacterBase, CombatTarget, COND_SkipOwner, REPNOTIFY_Always)
 }
 
 // Called in PossessedBy, which is called only on server or standalone
@@ -160,12 +186,13 @@ void AAuraCharacterBase::AddCharacterStartupAbilities() const
 
 void AAuraCharacterBase::Dissolve()
 {
-	if (IsValid(MeshDissolveMI))
+	if (MeshDissolveMI)
 	{
 		UMaterialInstanceDynamic* MIDynamic = UMaterialInstanceDynamic::Create(MeshDissolveMI, this);
 		GetMesh()->SetMaterial(0, MIDynamic);
 		StartDissolveTimeline(MIDynamic);
 	}
+
 	if (Weapon->GetSkeletalMeshAsset() && IsValid(WeaponDissolveMI))
 	{
 		UMaterialInstanceDynamic* MIDynamic = UMaterialInstanceDynamic::Create(WeaponDissolveMI, this);

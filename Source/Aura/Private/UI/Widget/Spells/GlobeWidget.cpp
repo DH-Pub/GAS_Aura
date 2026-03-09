@@ -14,6 +14,8 @@ void UGlobeWidget::NativePreConstruct()
 	{
 		SizeBox_Root->SetWidthOverride(WidthHeight.X);
 		SizeBox_Root->SetHeightOverride(WidthHeight.Y);
+		SizeBox_Root->SetMinAspectRatio(1.f);
+		SizeBox_Root->SetMaxAspectRatio(1.f);
 	}
 
 	Image_Background->SetBrush(DefaultBackground);

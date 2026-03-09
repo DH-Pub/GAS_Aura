@@ -3,53 +3,187 @@
 
 #include "AuraAbilityLibrary.h"
 
+#include "KismetTraceUtils.h"
+#include "Aura/Aura.h"
 #include "Engine/OverlapResult.h"
+#include "Interface/CombatInterface.h"
 #include "Kismet/GameplayStatics.h"
+#include "PhysicsEngine/PhysicsSettings.h"
 
-bool UAuraAbilityLibrary::YawActorToRotation(AActor* InActor, const FVector InAimDirection, const float DeltaTime,
-	const float InterpSpeed)
+void UAuraAbilityLibrary::AddAdditionalTraceIgnoreActors(TArray<AActor*>& IgnoreActors, AActor* ActorToCompare)
 {
-	FRotator CurrentRot = InActor->GetActorRotation();
-	const FRotator TargetRot = InAimDirection.ToOrientationRotator();
-	const float CurrentDiff = FMath::Abs(TargetRot.Yaw - CurrentRot.Yaw);
-	if (CurrentDiff < UE_SMALL_NUMBER) return true; // if rotation is within Tolerance
-	if (CurrentDiff < 1.f)
+	if (!ActorToCompare) return;
+	TArray<AActor*> AttachedActors; ActorToCompare->GetAttachedActors(AttachedActors);
+	IgnoreActors.Append(MoveTemp(AttachedActors));
+
+	if (AActor* Owner = ActorToCompare->GetOwner())
 	{
-		CurrentRot.Yaw = TargetRot.Yaw;
-		InActor->GetRootComponent()->SetWorldRotation(CurrentRot);
-		return true;
+		IgnoreActors.Add(Owner);
+		TArray<AActor*> OwnerAttached; Owner->GetAttachedActors(OwnerAttached);
+		IgnoreActors.Append(MoveTemp(OwnerAttached));
 	}
 
-	const float DeltaRot = DeltaTime * InterpSpeed * 3.f;
-	CurrentRot.Yaw = FMath::FixedTurn(CurrentRot.Yaw, TargetRot.Yaw, DeltaRot);
-	// CurrentRot.Yaw = FMath::FInterpTo(CurrentRot.Yaw, TargetRot.Yaw, DeltaTime, InterpSpeed * .05f); // For top-down view
-	InActor->GetRootComponent()->SetWorldRotation(CurrentRot);
-	return false;
+	if (AActor* Instigator = ActorToCompare->GetInstigator())
+	{
+		IgnoreActors.Add(Instigator);
+		TArray<AActor*> InstigatorAttached; Instigator->GetAttachedActors(InstigatorAttached);
+		IgnoreActors.Append(MoveTemp(InstigatorAttached));
+	}
 }
 
-void UAuraAbilityLibrary::GetLivePlayersInRadius(const UObject* WorldContextObject, TArray<AActor*>& OutActors,
+bool UAuraAbilityLibrary::TraceByChannel(const UObject* WorldContextObject, const FVector& Start, const FVector& End,
+	const TArray<AActor*>& ActorsToIgnore, EDrawDebugTrace::Type DrawDebugType, TArray<FHitResult>& OutHits,
+	const TArray<TEnumAsByte<ECollisionChannel>>& Channels, const bool bTraceType, const float SweepRadius, const bool bTraceComplex)
+{
+	static const FName SphereTraceName(TEXT("Trace"));
+	FCollisionQueryParams Params(SphereTraceName, SCENE_QUERY_STAT_ONLY(KismetTraceUtils), bTraceComplex);
+	Params.bReturnPhysicalMaterial = true; // To get PhysMaterial from hit
+	Params.bReturnFaceIndex = !UPhysicsSettings::Get()->bSuppressFaceRemapTable; // Face Index (not disable globally)
+	Params.AddIgnoredActors(ActorsToIgnore);
+
+	const UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
+	TArray<FHitResult> HitResults;
+	if (bTraceType)
+	{
+		for (const ECollisionChannel Channel : Channels)
+		{	// Normally, we will only use ONE trace channel
+			TArray<FHitResult> TraceResults;
+			if (SweepRadius > 0.f)
+			{
+				World->SweepMultiByChannel(TraceResults, Start, End, FQuat::Identity, Channel,
+					FCollisionShape::MakeSphere(SweepRadius), Params);
+			}
+			else World->LineTraceMultiByChannel(TraceResults, Start, End, Channel, Params);
+
+			HitResults.Append(MoveTemp(TraceResults));
+		}
+	}
+	else
+	{
+		FCollisionObjectQueryParams ObjectParams;
+		for (const ECollisionChannel Channel : Channels) {ObjectParams.AddObjectTypesToQuery(Channel);}
+		if (SweepRadius > 0.f)
+		{
+			World->SweepMultiByObjectType(HitResults, Start, End, FQuat::Identity, ObjectParams,
+				FCollisionShape::MakeSphere(SweepRadius), Params);
+		}
+		else World->LineTraceMultiByObjectType(HitResults, Start, End, ObjectParams, Params);
+	}
+
+	for (FHitResult& Hit : HitResults)
+	{	// Filter to prevent multiple hits on the same actor
+		// a single bullet dealing damage multiple times to a single actor if using an overlap trace
+		auto Pred = [&Hit](FHitResult& Other)
+		{
+			return Other.HitObjectHandle == Hit.HitObjectHandle;
+		};
+		if (!OutHits.ContainsByPredicate(Pred)) OutHits.Add(MoveTemp(Hit));
+	}
+
+
+#if ENABLE_DRAW_DEBUG
+	if (SweepRadius > 0.f)
+	{
+		DrawDebugSphereTraceMulti(World, Start, End, SweepRadius, DrawDebugType, OutHits.Num() > 0, OutHits,
+			FLinearColor::Red, FLinearColor::Green, .5f);
+	}
+	else
+	{
+		DrawDebugLineTraceMulti(World, Start, End, DrawDebugType, OutHits.Num() > 0, OutHits,
+			FLinearColor::Red, FLinearColor::Green, .5f);
+	}
+#endif
+
+	return OutHits.Num() > 0;
+}
+
+bool UAuraAbilityLibrary::ConeOverlapLivingCharacters(const UObject* WorldContextObject, const FVector& Start,
+	FVector Direction, float SlantHeight, float ConeHalfAngleDeg, const TArray<AActor*>& ActorsToIgnore,
+	EDrawDebugTrace::Type DrawDebugType, TArray<AActor*>& OutCharacters)
+{
+	TArray<AActor*> OverlapActors;
+	GetLiveCharactersInRadius(WorldContextObject, OverlapActors, ActorsToIgnore, SlantHeight, Start,
+		DrawDebugType > EDrawDebugTrace::None);
+
+	if (!Direction.IsNormalized()) {if (Direction.Normalize()) return false;}
+	const float ConeHalfAngleRad = FMath::DegreesToRadians(ConeHalfAngleDeg);
+	// const float ConeBaseRadius = ConeHeight * tan(ConeHalfAngleRad); // r = h * tan(theta / 2)
+	for (AActor* Actor : OverlapActors)
+	{
+		const FVector ActorVec = Actor->GetActorLocation() - Start;
+		const float AngleRad = FMath::Acos(FVector::DotProduct(Direction, ActorVec.GetSafeNormal()));
+		if (AngleRad < ConeHalfAngleRad) OutCharacters.AddUnique(Actor);
+	}
+
+#if ENABLE_DRAW_DEBUG
+	if (DrawDebugType != EDrawDebugTrace::None)
+	{
+		DrawDebugCone(WorldContextObject->GetWorld(), Start, Direction, SlantHeight, ConeHalfAngleRad,
+			ConeHalfAngleRad, 32, FColor::Green, false, 0.05f);
+	}
+#endif
+
+	return OutCharacters.Num() > 0;
+}
+
+void UAuraAbilityLibrary::SortActorsByClosest(TArray<AActor*>& Actors, const FVector& Origin)
+{
+	Algo::Sort(Actors, [&Origin](const AActor* A, const AActor* B) /*Actors.Sort()*/
+	{return FVector::DistSquared(A->GetActorLocation(), Origin) < FVector::DistSquared(B->GetActorLocation(), Origin);});
+}
+
+bool UAuraAbilityLibrary::GetLiveCharactersInRadius(const UObject* WorldContextObject, TArray<AActor*>& OutActors,
 	const TArray<AActor*>& ActorsToIgnore, const float Radius, const FVector& Origin, const bool bShowDebug)
 {
 	const UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
-	if (World == nullptr) return;
-	FCollisionQueryParams SphereParams; SphereParams.AddIgnoredActors(ActorsToIgnore);
-	TArray<FOverlapResult> Overlaps;
+	if (World == nullptr) return false;
+	FCollisionQueryParams Params; Params.AddIgnoredActors(ActorsToIgnore);
+	Params.bReturnPhysicalMaterial = true; // Params.bReturnFaceIndex = !UPhysicsSettings::Get()->bSuppressFaceRemapTable;
 	// UKismetSystemLibrary::SphereOverlapActors();
-	World->OverlapMultiByObjectType(Overlaps, Origin, FQuat::Identity,
+	TArray<FOverlapResult> Results;
+	World->OverlapMultiByObjectType(Results, Origin, FQuat::Identity,
 		FCollisionObjectQueryParams(ECC_Pawn)/*FCollisionObjectQueryParams(FCollisionObjectQueryParams::InitType::AllDynamicObjects)*/,
-		FCollisionShape::MakeSphere(Radius), SphereParams);
-	for (FOverlapResult& Overlap : Overlaps)
+		FCollisionShape::MakeSphere(Radius), Params);
+	for (FOverlapResult& Overlap : Results)
 	{
-		OutActors.AddUnique(Overlap.GetActor());
+		AActor* OverlapActor = Overlap.GetActor();
+		if (OutActors.Contains(OverlapActor)) continue;
+		if (OverlapActor->Implements<UCombatInterface>() && !ICombatInterface::Execute_IsDead(OverlapActor))
+		{
+			OutActors.Add(OverlapActor);
+		}
 	}
-
 	if (bShowDebug) UKismetSystemLibrary::DrawDebugSphere(WorldContextObject, Origin, Radius, 12, FColor::Red, 1.f);
+
+	return OutActors.Num() > 0;
 }
 
-bool UAuraAbilityLibrary::IsNotFriend(const AActor* FirstActor, const AActor* SecondActor)
+bool UAuraAbilityLibrary::IsAlly(const AActor* FirstActor, const AActor* SecondActor)
 {
 	if (FirstActor == nullptr || SecondActor == nullptr) return false;
-	const bool bBothArePlayers = FirstActor->ActorHasTag(FName("Player")) && SecondActor->ActorHasTag(FName("Player"));
-	const bool bBothAreEnemies = FirstActor->ActorHasTag(FName("Enemy")) && SecondActor->ActorHasTag(FName("Enemy"));
+	const bool bBothArePlayers = FirstActor->ActorHasTag(AuraActorTag_Player) && SecondActor->ActorHasTag(AuraActorTag_Player);
+	const bool bBothAreEnemies = FirstActor->ActorHasTag(AuraActorTag_Enemy) && SecondActor->ActorHasTag(AuraActorTag_Enemy);
+	return bBothArePlayers || bBothAreEnemies;
+}
+bool UAuraAbilityLibrary::IsNotAlly(const AActor* FirstActor, const AActor* SecondActor)
+{
+	if (FirstActor == nullptr || SecondActor == nullptr) return false;
+	const bool bBothArePlayers = FirstActor->ActorHasTag(AuraActorTag_Player) && SecondActor->ActorHasTag(AuraActorTag_Player);
+	const bool bBothAreEnemies = FirstActor->ActorHasTag(AuraActorTag_Enemy) && SecondActor->ActorHasTag(AuraActorTag_Enemy);
 	return !(bBothArePlayers || bBothAreEnemies);
+}
+
+void UAuraAbilityLibrary::FilterOutAllies(const AActor* InActor, TArray<AActor*>& ActorsToFilter)
+{
+	ActorsToFilter = ActorsToFilter.FilterByPredicate([InActor](const AActor* Actor)
+	{
+		return IsNotAlly(Actor, InActor);
+	});
+}
+void UAuraAbilityLibrary::FilterOutEnemies(const AActor* InActor, TArray<AActor*>& ActorsToFilter)
+{
+	ActorsToFilter = ActorsToFilter.FilterByPredicate([InActor](const AActor* Actor)
+	{
+		return IsAlly(Actor, InActor);
+	});
 }

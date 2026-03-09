@@ -5,6 +5,7 @@
 
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemGlobals.h"
+#include "AbilitySystemLog.h"
 #include "AbilitySystem/Ability/AuraGameplayAbility.h"
 #include "GameFramework/Character.h"
 
@@ -56,9 +57,9 @@ void UAT_PlayMontageWaitEvent::OnGameplayEvent(FGameplayTag EventTag, const FGam
 {
 	if (ShouldBroadcastAbilityTaskDelegates())
 	{
-		FGameplayEventData TempPayload = *Payload;
-		TempPayload.EventTag = EventTag;
-		EventReceived.Broadcast(EventTag, TempPayload);
+		const_cast<FGameplayEventData*>(Payload)->EventTag = EventTag;
+		// FGameplayEventData TempPayload = *Payload; TempPayload.EventTag = EventTag;
+		EventReceived.Broadcast(EventTag, *Payload);
 	}
 }
 
@@ -118,14 +119,14 @@ void UAT_PlayMontageWaitEvent::Activate()
 				bPlayedMontage = true;
 			}
 		}
-		else UE_LOG(LogTemp, Warning, TEXT("Call to PlayMontage failed!"));
+		else ABILITY_LOG(Warning, TEXT("UAbilityTask_PlayMontageAndWait call to PlayMontage failed!"));
 	}
-	else UE_LOG(LogTemp, Warning, TEXT("Called on invalid AbilitySystemComponent"));
+	else ABILITY_LOG(Warning, TEXT("UAbilityTask_PlayAnimAndWait called on invalid AbilitySystemComponent"));
 
 	if (!bPlayedMontage)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("In Ability %s failed to play montage %s; Task Instance Name %s."),
-								*Ability->GetName(), *GetNameSafe(MontageToPlay), *InstanceName.ToString());
+		ABILITY_LOG(Warning, TEXT("UAbilityTask_PlayMontageAndWait called in Ability %s failed to play montage %s; "
+			"Task Instance Name %s."), *Ability->GetName(), *GetNameSafe(MontageToPlay),*InstanceName.ToString());
 		if (ShouldBroadcastAbilityTaskDelegates()) OnCancelled.Broadcast(FGameplayTag(), FGameplayEventData());
 	}
 

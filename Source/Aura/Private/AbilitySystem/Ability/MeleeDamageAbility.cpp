@@ -5,6 +5,5 @@
 
 UMeleeDamageAbility::UMeleeDamageAbility()
 {
-	bStagger = true;
-	bStopRotation = true;
+
 }

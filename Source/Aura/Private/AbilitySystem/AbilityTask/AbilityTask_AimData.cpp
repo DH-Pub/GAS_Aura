@@ -42,7 +42,11 @@ void UAbilityTask_AimData::Activate()
 				GetActivationPredictionKey(), DataHandle, FGameplayTag(),
 				AbilitySystemComponent->ScopedPredictionKey);
 		}
-		if (ShouldBroadcastAbilityTaskDelegates()) ValidData.Broadcast(Data->EndPoint, /*DataHandle*/Data->TargetActor.Get());
+
+		if (ShouldBroadcastAbilityTaskDelegates())
+		{
+			ValidData.Broadcast(Data->AimDirection, Data->EndPoint, Data->TargetActor.Get());
+		}
 	}
 	else
 	{
@@ -76,5 +80,5 @@ void UAbilityTask_AimData::OnTargetDataReplicatedCallback(const FGameplayAbility
 
 	AbilitySystemComponent->AbilityTargetDataSetDelegate(GetAbilitySpecHandle(), GetActivationPredictionKey()).Remove(DelegateHandle);
 	AbilitySystemComponent->ConsumeClientReplicatedTargetData(GetAbilitySpecHandle(), GetActivationPredictionKey());
-	if (ShouldBroadcastAbilityTaskDelegates()) ValidData.Broadcast(Data->GetEndPoint(), Target);
+	if (ShouldBroadcastAbilityTaskDelegates()) ValidData.Broadcast(Character->AimDirection, Data->GetEndPoint(), Target);
 }

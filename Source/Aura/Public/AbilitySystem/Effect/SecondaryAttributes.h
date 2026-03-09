@@ -44,6 +44,5 @@ UCLASS()
 class AURA_API USecondaryAttributesEffect : public UGameplayEffect
 {
 	GENERATED_BODY()
-public:
 	USecondaryAttributesEffect();
 };

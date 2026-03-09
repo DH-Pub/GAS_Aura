@@ -9,12 +9,9 @@
 /*=========================================================================================================*/
 UMMC_MaxHealth::UMMC_MaxHealth()
 {
-	VigorDef = FGameplayEffectAttributeCaptureDefinition(
-		UAuraAttributeSet::GetVigorAttribute(), EGameplayEffectAttributeCaptureSource::Target, false);
-	// AURA_DEFINE_CAPTURE_DEF(VigorDef, GetVigorAttribute(), Target, false);
-	// RelevantAttributesToCapture.Add(VigorDef);
+	AURA_ATTR_DEFINE_CAPTUREDEF(VigorDef, GetVigorAttribute(), Target, false);
 	RelevantAttributesToCapture.Add(VigorDef);
-	AURA_DEFINE_CAPTURE_DEF(StrengthDef, GetStrengthAttribute(), Target, false);
+	AURA_ATTR_DEFINE_CAPTUREDEF(StrengthDef, GetStrengthAttribute(), Target, false);
 	RelevantAttributesToCapture.Add(StrengthDef);
 }
 float UMMC_MaxHealth::CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const
@@ -38,7 +35,7 @@ float UMMC_MaxHealth::CalculateBaseMagnitude_Implementation(const FGameplayEffec
 /*====================================================================================================================*/
 UMMC_MaxMana::UMMC_MaxMana()
 {
-	AURA_DEFINE_CAPTURE_DEF(IntelligenceDef, GetIntelligenceAttribute(), Target, false);
+	AURA_ATTR_DEFINE_CAPTUREDEF(IntelligenceDef, GetIntelligenceAttribute(), Target, false);
 	RelevantAttributesToCapture.Add(IntelligenceDef);
 }
 float UMMC_MaxMana::CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const
@@ -60,20 +57,16 @@ float UMMC_MaxMana::CalculateBaseMagnitude_Implementation(const FGameplayEffectS
 
 USecondaryAttributesEffect::USecondaryAttributesEffect()
 {
-	/*
-	 * Instant: modify BaseValue (Permanent) (ex: Damage Effect Decrease Health)
-	 * HasDuration:
-	 *	+ UGameplayEffect::NO_PERIOD(0.f): modify CurrentValue(Temporal) (ex: 5s buff to strength)
-	 *	+ > UGameplayEffect::NO_PERIOD: modify BaseValue(Permanent) (ex: damage, heal over time)
-	 * Infinite: Stay until Removed (ex: buff while the weapon is equipped, fire hazard applying debuffs while inside)
-	 *	+ > UGameplayEffect::NO_PERIOD: (Permanent) ex: Health, Mana Regen
+	/** BaseValue == Permanent; CurrentValue = BaseValue + Temporary Modification from GE
+	 * Instant: modify BaseValue(Permanent) (ex: Damage Effect Decrease Health)
+	 * HasDuration: CurrentValue(Temporal) (ex: 5s buff to strength)
+	 *	if (Period > 0.f) BaseValue (ex: damage, heal over time)
+	 * Infinite: CurrentValue until Removed (ex: Equipments' Attributes, Swamp slow inside)
+	 *	if (Period > 0.f): BaseValue (ex: Health, Mana, Stamina Regen, fire apply dmg while inside)
 	 *
 	 *	Executions: only works for (Permanent)
 	 */
 	DurationPolicy = EGameplayEffectDurationType::Infinite;
-	FGameplayModifierInfo Info;
-
-	FAttributeBasedFloat AttributeBasedFloat;
 	AURA_ADD_ATTRIBUTE_BASED_MODIFIER(GetArmorAttribute(), AddBase, .25, 2, 6, GetResilienceAttribute()) // 0
 	AURA_ADD_ATTRIBUTE_BASED_MODIFIER(GetArmorPenetrationAttribute(), AddBase, .15, 1, 3, GetStrengthAttribute()) // 1
 	AURA_ADD_ATTRIBUTE_BASED_MODIFIER(GetBlockChanceAttribute(), AddBase, .25, 0, 4, GetArmorAttribute()) // 2
@@ -89,7 +82,6 @@ USecondaryAttributesEffect::USecondaryAttributesEffect()
 	AURA_ADD_ATTRIBUTE_BASED_MODIFIER(GetArcaneResistanceAttribute(), AddBase, .5, 0, 3, GetResilienceAttribute()) // 10
 	AURA_ADD_ATTRIBUTE_BASED_MODIFIER(GetPhysicalResistanceAttribute(), AddBase, .5, 0, 3, GetResilienceAttribute()) // 11
 
-	FCustomCalculationBasedFloat CustomCalculation;
 	AURA_ADD_CUSTOM_CALCULATION_MODIFIER(GetMaxHealthAttribute(), AddBase, UMMC_MaxHealth) // 12
 	AURA_ADD_CUSTOM_CALCULATION_MODIFIER(GetMaxManaAttribute(), AddBase, UMMC_MaxMana) // 13
 }

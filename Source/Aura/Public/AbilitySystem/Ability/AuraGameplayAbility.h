@@ -26,6 +26,11 @@ struct FAbilityDetails
 	float CooldownReduction = 0.f; // %
 	UPROPERTY(BlueprintReadOnly)
 	float CalculatedCooldown = 0.f;
+
+	UPROPERTY(BlueprintReadOnly)
+	int32 ProjectileNums = 0;
+	UPROPERTY(BlueprintReadOnly)
+	float Damage = 0.f;
 };
 
 UENUM(BlueprintType)
@@ -36,11 +41,12 @@ enum class EAuraActivationPolicy : uint8
 	OnSpawn, // Passive, activate in OnAvatarSet
 };
 
+// AOE, SingleTarget, AutoSelfCast, SkillShots, Toggle, Passive
 /**
  * Base GameplayAbility for this project
  * Gameplay Ability is only replicated to the owning player by default
  */
-UCLASS()
+UCLASS(Abstract)
 class AURA_API UAuraGameplayAbility : public UGameplayAbility
 {
 	GENERATED_BODY()
@@ -52,54 +58,39 @@ public:
 		FGameplayTagContainer* OptionalRelevantTags = nullptr) const override;
 
 	// Added to GetDynamicSpecSourceTags() and also used for CD
-	UPROPERTY(EditDefaultsOnly, Category="Default", meta=(GameplayTagFilter="Ability"))
+	UPROPERTY(EditDefaultsOnly, Category="Tags", meta=(GameplayTagFilter="Ability"))
 	FGameplayTag AuraAbilityTag = FGameplayTag::EmptyTag;
 
 	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<class AAuraCharacterBase> AuraCharacter = nullptr;
 
 	// Defines how this ability is meant to activate.
-	UPROPERTY(EditDefaultsOnly, Category="Default|Input")
+	UPROPERTY(EditDefaultsOnly, Category="Aura|Input")
 	EAuraActivationPolicy ActivationPolicy = EAuraActivationPolicy::InputHolding;
 
-	UPROPERTY(EditDefaultsOnly, Category="Default|Input", meta=(
-		EditCondition="ActivationPolicy!=EAuraActivationPolicy::OnSpawn", EditConditionHides))
-	EAuraAbilityInputID StartupInputID = EAuraAbilityInputID::None; //TODO: This is for testing, remove this
-	UPROPERTY(EditDefaultsOnly, Category="Default|Input", meta=(
-		EditCondition="ActivationPolicy==EAuraActivationPolicy::OnSpawn", EditConditionHides))
-	EAuraAbilityPassiveID PassiveID = EAuraAbilityPassiveID::None;
+	UPROPERTY(EditDefaultsOnly, Category="Aura|Input")
+	TEnumAsByte<EAuraAbilityInputID::Type> StartupInputID = EAuraAbilityInputID::None; //TODO: Testing, remove this
 
 protected:
 	virtual void PreActivate(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
 		const FGameplayAbilityActivationInfo ActivationInfo, FOnGameplayAbilityEnded::FDelegate* OnGameplayAbilityEndedDelegate,
 		const FGameplayEventData* TriggerEventData = nullptr) override;
+	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
+		const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
 	virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
 		const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
 
-	// Epic's Comment: Projects may want to initiate passives or do other "BeginPlay" type of logic here.
 	virtual void OnAvatarSet(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec) override;
 
-	UPROPERTY(EditDefaultsOnly, Category="Default")
-	bool bStopRotation = false;
+	UFUNCTION(BlueprintCallable)
+	void DelayEndAbility(const float Time); // Call EndAbility() after Time
+	FTimerHandle EndHandle;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Default")
-	FText AbilityName;
-
-	FGameplayTagContainer& AddGenericAssetTags(FGameplayTagContainer& Tags);
-	void SetBaseCancelBlock();
 
 public:
-	UFUNCTION(BlueprintImplementableEvent) // Override this in each ability's BP
+	UFUNCTION(BlueprintImplementableEvent, Category="Description") // Override this in each ability's BP
 	void GetDescription(const FAbilityDetails& Details, FText& OutDescription) const;
-	UFUNCTION(BlueprintImplementableEvent) // Override this in each ability's BP
+	UFUNCTION(BlueprintImplementableEvent, Category="Description") // Override this in each ability's BP
 	void GetLevelChangeDescription(const FAbilityDetails& Details, const FAbilityDetails& ChangeDetails,
 		FText& OutDescription) const;
-	UFUNCTION(BlueprintPure, meta=(CompactNodeTitle="Lv"))
-	static int32 GetLevelFromDetails(const FAbilityDetails& Details) {return Details.Level;}
-
-	/**
-	 * For outside of ability conversion (UI get AbilityID base on type)
-	 */
-	UFUNCTION(BlueprintCallable)
-	static int32 ConvertInputAndPassiveEnumToAbilityID(const EAuraAbilityInputID InInputID, const EAuraAbilityPassiveID InPassiveID);
 };

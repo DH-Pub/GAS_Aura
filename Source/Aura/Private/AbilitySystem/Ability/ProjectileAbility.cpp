@@ -8,8 +8,7 @@
 #include "Character/AuraCharacterBase.h"
 #include "GameFramework/GameStateBase.h"
 
-void UProjectileAbility::SpawnProjectile(FVector& SpawnLoc, const FVector& CursorHit, FRotator InRot,
-	const AActor* HomingTarget, float HeightAdd)
+void UProjectileAbility::SpawnProjectile(FVector& SpawnLoc, FRotator InRot, const AActor* HomingTarget, float HeightAdd)
 {
 	// stop projectile from hitting the floor on spawned
 	FHitResult FloorHitResult; FCollisionObjectQueryParams Params(ECC_WorldStatic);
@@ -38,7 +37,7 @@ void UProjectileAbility::SpawnProjectile(FVector& SpawnLoc, const FVector& Curso
 		{	// Spawn on server
 			AAuraProjectile* Projectile = GetWorld()->SpawnActorDeferred<AAuraProjectile>(ProjectileClass,
 				SpawnTransform, nullptr /*Owned by the staff, but it's not an actor*/, AuraCharacter,
-				ESpawnActorCollisionHandlingMethod::AlwaysSpawn /*can spawn inside others, HitResult.Distance == 0.f*/);
+				ESpawnActorCollisionHandlingMethod::AlwaysSpawn /*can spawn inside others, HitResult.bStartPenetrating*/);
 			Projectile->SpawnedFromAbility = this;
 			Projectile->FinishSpawning(SpawnTransform);
 			if (bHomingValid)
@@ -49,24 +48,26 @@ void UProjectileAbility::SpawnProjectile(FVector& SpawnLoc, const FVector& Curso
 		else if (bPredictingClient)
 		{
 			bool bSpawn = false;
-			/*AAuraProjectile* Projectile = GetWorld()->SpawnActorDeferred<AAuraProjectile>(ProjectileClass, SpawnTransform,
-				nullptr /*Owned by the staff, but it's not an actor#1#, AuraCharacter,
-				ESpawnActorCollisionHandlingMethod::AlwaysSpawn /*can spawn inside other actor, HitResult.Distance == 0.f#1#);
-			Projectile->SpawnedFromAbility = this;*/
 		}
 	}
 }
 
+void UProjectileAbility::GetAbilityDetails(FAbilityDetails& Details) const
+{
+	Super::GetAbilityDetails(Details);
+	Details.ProjectileNums = ProjectileNums.GetValueAtLevel(Details.Level);
+}
 
 
 // AbilityTask ======================================================================================================
 UAbilityTask_SpawnProjectile* UAbilityTask_SpawnProjectile::SpawnProjectile(UProjectileAbility* OwningAbility,
-	const ECombatSocket SpawnSocket, const FVector EndPoint, AActor* Target, const float HeightIfHitGround)
+	const ECombatSocket SpawnSocket, const FVector& Direction, AActor* Target, float HeightIfHitGround)
 {
 	UAbilityTask_SpawnProjectile* Task = NewAbilityTask<UAbilityTask_SpawnProjectile>(OwningAbility);
 	Task->ProjectileAbility = OwningAbility;
-	Task->SocketLocation = Task->ProjectileAbility->AuraCharacter->GetCombatSocketLocation(SpawnSocket);
-	Task->EndPoint = EndPoint;
+	Task->AuraCharacter = Task->ProjectileAbility->AuraCharacter;
+	Task->SocketLocation = Task->AuraCharacter->GetCombatSocketLocation(SpawnSocket);
+	Task->Direction = Direction;
 	Task->Target = Target;
 	Task->HeightIfHitGround = HeightIfHitGround;
 	return Task;
@@ -81,11 +82,10 @@ void UAbilityTask_SpawnProjectile::Activate()
 		FScopedPredictionWindow(AbilitySystemComponent.Get(), IsPredictingClient());
 		if (IsPredictingClient())
 		{
-			FGA_TargetData_ProjectileInfo* Data = new FGA_TargetData_ProjectileInfo();
+			FGATargetData_ProjectileInfo* Data = new FGATargetData_ProjectileInfo();
 			Data->Location = SocketLocation;
-			Data->Rotation = ProjectileAbility->AuraCharacter->AimDirection.ToOrientationRotator();
+			Data->Rotation = Direction.ToOrientationRotator();
 			Data->ActivationTime = GetWorld()->GetGameState()->GetServerWorldTimeSeconds();
-			Data->EndPoint = EndPoint;
 			FGameplayAbilityTargetDataHandle DataHandle(Data);
 
 			AbilitySystemComponent->CallServerSetReplicatedTargetData(GetAbilitySpecHandle(),
@@ -94,8 +94,8 @@ void UAbilityTask_SpawnProjectile::Activate()
 		}
 		else
 		{	// Server
-			ProjectileAbility->SpawnProjectile(SocketLocation, EndPoint,
-				ProjectileAbility->AuraCharacter->AimDirection.ToOrientationRotator(), Target, HeightIfHitGround);
+			ProjectileAbility->SpawnProjectile(SocketLocation,
+				Direction.ToOrientationRotator(), Target, HeightIfHitGround);
 		}
 		if (ShouldBroadcastAbilityTaskDelegates()) OnSpawnFinish.Broadcast();
 	}
@@ -126,16 +126,15 @@ void UAbilityTask_SpawnProjectile::OnTargetDataReplicatedCallback(const FGamepla
 		if (DifferenceSizeSqr < 10'000.f) SocketLocation = ClientSpawnLocation;
 		else if (Difference.Normalize()) SocketLocation += Difference * 100.f;
 	}
-	ProjectileAbility->AuraCharacter->AimDirection = ClientTransformData.GetRotation().GetAxisX();
+	Direction = ClientTransformData.GetRotation().GetAxisX();
 	const FVector Floats = ClientTransformData.GetScale3D(); // Arbitrary numbers are stored in Scale
 	const float TimeDifferent = GetWorld()->GetGameState()->GetServerWorldTimeSeconds() - Floats.X;
 	if (TimeDifferent > UE_KINDA_SMALL_NUMBER && TimeDifferent < .5f)
 	{
 		// Modify Spawn according to time difference here
 	}
-	EndPoint = Data->GetEndPoint();
-	ProjectileAbility->SpawnProjectile(SocketLocation, EndPoint,
-		ProjectileAbility->AuraCharacter->AimDirection.ToOrientationRotator(), Target, HeightIfHitGround);
+	ProjectileAbility->SpawnProjectile(SocketLocation, Direction.ToOrientationRotator(), Target,
+		HeightIfHitGround);
 
 	AbilitySystemComponent->AbilityTargetDataSetDelegate(GetAbilitySpecHandle(), GetActivationPredictionKey()).Remove(DelegateHandle);
 	AbilitySystemComponent->ConsumeClientReplicatedTargetData(GetAbilitySpecHandle(), GetActivationPredictionKey());

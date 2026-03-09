@@ -5,9 +5,10 @@
 
 #include "Blueprint/SlateBlueprintLibrary.h"
 #include "Blueprint/WidgetLayoutLibrary.h"
+#include "Components/SizeBox.h"
 #include "Kismet/KismetMathLibrary.h"
 
-FVector2D UAuraUserWidget::GetOffsetToPivot(const FGeometry& MyGeometry, const FVector2D Offset)
+FVector2D UAuraUserWidget::GetOffsetToPivot(const FGeometry& MyGeometry, const FVector2D Offset) const
 {
 	const FVector2D MousePos = UWidgetLayoutLibrary::GetMousePositionOnViewport(this);
 	FVector2D WidgetPosToTopLeft;
@@ -19,4 +20,10 @@ FVector2D UAuraUserWidget::GetOffsetToPivot(const FGeometry& MyGeometry, const F
 	const FVector2D MousePercentOnWidget(UKismetMathLibrary::SafeDivide(MousePosOnWidget.X, WidgetSize.X),
 		UKismetMathLibrary::SafeDivide(MousePosOnWidget.Y, WidgetSize.Y));
 	return MousePercentOnWidget - FVector2D(Offset.X, Offset.Y);
+}
+
+void UAuraUserWidget::SetSizeBoxWidthHeight(class USizeBox* InSizeBox, const FVector2D& InWidthHeight)
+{
+	InSizeBox->SetWidthOverride(InWidthHeight.X);
+	InSizeBox->SetHeightOverride(InWidthHeight.Y);
 }

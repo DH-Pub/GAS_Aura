@@ -23,7 +23,7 @@ public:
 	virtual void SetWidgetController(class UAuraWidgetController* InWidgetController)
 	{
 		WidgetControllerSet(InWidgetController); // Call event in blueprint
-	};
+	}
 
 	/**
 	 * For CreateDragDropOperation Offset. Get Offset so that Player will see mouse at the Pivot Offset
@@ -31,9 +31,12 @@ public:
 	 * @param Offset: (0, 0) top-left (1, 1) bot-right. Default (.75, .75) so that mouse doesn't cover the Dragging Item
 	 */
 	UFUNCTION(BlueprintPure)
-	FVector2D GetOffsetToPivot(const FGeometry& MyGeometry, const FVector2D Offset=FVector2D(.75, .75));
+	FVector2D GetOffsetToPivot(const FGeometry& MyGeometry, const FVector2D Offset=FVector2D(.75, .75)) const;
 protected:
 	/** Bind changed event to widget in BP */
 	UFUNCTION(BlueprintImplementableEvent)
 	void WidgetControllerSet(UAuraWidgetController* Controller);
+
+	UFUNCTION(BlueprintCallable)
+	static void SetSizeBoxWidthHeight(class USizeBox* InSizeBox, const FVector2D& InWidthHeight);
 };

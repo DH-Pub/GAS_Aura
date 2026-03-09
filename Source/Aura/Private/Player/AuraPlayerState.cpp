@@ -3,12 +3,14 @@
 
 #include "Player/AuraPlayerState.h"
 
+#include "AuraGameplayTags.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "AbilitySystem/Data/AbilityDataAsset.h"
 #include "AbilitySystem/Data/LevelUpDataAsset.h"
 #include "Character/AuraPlayer.h"
 #include "Net/UnrealNetwork.h"
+#include "UI/WidgetController/CharacterWidgetController.h"
 
 AAuraPlayerState::AAuraPlayerState()
 {
@@ -33,26 +35,58 @@ void AAuraPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 
 UAbilitySystemComponent* AAuraPlayerState::GetAbilitySystemComponent() const {return AbilitySystemComponent;}
 
+void AAuraPlayerState::SetLevel(const int32 NewLevel)
+{
+	const int32 OldLevel = Level;
+	Level = NewLevel;
+	UAbilityDataAsset::UnlockAbilityByLevel(this, AbilitySystemComponent, Level);
+	OnRep_Level(OldLevel);
+}
+
 void AAuraPlayerState::SetXP(const int32 NewXP)
 {
+	const int32 OldXP = XP;
 	XP = NewXP;
-	int32 i = GetPlayerLevel();
+	int32 OldLv = GetPlayerLevel();
 	const int32 NewXPLevel = LevelUpDataAsset->FindLevelForXP(XP);
-	if (i != NewXPLevel)
+	if (OldLv != NewXPLevel)
 	{
 		int32 AttributePointsToAdd = 0;
 		int32 SpellPointsToAdd = 0;
-		while (i < NewXPLevel)
+		while (OldLv < NewXPLevel)
 		{
-			const FAuraLevelUpData& LevelUpData = LevelUpDataAsset->LevelUpDataList[++i];
+			const FAuraLevelUpData& LevelUpData = LevelUpDataAsset->LevelUpDataList[++OldLv];
 			AttributePointsToAdd += LevelUpData.AttributePointsGain;
 			SpellPointsToAdd += LevelUpData.SpellPointsGain;
 		}
 		AddToAttributePoints(AttributePointsToAdd);
 		AddToSpellPoints(SpellPointsToAdd);
-		SetLevel(i);
-		UAbilityDataAsset::UnlockAbilityByLevel(this, AbilitySystemComponent, Level);
-		if (AAuraPlayer* Character = Cast<AAuraPlayer>(GetPawn())) Character->MulticastLevelUpEffects(Level);
+		SetLevel(NewXPLevel);
 	}
-	OnXPChangedDelegate.Broadcast(XP);
+
+	OnRep_XP(OldXP);
+}
+
+void AAuraPlayerState::OnRep_Level(const int32 OldLevel) const
+{
+	if (Level > OldLevel)
+	{
+		const APlayerController* PC = GEngine->GetFirstLocalPlayerController(GetWorld());
+		if (PC && GetPawn() && PC->PlayerState == this)
+		{	// Cue only on local
+			FGameplayCueParameters Params;
+			Params.RawMagnitude = Level; // Params.AbilityLevel = NewLevel; Params.GameplayEffectLevel = NewLevel;
+			if (GetPawn()) Params.Location = GetPawn()->GetActorLocation();
+			Params.Normal = -PC->PlayerCameraManager->GetActorForwardVector();
+			Params.Instigator = GetPawn();
+			AbilitySystemComponent->InvokeGameplayCueEvent(AuraGameplayTags::GameplayCue_Shared_LevelUp,
+				EGameplayCueEvent::Executed, Params);
+
+			if (const AAuraPlayer* Chara = Cast<AAuraPlayer>(GetPawn()))
+			{	//TODO: use AuraWorldUserWidget
+				Chara->CharacterWC->OnLevelUpDelegate.Broadcast(Level);
+			}
+		}
+	}
+	OnLevelChangedDelegate.Broadcast(Level);
 }

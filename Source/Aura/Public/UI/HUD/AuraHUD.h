@@ -40,7 +40,7 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<USpellMenuWidgetController> SpellMenuController;
 
-	UPROPERTY(EditDefaultsOnly, Category="Default")
+	UPROPERTY(EditDefaultsOnly, Category="Aura")
 	TObjectPtr<const class UAttributeDataAsset> AttributeData;
 	const TMap<struct FGameplayTag, struct FAuraAttributeData>& GetAttributeDataList() const;
 
@@ -71,12 +71,12 @@ public:
 
 
 private:
-	UPROPERTY(EditDefaultsOnly, Category="Default")
+	UPROPERTY(EditDefaultsOnly, Category="Aura")
 	TSubclassOf<UAuraUserWidget> OverlayWidgetClass; // For WBP_Overlay
-	UPROPERTY(EditDefaultsOnly, Category="Default")
+	UPROPERTY(EditDefaultsOnly, Category="Aura")
 	TSubclassOf<UOverlayWidgetController> OverlayWidgetControllerClass;
-	UPROPERTY(EditDefaultsOnly, Category="Default")
+	UPROPERTY(EditDefaultsOnly, Category="Aura")
 	TSubclassOf<UAttributeMenuWidgetController> AttributeMenuWidgetControllerClass;
-	UPROPERTY(EditDefaultsOnly, Category="Default")
+	UPROPERTY(EditDefaultsOnly, Category="Aura")
 	TSubclassOf<USpellMenuWidgetController> SpellMenuWidgetControllerClass;
 };

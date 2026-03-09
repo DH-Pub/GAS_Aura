@@ -3,32 +3,36 @@
 
 #include "AbilitySystem/AsyncTask/Async_CooldownChange.h"
 
-#include "AbilitySystemComponent.h"
-#include "AuraGameplayTags.h"
+#include "AbilitySystem/AuraAbilitySystemComponent.h"
 
-UAsync_CooldownChange* UAsync_CooldownChange::WaitForCooldownChange(UAbilitySystemComponent* InASC,
-                                                                    const FGameplayTagContainer& InCooldownTags, const bool InUseServerCooldown)
+UAsync_CooldownChange* UAsync_CooldownChange::WaitForCooldownChange(UAuraAbilitySystemComponent* InASC,
+	const FGameplayTagContainer& InCooldownTags, const bool InUseServerCooldown)
 {
 	if (!IsValid(InASC) || InCooldownTags.IsEmpty()) return nullptr;
-	UAsync_CooldownChange* WaitCDChange = NewObject<UAsync_CooldownChange>();
-	WaitCDChange->ASC = InASC;
-	WaitCDChange->CooldownTags = InCooldownTags;
-	WaitCDChange->bUseServerCooldown = InUseServerCooldown;
-
+	UAsync_CooldownChange* AsyncAction = NewObject<UAsync_CooldownChange>();
+	AsyncAction->ASC = InASC;
+	AsyncAction->CooldownTags = InCooldownTags;
+	AsyncAction->bUseServerCooldown = InUseServerCooldown;
 	// GE_Cooldown Applied. Have access to the GameplayEffectSpec that applied it.
-	// From this you can determine if the Cooldown GE is the locally predicted one or the Server's correcting one.
-	InASC->OnActiveGameplayEffectAddedDelegateToSelf.AddUObject(WaitCDChange, &UAsync_CooldownChange::OnActiveEffectAdded);
+	// Recommended because From GameplayEffectSpec you can determine if the Cooldown GE is the locally predicted one or the Server's correcting one.
+	AsyncAction->ASC->OnActiveGameplayEffectAddedDelegateToSelf.AddUObject(AsyncAction, &UAsync_CooldownChange::OnActiveEffectAdded);
 
-	/* Tag Changed. Recommended because when the Server's Cooldown GE comes in, it will remove our locally predicted one,
-	 * firing OnAnyGameplayEffectRemovedDelegate() even though we've just received Server correction and still on CD.
-	 * The Cooldown Tag will not change during the removal of the predicted Cooldown GE and the application of the Server's corrected Cooldown GE.*/
-	for (const FGameplayTag& Tag : InCooldownTags)
+	AsyncAction->ASC->OnAnyGameplayEffectRemovedDelegate().AddWeakLambda(AsyncAction,
+	[AsyncAction](const FActiveGameplayEffect& ActiveEffect)
 	{
-		InASC->RegisterGameplayTagEvent(Tag, EGameplayTagEventType::NewOrRemoved)
-			.AddUObject(WaitCDChange/* static func, don't use 'this' */, &UAsync_CooldownChange::CooldownTagChanged);
-	}
+		FGameplayTagContainer EffectTags; ActiveEffect.Spec.GetAllGrantedTags(EffectTags); //.GetAllAssetTags(EffectTags);
+		if (EffectTags.HasAnyExact(AsyncAction->CooldownTags)) AsyncAction->InitWaitCooldown();
+	});
 
-	return WaitCDChange;
+	/*for (const FGameplayTag& Tag : AsyncAction->CooldownTags = InCooldownTags)
+	{	/* Tag Changed. Recommended because when the Server's Cooldown GE comes in, it will remove our locally predicted CD,
+		 * broadcasting OnAnyGameplayEffectRemovedDelegate() despite just receiving Server correction and still on CD.
+		 * RegisterGameplayTagEvent will not fire during the removal of the predicted CD and the application of Server's corrected CD.#1#
+		InASC->RegisterGameplayTagEvent(Tag, EGameplayTagEventType::NewOrRemoved)
+			.AddUObject(AsyncAction /*static func, don't use 'this'#1# , &UAsync_CooldownChange::CooldownTagChanged);
+	}*/
+
+	return AsyncAction;
 }
 
 void UAsync_CooldownChange::EndTask()
@@ -36,44 +40,39 @@ void UAsync_CooldownChange::EndTask()
 	if (IsValid(ASC))
 	{
 		ASC->OnActiveGameplayEffectAddedDelegateToSelf.RemoveAll(this);
-		for (const FGameplayTag& Tag : CooldownTags)
+		/*for (const FGameplayTag& Tag : CooldownTags)
 		{
 			ASC->RegisterGameplayTagEvent(Tag, EGameplayTagEventType::NewOrRemoved).RemoveAll(this);
-		}
+		}*/
+		ASC->OnAnyGameplayEffectRemovedDelegate().RemoveAll(this);
 	}
 
 	SetReadyToDestroy();
 	MarkAsGarbage();
 }
 
-// For when input is changed during cooldown
+// For when input is changed during cooldown, Task should be re-created before calling this
 void UAsync_CooldownChange::InitWaitCooldown()
 {
-	const FGameplayEffectQuery GameplayEffectQuery = FGameplayEffectQuery::MakeQuery_MatchAnyOwningTags(CooldownTags);
-	for (const FActiveGameplayEffectHandle ActiveHandle : ASC->GetActiveEffects(GameplayEffectQuery))
-	{	// Set Cooldown
-		CheckCooldown(ActiveHandle);
-	}
-	if (CooldownTime > UE_KINDA_SMALL_NUMBER)
-	{	// if is on cooldown
-		CooldownChanged.Broadcast(CooldownTime, CooldownDuration);
-	}
+	CheckCooldown();
+	if (CooldownTime > UE_KINDA_SMALL_NUMBER) CooldownChanged.Broadcast(CooldownTime, CooldownDuration); // On CD
+	else CooldownEnd.Broadcast(0.f, 0.f);
 }
 
 void UAsync_CooldownChange::OnActiveEffectAdded(UAbilitySystemComponent* TargetASC,
 	const FGameplayEffectSpec& SpecApplied, const FActiveGameplayEffectHandle ActiveEffectHandle)
 {
 	FGameplayTagContainer EffectTags; SpecApplied.GetAllGrantedTags(EffectTags); //SpecApplied.GetAllAssetTags(EffectTags);
-	if (!EffectTags.HasAnyExact(CooldownTags)) return; // CooldownTag.GetSingleTagContainer();
+	if (!EffectTags.HasAnyExact(CooldownTags)) return;
 
-	CheckCooldown(ActiveEffectHandle);
+	CheckCooldown();
 
 	if (ASC->GetOwnerRole() == ROLE_Authority) CooldownChanged.Broadcast(CooldownTime, CooldownDuration); /*Is Server*/
 	else // Client
 	{	// _NotReplicated() will return null for Context received from server, != nullptr for local prediction
 		const bool bIsFromServer = SpecApplied.GetContext().GetAbilityInstance_NotReplicated() == nullptr;
-		if ((!bUseServerCooldown && !bIsFromServer) || /*Local Predicted Cooldown*/
-			(bUseServerCooldown && bIsFromServer)) /*Receive Server's CD*/
+		if ((!bUseServerCooldown && !bIsFromServer) || /*Use Local Predicted*/
+			(bUseServerCooldown && bIsFromServer)) /*Use Server and just Received Server's CD*/
 		{
 			CooldownChanged.Broadcast(CooldownTime, CooldownDuration);
 		}
@@ -84,22 +83,16 @@ void UAsync_CooldownChange::OnActiveEffectAdded(UAbilitySystemComponent* TargetA
 	}
 }
 
-void UAsync_CooldownChange::CooldownTagChanged(const FGameplayTag InCooldownTag, int32 NewCount)
-{
-	if (InCooldownTag.MatchesAnyExact(CooldownTags) && NewCount == 0)
+void UAsync_CooldownChange::CheckCooldown() // Ability's CD can be affected by multiple tags/effects
+{	// UGameplayAbility::GetCooldownTimeRemainingAndDuration() returns largest TimeRemaining
+	const FGameplayEffectQuery Query = FGameplayEffectQuery::MakeQuery_MatchAnyOwningTags(CooldownTags);
+	CooldownTime = CooldownDuration = 0.f;
+	for (auto [TimeRemaining, Duration] : ASC->GetActiveEffectsTimeRemainingAndDuration(Query))
 	{
-		CooldownTime = 0.f;
-		CooldownEnd.Broadcast();
+		if (TimeRemaining > CooldownTime)
+		{
+			CooldownTime = TimeRemaining;
+			CooldownDuration = Duration;
+		}
 	}
-}
-
-void UAsync_CooldownChange::CheckCooldown(const FActiveGameplayEffectHandle ActiveHandle)
-{
-	const FActiveGameplayEffect* GE = ASC->GetActiveGameplayEffect(ActiveHandle);
-	CooldownTime = GE->GetTimeRemaining(ASC->GetWorld()->GetTimeSeconds());
-	if (const float* Duration = GE->Spec.SetByCallerTagMagnitudes.Find(AuraGameplayTags::Ability_Cooldown_Duration))
-	{
-		CooldownDuration = *Duration;
-	}
-	else CooldownDuration = GE->GetDuration();
 }

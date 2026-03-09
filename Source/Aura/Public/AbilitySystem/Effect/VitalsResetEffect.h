@@ -13,6 +13,5 @@ UCLASS()
 class AURA_API UVitalsResetEffect : public UGameplayEffect //NOTE: Cannot Start class name with "Reset"
 {
 	GENERATED_BODY()
-public:
 	UVitalsResetEffect();
 };

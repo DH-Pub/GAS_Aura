@@ -6,8 +6,6 @@
 #include "GlobeWidgetInput.h"
 #include "MenuEquipSpellWidget.generated.h"
 
-enum class EAuraAbilityPassiveID : uint8;
-enum class EAuraAbilityInputID : uint8;
 /**
  * Spell globes in spell menu that can drag/drop into
  */
@@ -22,7 +20,7 @@ protected:
 	virtual void NativeDestruct() override;
 
 	UFUNCTION()
-	void ReceiveAbilityData(const struct FAuraAbilityData& Data, const struct FPlayerAbilityData& PlayerData);
+	void ReceiveAbilityData(const struct FGameplayAbilitySpec& AbilitySpec, const struct FAuraAbilityData& Data);
 	UFUNCTION(BlueprintCallable)
 	void ClearGlobe();
 

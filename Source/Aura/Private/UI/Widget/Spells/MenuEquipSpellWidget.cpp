@@ -24,17 +24,14 @@ void UMenuEquipSpellWidget::NativePreConstruct()
 
 void UMenuEquipSpellWidget::NativeDestruct()
 {
-	if (SpellMenuWC && SpellMenuWC->GetASC())
-	{
-		SpellMenuWC->GetASC()->AbilityDataDelegate.RemoveDynamic(this, &UMenuEquipSpellWidget::ReceiveAbilityData);
-	}
+	if (SpellMenuWC) SpellMenuWC->GetASC()->AbilityDataDelegate.RemoveAll(this);
 	Super::NativeDestruct();
 }
 
-void UMenuEquipSpellWidget::ReceiveAbilityData(const FAuraAbilityData& Data, const FPlayerAbilityData& PlayerData)
+void UMenuEquipSpellWidget::ReceiveAbilityData(const FGameplayAbilitySpec& AbilitySpec, const FAuraAbilityData& Data)
 {
 	const FGameplayTag& DataAbilityTag = Data.GetAuraAbilityTag();
-	if (PlayerData.AbilityID == AbilityID)
+	if (AbilitySpec.InputID == AbilityID)
 	{
 		AbilityTag = DataAbilityTag;
 

@@ -17,12 +17,12 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void ButtonWidgetClicked();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Default|Properties")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Aura|Properties")
 	FVector2D ButtonWidthHeight = FVector2D(40., 40.);
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Default|Properties")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Aura|Properties")
 	FSlateBrush BorderBrush = FSlateBrush();
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Default|Properties")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Aura|Properties")
 	FButtonStyle InnerStyle = FButtonStyle();
 protected:
 	virtual void NativePreConstruct() override;

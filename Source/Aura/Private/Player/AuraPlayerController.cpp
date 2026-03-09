@@ -32,6 +32,7 @@ void AAuraPlayerController::PlayerTick(const float DeltaTime)
 {
 	Super::PlayerTick(DeltaTime);
 	if (AuraPawn == nullptr) return;
+	UpdateAim();
 	CursorTick();
 
 	switch (MovementState)
@@ -81,8 +82,6 @@ void AAuraPlayerController::BeginPlay()
 	InputModeData.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
 	InputModeData.SetHideCursorDuringCapture(false);
 	SetInputMode(InputModeData);
-
-	NavSystem = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
 }
 void AAuraPlayerController::SetupInputComponent()
 {	// AuraInputComponent->BindActionValue(InputAction).GetValue();
@@ -165,9 +164,8 @@ void AAuraPlayerController::Move(const FInputActionValue& InputActionValue)
 	if (GetPawn() == nullptr) return;
 	MovementState = Stop;
 	const FVector2D InputAxisVector = InputActionValue.Get<FVector2D>();
-	//TODO: No need to run this every tick because this project's camera is static
-	// const FRotator Rotation = GetControlRotation(); // Camera->bUsePawnControlRotation has to be true for this to work
 
+	// const FRotator Rotation = GetControlRotation(); // Camera->bUsePawnControlRotation has to be true for this to work
 	// GetPlayerViewPoint(); // Called in APawn::GetBaseAimRotation()
 	const FRotator Rotation = PlayerCameraManager->GetCameraRotation();
 	const FRotator YawRotation(0., Rotation.Yaw, 0.);
@@ -185,47 +183,41 @@ void AAuraPlayerController::MoveMouseTriggered(const FInputActionValue& InputAct
 }
 void AAuraPlayerController::MoveMouseComplete(const FInputActionValue& InputActionValue)
 {
-	if (MoveHoldTime < HoldTimeThreshold && CursorHitResult.bBlockingHit)
+	MovementState = Stop;
+	if (MoveHoldTime > HoldTimeThreshold)
 	{
-		AuraPawn->AutoMoveDestination = CursorHitResult.ImpactPoint;
-		FNavLocation DestinationNavLocation;
-		if (NavSystem->ProjectPointToNavigation(AuraPawn->AutoMoveDestination, DestinationNavLocation, NavExtent,
-			&AuraPawn->GetNavAgentPropertiesRef()))
-		{
-			UNavigationPath* NavPath = UNavigationSystemV1::FindPathToLocationSynchronously(this,
-				AuraPawn->GetActorLocation(), AuraPawn->AutoMoveDestination);
-			if (NavPath && !NavPath->PathPoints.IsEmpty())
-			{
-				Spline->ClearSplinePoints();
-				for (int32 i = 0; i < NavPath->PathPoints.Num(); i++)
-				{
-					FVector Position = Spline->GetComponentTransform().InverseTransformPosition(
-						NavPath->PathPoints[i]);
-					FSplinePoint SplinePoint(i, Position, ESplinePointType::Linear);
-					Spline->AddPoint(SplinePoint);
-					if (bDrawNavBox) DrawDebugSphere(GetWorld(), NavPath->PathPoints[i], 25.f, 6,
-						FColor::Yellow, false, 1.f);
-				}
-				// for (FVector& PointLoc : NavPath->PathPoints) {Spline->AddSplinePoint(PointLoc, ESplineCoordinateSpace::World);}
-				AuraPawn->AutoMoveDestination = NavPath->PathPoints.Last();
-				MovementState = AutoMove;
-				UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, ClickNiagara, CursorHitResult.ImpactPoint);
-			}
-		}
-	}
-	else
-	{
+		MoveHoldTime = 0.f;
 		if (AuraPawn) AuraPawn->GetCharacterMovement()->StopActiveMovement();
-		MovementState = Stop;
+		return;
 	}
 	MoveHoldTime = 0.f;
+	if (!CursorHitResult.bBlockingHit) return;
+	UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
+	if (NavSys == nullptr) return;
+	FNavLocation DestinationNavLocation;
+	if (NavSys == nullptr || !NavSys->ProjectPointToNavigation(CursorHitResult.ImpactPoint, DestinationNavLocation,
+		NavExtent, &AuraPawn->GetNavAgentPropertiesRef())) return; // Get the closest point to a point location that might be non-reachable within NavExtent
+	AuraPawn->AutoMoveDestination = DestinationNavLocation;
+	UNavigationPath* NavPath = UNavigationSystemV1::FindPathToLocationSynchronously(this,
+		AuraPawn->GetActorLocation(), AuraPawn->AutoMoveDestination);
+	if (NavPath == nullptr || NavPath->PathPoints.IsEmpty()) return;
+	MovementState = AutoMove;
+	Spline->ClearSplinePoints();
+	for (int32 i = 0; i < NavPath->PathPoints.Num(); i++)
+	{
+		FVector Position = Spline->GetComponentTransform().InverseTransformPosition(NavPath->PathPoints[i]);
+		FSplinePoint SplinePoint(i, Position, ESplinePointType::Linear);
+		Spline->AddPoint(SplinePoint);
+		if (bDrawNavBox) DrawDebugSphere(GetWorld(), NavPath->PathPoints[i], 25.f, 6,
+			FColor::Yellow, false, 1.f);
+	}
+	// for (FVector& PointLoc : NavPath->PathPoints) {Spline->AddSplinePoint(PointLoc, ESplineCoordinateSpace::World);}
+	AuraPawn->AutoMoveDestination = NavPath->PathPoints.Last();
+	UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, ClickNiagara, CursorHitResult.ImpactPoint);
 }
 
 void AAuraPlayerController::CursorTick()
 {
-	// GetHitResultUnderCursor(ECC_Mouse, false, CursorHitResult);
-	FVector2D MousePos; if (!GetMousePosition(MousePos.X, MousePos.Y)) return;
-	GetHitResultAtScreenPosition(MousePos, ECC_Mouse, false, CursorHitResult);
 	//CurrentCursorHitActor = CursorHitResult.GetActor(); // cast to IEnemyInterface, nullptr if can't (i.e. Floor -> nullptr)
 	if (!CursorHitResult.bBlockingHit) return;
 	AAuraEnemy* LastEnemy = CursorHitEnemy;
@@ -236,22 +228,11 @@ void AAuraPlayerController::CursorTick()
 		if (CursorHitEnemy) CursorHitEnemy->HighlightActor();
 	}
 
-	const FVector CharacterLocation = GetPawn()->GetActorLocation();
-	/*
-	 * We use a point at the same plane as character location:
-	 * - To improve click-accuracy from player's POV because projectiles are spawned near that plane
-	 * - Still get an accurate mouse-to-character direction even if character is on different altitude than HitResult ground (or none)
-	 */
-	FVector Intersection; float TIntersection;
-	UKismetMathLibrary::LinePlaneIntersection_OriginNormal(CursorHitResult.TraceStart, CursorHitResult.TraceEnd,
-		CharacterLocation, FVector::UpVector, TIntersection, Intersection);
-	AuraPawn->AimDirection = (Intersection - CharacterLocation).GetSafeNormal();
-	ServerSetCharacterAimDirection(AuraPawn->AimDirection);
-
 	if (CursorHitEnemy) return; // Has valid Hit to end here
 	TArray<FHitResult> Hits;
+	const TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes = {UCollisionProfile::Get()->ConvertToObjectType(ECC_Pawn)};
 	UKismetSystemLibrary::SphereTraceMultiForObjects(this,
-		CursorHitResult.TraceStart, CursorHitResult.TraceEnd, 50.f, {ObjectTypeQuery3},
+		CursorHitResult.TraceStart, CursorHitResult.TraceEnd, 50.f, ObjectTypes,
 		false, {GetPawn()}, EDrawDebugTrace::None, Hits, true);
 	float NearestDistance = UE_BIG_NUMBER;
 	for (const FHitResult& Hit : Hits)
@@ -269,6 +250,25 @@ void AAuraPlayerController::CursorTick()
 	// if (AActor* Nearest = UGameplayStatics::FindNearestActor(Intersection, HitActors, NearestDistance))
 	if (CursorHitEnemy) CursorHitEnemy->HighlightActor();
 	/*GetWorld()->OverlapMultiByObjectType();*/
+}
+
+//TODO: Set Physical Material for Wall and Ground
+void AAuraPlayerController::UpdateAim()
+{	// GetHitResultUnderCursor(ECC_Mouse, false, CursorHitResult);
+	FVector2D MousePos; if (!GetMousePosition(MousePos.X, MousePos.Y)) return;
+	GetHitResultAtScreenPosition(MousePos, ECC_AuraTrace_Mouse, false, CursorHitResult);
+
+	const FVector CharacterLocation = GetPawn()->GetActorLocation();
+	/*
+	 * We use a point at the same plane as character location:
+	 * - To improve click-accuracy from player's POV because projectiles are spawned near that plane
+	 * - Still get an accurate mouse-to-character direction even if character is on different altitude than HitResult ground (or none)
+	 */
+	FVector Intersection; float TIntersection;
+	UKismetMathLibrary::LinePlaneIntersection_OriginNormal(CursorHitResult.TraceStart, CursorHitResult.TraceEnd,
+		CharacterLocation, FVector::UpVector, TIntersection, Intersection);
+	AuraPawn->AimDirection = (Intersection - CharacterLocation).GetSafeNormal();
+	ServerSetCharacterAimDirection(AuraPawn->AimDirection);
 }
 
 // Change on server for UPROPERTY(Replicated/ReplicatedUsing) to work, else use AbilityTask_AimData

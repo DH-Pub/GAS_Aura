@@ -20,12 +20,12 @@ public:
 	virtual void SetWidgetController(UAuraWidgetController* InWidgetController) override;
 
 	UFUNCTION(BlueprintCallable)
-	void ReceiveAbilityData(const struct FAuraAbilityData& AbilityData, const struct FPlayerAbilityData& PlayerData);
+	void ReceiveAbilityData(const struct FGameplayAbilitySpec& AbilitySpec, const struct FAuraAbilityData& AbilityData);
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Default|Properties")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Aura|Properties")
 	FVector2D ButtonWidthHeight = FVector2D(40., 40.);
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Default", meta=(GameplayTagFilter="Ability"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Aura", meta=(GameplayTagFilter="Ability"))
 	FGameplayTag AbilityTag = FGameplayTag();
 	UPROPERTY(BlueprintReadOnly)
 	FGameplayTag StatusTag = AuraGameplayTags::Ability_Status_Locked;
@@ -55,24 +55,24 @@ protected:
 
 	UPROPERTY(BlueprintReadWrite, meta=(BindWidget))
 	TObjectPtr<class UBorder> Border;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Default|Border")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Aura|Border")
 	FSlateBrush BorderDisabled = FSlateBrush();
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Default|Border")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Aura|Border")
 	FSlateBrush BorderNormal = FSlateBrush();
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Default|Border")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Aura|Border")
 	FSlateBrush BorderHovered = FSlateBrush();
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Default|Border")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Aura|Border")
 	FSlateBrush BorderClicked = FSlateBrush();
 
 	UPROPERTY(BlueprintReadWrite, Transient, meta=(BindWidgetAnim))
 	TObjectPtr<UWidgetAnimation> SelectAnimation;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Default")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Aura")
 	TObjectPtr<USoundBase> ClickSound;
 private:
-	UPROPERTY(EditDefaultsOnly, Category="Default")
+	UPROPERTY(EditDefaultsOnly, Category="Aura")
 	TObjectPtr<UTexture2D> LockedTexture;
-	UPROPERTY(EditDefaultsOnly, Category="Default")
+	UPROPERTY(EditDefaultsOnly, Category="Aura")
 	TObjectPtr<UMaterialInterface> LockedMaterial;
 	bool bDragEnable = false;
 };

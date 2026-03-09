@@ -59,7 +59,7 @@ public:
 	UFUNCTION(BlueprintCallable, meta=(HidePin="OwningAbility", DefaultToSelf="OwningAbility", BlueprintInternalUseOnly="TRUE"))
 	static UAT_PlayMontageWaitEvent* PlayMontageWaitEvent(class UAuraGameplayAbility* OwningAbility,
 		UAnimMontage* MontageToPlay,
-		UPARAM(meta=(GameplayTagFilter="GameplayEventTagsCategory.Montage")) FGameplayTagContainer EventTags,
+		UPARAM(meta=(GameplayTagFilter="GameplayEvent.Montage")) FGameplayTagContainer EventTags,
 		const float Rate = 1.f, const FName StartSection = NAME_None,
 		const bool bStopWhenAbilityEnds = true, const float AnimRootMotionTranslationScale = 1.f);
 

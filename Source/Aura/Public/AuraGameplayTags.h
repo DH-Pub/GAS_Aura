@@ -6,9 +6,10 @@
 #include "NativeGameplayTags.h"
 
 
-namespace AuraGameplayTags
+// Project Settings -> Project - GameplayTags -> ✅Fast Replication & Add "Commonly Replicated Tags"
+
+namespace AuraGameplayTags // Automatically add to Gameplay Tag List
 {
-	// Automatically add to Gameplay Tag List
 #pragma region Attributes
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Attributes)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Attributes_Primary_Strength)
@@ -40,8 +41,6 @@ namespace AuraGameplayTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Attributes_Meta_IncomingXP)
 #pragma endregion
 
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Cooldown) // Generic Grant Tags for CooldownEffect, replaced in GetCooldownTags()
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Cooldown_Duration) // Store original Duration during cooldown as SetByCaller
 
 #pragma region Ability
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability)
@@ -51,9 +50,13 @@ namespace AuraGameplayTags
 
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Cooldown_Reduce) // Activate this to reduce remaining cooldown of abilities
 	// Abilities with CD =============================================================================================
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Fire_FireBolt)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Fire_FireBolt) // UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Fire_FireBolt_Cooldown)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Lightning_Electrocute)
 	//================================================================================================================
+
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Passive_HaloOfProtection)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Passive_LifeSiphon)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Passive_ManaSiphon)
 
 	// Dynamic Tags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Status) //TODO: Delete all Status this
@@ -62,26 +65,53 @@ namespace AuraGameplayTags
 #pragma endregion
 
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Generic_Ability)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Generic_Ability_Cancelable)
-	// UE_DECLARE_GAMEPLAY_TAG_EXTERN(Generic_Ability_Blockable)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Generic_Ability_Cancelable) // This Ability can be canceled by most
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Generic_Ability_Blockable) // This Ability can be blocked by most
 
-#pragma region CharacterState
-	// ActivationOwnedTags(Block others including self) and ActivationBlockedTags(Be Blocked)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_State_Ability)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_State_HitReact)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_State_Death)
 
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_State_Block_Movement)
+#pragma region Effect
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Effect_RemoveOnDeath)
 
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_State_Block_Input) // Block Player's Input
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Effect_Ability_Cooldown)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Effect_Duration)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Effect_Period)
 #pragma endregion
+
+
+#pragma region Character State // ActivationOwnedTags(Block others including self) and ActivationBlockedTags(Be Blocked)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_HitReact)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_HitReact_Stun)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_HitReact_Shocked)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Death)
+
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_HitReact_Knockback) // For Send Event
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_HitReact_PlayMontage) // For Send Event
+
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Debuff_Burn)
+
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Block_Movement)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Block_Movement_Speed)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Block_Movement_Rotation)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Block_Input)
+#pragma endregion
+
 
 #pragma region Combat
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Damage)
+
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Damage_Blocked)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Damage_Crit)
+
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Damage_Fire)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Damage_Lightning)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Damage_Arcane)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Damage_Physical)
+	static const TArray<FGameplayTag> DamageTypeArray = {
+		Damage_Fire, Damage_Lightning, Damage_Arcane, Damage_Physical
+	};
+
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Damage_Knockback)
+
 	/*static const TMap<FGameplayTag, FGameplayTag> DamageTypesToResistances = {
 		{Damage_Fire, Attributes_Resistance_Fire},
 		{Damage_Lightning, Attributes_Resistance_Lightning},
@@ -91,24 +121,44 @@ namespace AuraGameplayTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Debuff)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Debuff_Type)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Debuff_Type_Burn)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Debuff_Type_Stun)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Debuff_Type_Electric)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Debuff_Type_Arcane)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Debuff_Type_Physical)
+	static const TArray<FGameplayTag> DebuffTypeArray = {
+		Debuff_Type_Burn, Debuff_Type_Electric, Debuff_Type_Arcane, Debuff_Type_Physical
+	};
 
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayEventTagsCategory_Montage_1)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayEventTagsCategory_Montage_2)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayEventTagsCategory_Montage_3)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayEventTagsCategory_Montage_4)
+
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayEvent_Montage) // Generic GameplayEvents for Animation Montage
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayEvent_Montage_1)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayEvent_Montage_2)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayEvent_Montage_3)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayEvent_Montage_4)
 #pragma endregion
 
 
 #pragma region GameplayCue
-	// UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_FireBolt_Impact)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Damage)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Impact_Melee)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Impact_Projectile)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_ShockBurst)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Summon)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Shared_Damage)
+
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Shared_Impact_Melee)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Shared_Impact_Projectile)
+
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Shared_ShockLoop)
+
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Shared_Burn)
+	/**
+	 * - Effect with this GameplayEffectCue can't be periodical: so that cue not execute after
+	 * EGameplayCueEvent::Removed, which will create new GCActor
+	 * - Must be stackable: to avoid repeatedly remove, add GC, which may add multiple GCActor and all GameplayCue is not removed
+	 */
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Shared_Stun)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Shared_Shocked)
+
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Shared_Summon)
+
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Melee_Pierce_Impact)
+
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Shared_LevelUp)
 #pragma endregion
 }
 

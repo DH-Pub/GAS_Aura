@@ -24,19 +24,16 @@ public:
 	template<class UserClassT, typename PressedFuncT, typename ReleasedFuncT>
 	void BindAbilityActions(const UAuraInputConfig* InputConfig, const UInputMappingContext* InputMappingContext,
 		UserClassT* Object, PressedFuncT PressedFunc, ReleasedFuncT ReleasedFunc)
-	{
-		check(InputConfig);
+	{	check(InputConfig);
 		for (const auto [InputID, InputAction] : InputConfig->InputIDActions)
-		{
-			const int8 Idx = static_cast<int8>(InputID);
-			if (InputAction && Idx > 0)
-			{	/*template FEnhancedInputActionEventBinding& BindAction(const UInputAction* Action, ...)*/
-				if (PressedFunc) BindAction(InputAction, ETriggerEvent::Started, Object, PressedFunc, Idx);
-				if (ReleasedFunc) BindAction(InputAction, ETriggerEvent::Completed, Object, ReleasedFunc, Idx);
-			}
+		{	/*template FEnhancedInputActionEventBinding& BindAction(const UInputAction* Action, ...)*/
+			ensure(InputAction);
+			if (PressedFunc) BindAction(InputAction, ETriggerEvent::Started, Object, PressedFunc, InputID.GetIntValue());
+			if (ReleasedFunc) BindAction(InputAction, ETriggerEvent::Completed, Object, ReleasedFunc, InputID.GetIntValue());
+
 			/*for (const auto& Key : EnhancedInputLocalPlayerSubsystem->QueryKeysMappedToAction(InputAction))
 			{InputMappingContext->MapKey(InputAction, Key);}*/
-			UEnhancedInputLibrary::RequestRebuildControlMappingsUsingContext(InputMappingContext);
 		}
+		// UEnhancedInputLibrary::RequestRebuildControlMappingsUsingContext(InputMappingContext);
 	}
 };

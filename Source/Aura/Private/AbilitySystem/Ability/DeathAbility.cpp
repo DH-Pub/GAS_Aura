@@ -5,66 +5,65 @@
 
 #include "AbilitySystemComponent.h"
 #include "AuraEffectTypes.h"
-#include "AuraGameplayTags.h"
 #include "BrainComponent.h"
-#include "AbilitySystem/Ability/DamageAbility.h"
+#include "AbilitySystem/Ability/SummonAbility.h"
 #include "AbilitySystem/Data/CharacterClassDataAsset.h"
 #include "AI/AuraAIController.h"
 #include "Character/AuraCharacterBase.h"
 #include "Character/AuraEnemy.h"
+#include "Game/AuraGameMode.h"
 
 UDeathAbility::UDeathAbility()
-{
-	CancelAbilitiesWithTag = FGameplayTagContainer(AuraGameplayTags::Generic_Ability_Cancelable);
-	CancelAbilitiesWithTag.AddTag(AuraGameplayTags::Character_State_HitReact);
-
-	ActivationOwnedTags.AddTag(AuraGameplayTags::Character_State_Death); // Adds Tag to ASC on Activation
-	ActivationOwnedTags.AddTag(AuraGameplayTags::Character_State_Block_Movement);
+{	//TODO: Make this Passive, Grant Ability When Apply Effect
+	ActivationPolicy = EAuraActivationPolicy::OnSpawn;
 
 	NetExecutionPolicy = EGameplayAbilityNetExecutionPolicy::ServerInitiated;
 	NetSecurityPolicy = EGameplayAbilityNetSecurityPolicy::ServerOnly;
-
-	bStopRotation = true;
-
-	const int32 Idx = AbilityTriggers.Add(FAbilityTriggerData());
-	AbilityTriggers[Idx].TriggerTag = AuraGameplayTags::Character_State_Death;
-	AbilityTriggers[Idx].TriggerSource = EGameplayAbilityTriggerSource::GameplayEvent;
 }
 
 void UDeathAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
 	const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
 {
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
-	if (TriggerEventData == nullptr) return;
-	if (AuraCharacter != AuraCharacter->GetInstigator())
-	{	// Summoned have Instigator Set as the Summoner
-		if (AAuraCharacterBase* AuraInstigator = Cast<AAuraCharacterBase>(AuraCharacter->GetInstigator()))
-		{
-			AuraInstigator->Summons.RemoveSingleSwap(AuraCharacter);
-		}
-	}
-	GetAbilitySystemComponentFromActorInfo()->RemoveActiveEffectsWithGrantedTags(
-		FGameplayTagContainer(AuraGameplayTags::Debuff_Type)); // Clear all debuffs
+
+	KillAllSummons(AuraCharacter); /** If is summoner, Kill all summons */
+	/** If is a summon, remove self from summoner */
+	AAuraCharacterBase* SpawnerActor = Cast<AAuraCharacterBase>(AuraCharacter->GetOwner());
+	if (!SpawnerActor) SpawnerActor = Cast<AAuraCharacterBase>(AuraCharacter->GetInstigator());
+	if (SpawnerActor) SpawnerActor->Summons.RemoveSingleSwap(AuraCharacter);
 
 	if (!HasAuthority(&CurrentActivationInfo)) return;
-	// Send XP To Source on death =====================================================================================
-	const UCharacterClassDataAsset* ClassDataAsset = UCharacterClassDataAsset::GetFromGameMode(this);
-	ClassDataAsset->SendXPToDeathCauser(TriggerEventData->ContextHandle.GetInstigatorAbilitySystemComponent(),
-		AuraCharacter);
-	if (AAuraEnemy* Enemy = Cast<AAuraEnemy>(AuraCharacter))
+	const FGameplayEffectContextHandle ContextHandle = GetGrantedByEffectContext();
+	/*GetAbilitySystemComponentFromActorInfo()->RemoveActiveEffectsWithTags(
+		FGameplayTagContainer(AuraGameplayTags::Effect_RemoveOnDeath));*/ // RemoveActiveEffectsWithGrantedTags() Clear all
+	// GetAbilitySystemComponentFromActorInfo()->RemoveAllGameplayCues()
+	if (ContextHandle.IsValid())
 	{
-		Enemy->SetLifeSpan(Enemy->LifeSpan);
-		Enemy->AuraAIController->GetBrainComponent()->StopLogic("Death! Disable StateTree");
-	}
-
-	const FAuraEffectContext* AuraContext = FAuraEffectContext::ExtractAuraContext(TriggerEventData->ContextHandle);
-	FVector Impulse;
-	if (const UDamageAbility* DamageAbility = Cast<UDamageAbility>(AuraContext->GetAbilityInstance_NotReplicated()))
-	{
-		if (const FDamageEffectContext* DamageContext = AuraContext->GetStruct<FDamageEffectContext>())
+		// Send XP To Source on death ======================================================================
+		const UCharacterClassDataAsset* ClassDataAsset = UCharacterClassDataAsset::GetFromGameMode(this);
+		ClassDataAsset->SendXPToDeathCauser(ContextHandle.GetInstigatorAbilitySystemComponent(), AuraCharacter);
+		if (AAuraEnemy* Enemy = Cast<AAuraEnemy>(AuraCharacter))
 		{
-			Impulse = DamageContext->DamageDirection * DamageAbility->DeathImpulseMagnitude;
+			Enemy->SetLifeSpan(Enemy->LifeSpan);
+			Enemy->AuraAIController->GetBrainComponent()->StopLogic("Death! Disable StateTree");
+		}
+
+		AuraCharacter->MulticastHandleDeath(FVector());
+	}
+}
+
+void UDeathAbility::KillAllSummons(AAuraCharacterBase* Chara)
+{
+	if (!Chara) return;
+	if (const AAuraGameMode* AuraGameMode = AAuraGameMode::Get(Chara))
+	{
+		for (int32 i = Chara->Summons.Num() - 1; i >= 0; i--)  // Iterate backwards so we can remove during loop
+		{
+			AAuraCharacterBase* Summon = Chara->Summons[i];
+			if (!Summon) continue;
+			FGameplayEffectSpecHandle SpecHandle = Chara->GetAbilitySystemComponent()->MakeOutgoingSpec(
+				AuraGameMode->DeathEffect, 1, FGameplayEffectContextHandle());
+			Summon->GetAbilitySystemComponent()->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data);
 		}
 	}
-	AuraCharacter->MulticastHandleDeath(Impulse);
 }

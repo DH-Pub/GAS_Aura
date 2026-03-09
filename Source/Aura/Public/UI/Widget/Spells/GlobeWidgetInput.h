@@ -16,16 +16,9 @@ class AURA_API UGlobeWidgetInput : public UGlobeWidget
 {
 	GENERATED_BODY()
 protected:
-	virtual void NativeConstruct() override;
-
-	UPROPERTY(BlueprintReadWrite)
-	int32 AbilityID = INDEX_NONE;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Aura") // EditDefaultOnly: Can't edit in Parent Instance
+	TEnumAsByte<EAuraAbilityInputID::Type> AbilityID = EAuraAbilityInputID::None;
 
 	UPROPERTY(BlueprintReadWrite)
 	FGameplayTag AbilityTag;
-private:
-	UPROPERTY(EditAnywhere,Category="Default|GlobeProperties", meta=(EditCondition="PassiveID==EAuraAbilityPassiveID::None"))
-	EAuraAbilityInputID InputID = EAuraAbilityInputID::None;
-	UPROPERTY(EditAnywhere,Category="Default|GlobeProperties", meta=(EditCondition="InputID==EAuraAbilityInputID::None"))
-	EAuraAbilityPassiveID PassiveID = EAuraAbilityPassiveID::None;
 };

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "AbilitySystem/Ability/AttributesEventAbility.h"
 #include "UI/WidgetController/AuraWidgetController.h"
 #include "AttributeMenuWidgetController.generated.h"
 
@@ -22,10 +23,9 @@ public:
 	UPROPERTY(BlueprintAssignable, Category="GAS|Attributes")
 	FAttributeInfoSignature AttributeInfoDelegate;
 
-	TArray<FPointAllocation> PointAllocationList;
-	UFUNCTION(BlueprintCallable, meta=(ExpandBoolAsExecs="bFound"))
-	int32& FindPointAllocationByTag(const FGameplayTag& Tag, bool& bFound);
-	int32 GetTotalPointsAllocating();
+	FGameplayAbilityTargetData_AttributeData AttributeTargetData;
+	UFUNCTION(BlueprintCallable)
+	int32 FindPointAllocationByTag(const FGameplayTag& Tag);
 	UFUNCTION(BlueprintCallable)
 	void ApplyUpgrades();
 
@@ -37,6 +37,4 @@ public:
 	FOnAttriubtePointsChanged AttributePointsToUIDelegate;
 	UFUNCTION(BlueprintCallable)
 	void AllocatePointToAttribute(UPARAM(meta=(GameplayTagFilter="Attributes")) const FGameplayTag& AttributeTag, int32 Points);
-private:
-	int32 ZeroInteger = 0; // Default Value if GetPointAllocationByTag() not found, DO NOT modify this if used
 };

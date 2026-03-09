@@ -6,6 +6,29 @@
 #include "AbilitySystem/Ability/AuraGameplayAbility.h"
 #include "AttributesEventAbility.generated.h"
 
+USTRUCT()
+struct FAttributeData
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	FGameplayTag Tag = FGameplayTag::EmptyTag;
+	UPROPERTY()
+	int32 AttributeMagnitude = 0;
+
+	bool operator==(const FAttributeData& Other) const
+	{
+		return Tag.MatchesTagExact(Other.Tag) && AttributeMagnitude == Other.AttributeMagnitude;
+	}
+
+	bool NetSerialize(FArchive& Ar, class UPackageMap* Map, bool& bOutSuccess)
+	{
+		Tag.NetSerialize_Packed(Ar, Map, bOutSuccess);
+		Ar << AttributeMagnitude;
+		return bOutSuccess = true;
+	}
+};
+
 USTRUCT(BlueprintType)
 struct FGameplayAbilityTargetData_AttributeData : public FGameplayAbilityTargetData
 {
@@ -13,14 +36,24 @@ struct FGameplayAbilityTargetData_AttributeData : public FGameplayAbilityTargetD
 	FGameplayAbilityTargetData_AttributeData() {}
 
 	UPROPERTY()
-	TArray<FGameplayTag> AttributeTags;
-	UPROPERTY()
-	TArray<int32> AttributeMagnitudes;
+	TArray<FAttributeData> Data;
 
-	/** Returns all actors targeted, almost always overridden */
-	virtual TArray<TWeakObjectPtr<AActor>> GetActors() const
+	void AddNewData(const FGameplayTag& Tag, const int32 Points)
 	{
-		return TArray<TWeakObjectPtr<AActor>>();
+		if (!Tag.IsValid() || FindPointsPtr(Tag)) return; // Already has, modify existing instead
+		Data.Add(FAttributeData(Tag, Points));
+	}
+
+	int32* FindPointsPtr(const FGameplayTag& InTag)
+	{
+		for (auto& [Tag, Mag] : Data) {if (Tag.MatchesTagExact(InTag)) return &Mag;}
+		return nullptr;
+	}
+	int32 TotalPointsAllocating() const
+	{
+		int32 TotalPoints = 0;
+		for (auto& [Tag, Mag] : Data) TotalPoints += Mag;
+		return TotalPoints;
 	}
 
 	// Required for all child structs of FGameplayAbilityTargetData
@@ -28,10 +61,7 @@ struct FGameplayAbilityTargetData_AttributeData : public FGameplayAbilityTargetD
 	// Required for all child structs of FGameplayAbilityTargetData
 	bool NetSerialize(FArchive& Ar, class UPackageMap* Map, bool& bOutSuccess)
 	{
-		SafeNetSerializeTArray_Default<31>(Ar, AttributeTags);
-		SafeNetSerializeTArray_Default<31>(Ar, AttributeMagnitudes);
-		bOutSuccess = true;
-		return true;
+		return bOutSuccess |= SafeNetSerializeTArray_WithNetSerialize<31>(Ar, Data, Map);
 	}
 };
 template<>
@@ -58,6 +88,12 @@ protected:
 	virtual void OnAvatarSet(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec) override;
 	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
 		const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
+private:
+	UPROPERTY()
+	TObjectPtr<class AAuraPlayerState> AuraPS;
+
+	UPROPERTY(EditDefaultsOnly, Category="Aura|Attribute")
+	TSubclassOf<UGameplayEffect> AttributeEffect;
 };
 
 
@@ -68,6 +104,5 @@ UCLASS()
 class AURA_API UAttributeEventEffect : public UGameplayEffect
 {
 	GENERATED_BODY()
-public:
 	UAttributeEventEffect();
 };

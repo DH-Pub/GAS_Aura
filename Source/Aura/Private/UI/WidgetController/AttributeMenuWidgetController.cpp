@@ -3,30 +3,34 @@
 
 #include "UI/WidgetController/AttributeMenuWidgetController.h"
 
+#include "AuraGameplayTags.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/AuraAttributeSet.h"
+#include "AbilitySystem/Ability/AttributesEventAbility.h"
 #include "AbilitySystem/Data/AttributeDataAsset.h"
 #include "Player/AuraPlayerState.h"
 #include "UI/HUD/AuraHUD.h"
 
 void UAttributeMenuWidgetController::BindCallbacksDependencies()
-{
+{	// Super::BindCallbacksDependencies();
+	AttributeTargetData.Data.Empty();
 	GetPlayerState()->OnAttributePointsChangedDelegate.RemoveAll(this);
-	GetPlayerState()->OnAttributePointsChangedDelegate.AddLambda([&](const int32 Points)
-	{AttributePointsToUIDelegate.Broadcast(AttributePoints = Points, GetTotalPointsAllocating());});
+	GetPlayerState()->OnAttributePointsChangedDelegate.AddWeakLambda(this, [&](const int32 Points)
+	{
+		BroadcastInitialValues();
+	});
 
+	UAuraAbilitySystemComponent* ASC = GetASC();
 	for (const auto& [Tag, AttributeData] : AuraHUD->GetAttributeDataList())
 	{
-		GetASC()->GetGameplayAttributeValueChangeDelegate(AttributeData.GameplayAttribute).RemoveAll(this);
-		GetASC()->GetGameplayAttributeValueChangeDelegate(AttributeData.GameplayAttribute).AddLambda(
-		[&](const FOnAttributeChangeData& Data)
+		FOnGameplayAttributeValueChange& OnAttributeChanged =
+			ASC->GetGameplayAttributeValueChangeDelegate(AttributeData.GameplayAttribute);
+		OnAttributeChanged.RemoveAll(this);
+		OnAttributeChanged.AddWeakLambda(this, [&](const FOnAttributeChangeData& Data)
 		{
-			if (Data.NewValue == Data.OldValue) return;
-			AttributeInfoDelegate.Broadcast(Tag, Data.NewValue, AttributeData);
+			if (Data.NewValue != Data.OldValue) AttributeInfoDelegate.Broadcast(Tag, Data.NewValue, AttributeData);
 		});
 	}
-	GetASC()->OnApplyingStatFinishedDelegate.RemoveAll(this);
-	GetASC()->OnApplyingStatFinishedDelegate.AddUObject(this, &UAttributeMenuWidgetController::BroadcastInitialValues);
 }
 
 void UAttributeMenuWidgetController::BroadcastInitialValues()
@@ -37,63 +41,40 @@ void UAttributeMenuWidgetController::BroadcastInitialValues()
 		const float AttributeValue = AttributeData.GameplayAttribute.GetNumericValue(GetAttributeSet());
 		AttributeInfoDelegate.Broadcast(Tag, AttributeValue, AttributeData);
 	}
-
-	AttributePoints = GetPlayerState()->GetAttributePoints();
-	PointAllocationList.Reset();
-	AttributePointsToUIDelegate.Broadcast(AttributePoints, 0);
+	AttributePointsToUIDelegate.Broadcast(AttributePoints = GetPlayerState()->GetAttributePoints(),
+		AttributeTargetData.TotalPointsAllocating());
 }
 
-int32& UAttributeMenuWidgetController::FindPointAllocationByTag(const FGameplayTag& Tag, bool& bFound)
+int32 UAttributeMenuWidgetController::FindPointAllocationByTag(const FGameplayTag& Tag)
 {
-	for (auto& [AttributeTag, AddedPoints] : PointAllocationList)
-	{
-		if (Tag.MatchesTagExact(AttributeTag))
-		{
-			bFound = true;
-			return AddedPoints;
-		}
-	}
-	bFound = false;
-	return ZeroInteger;
-}
-
-int32 UAttributeMenuWidgetController::GetTotalPointsAllocating()
-{
-	int32 TotalPoints = 0;
-	for (const auto& [AttributeTag, AddedPoints] : PointAllocationList)
-	{
-		TotalPoints += AddedPoints;
-	}
-	return TotalPoints;
+	const int32* PointPtr = AttributeTargetData.FindPointsPtr(Tag);
+	return PointPtr ? *PointPtr : 0;
 }
 
 void UAttributeMenuWidgetController::ApplyUpgrades()
 {
-	bIsApplying = false;
-	GetASC()->ServerUpgradeAttribute(PointAllocationList);
-	PointAllocationList.Reset();
+	bIsApplying = true;
+	FGameplayAbilityTargetData_AttributeData* Data = new FGameplayAbilityTargetData_AttributeData();
+	*Data = AttributeTargetData;
+	AttributeTargetData.Data.Empty();
+	// Broadcast to disable buttons
+	AttributePointsToUIDelegate.Broadcast(AttributePoints - Data->TotalPointsAllocating(), 0);
+	GetASC()->ServerHandleGameplayEvent(AuraGameplayTags::Attributes, FGameplayAbilityTargetDataHandle(Data));
 }
 
 void UAttributeMenuWidgetController::AllocatePointToAttribute(const FGameplayTag& AttributeTag, const int32 Points)
 {
 	if (Points == 0) return;
-	bool bFound = false;
-	int32& AttributeAllocation = FindPointAllocationByTag(AttributeTag, bFound);
-	if (bFound)
+	if (int32* PointsPtr = AttributeTargetData.FindPointsPtr(AttributeTag))
 	{
-		const int32 PointsAboutToUse = GetTotalPointsAllocating() + Points;
+		const int32 PointsAboutToUse = AttributeTargetData.TotalPointsAllocating() + Points;
 		if (PointsAboutToUse < 0 || PointsAboutToUse > AttributePoints) return; // Invalid Points
-		AttributeAllocation += Points;
-		if (AttributeAllocation == 0) // Remove from array if 0
-		{
-			PointAllocationList.RemoveSingleSwap(FPointAllocation(AttributeTag, 0));
-		}
-		AttributePointsToUIDelegate.Broadcast(AttributePoints, PointsAboutToUse);
+		*PointsPtr += Points;
+		AttributeTargetData.Data.RemoveSwap(FAttributeData(AttributeTag, 0)); // Remove if above 0
 	}
-	else
+	else if (Points > 0 && Points <= AttributePoints)
 	{
-		if (Points < 0 || Points > AttributePoints) return;
-		PointAllocationList.AddUnique(FPointAllocation(AttributeTag, Points));
-		AttributePointsToUIDelegate.Broadcast(AttributePoints, GetTotalPointsAllocating());
+		AttributeTargetData.AddNewData(AttributeTag, Points);
 	}
+	AttributePointsToUIDelegate.Broadcast(AttributePoints, AttributeTargetData.TotalPointsAllocating());
 }

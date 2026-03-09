@@ -12,9 +12,12 @@ struct FAuraAbilityData
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Details")
+	FText AbilityName;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Details")
 	TObjectPtr<UTexture2D> Icon = nullptr;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Details")
 	TObjectPtr<UMaterialInterface> BackgroundMaterial = nullptr;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
@@ -23,17 +26,7 @@ struct FAuraAbilityData
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TSubclassOf<class UAuraGameplayAbility> AbilityClass = nullptr;
 	const FGameplayTag& GetAuraAbilityTag() const;
-};
-//Data Asset is shared among players, this is created to send current broadcast's ability data
-USTRUCT(BlueprintType)
-struct FPlayerAbilityData
-{
-	GENERATED_BODY()
-
-	UPROPERTY(BlueprintReadOnly)
-	int32 AbilityID = INDEX_NONE;
-	UPROPERTY(BlueprintReadOnly)
-	FGameplayTag StatusTag = FGameplayTag();
+	FGameplayTagContainer GetDataAssetTags() const; // This is not being used
 };
 
 /**
@@ -45,11 +38,10 @@ class AURA_API UAbilityDataAsset : public UDataAsset
 	GENERATED_BODY()
 public:
 	/** Data Asset list of all abilities with icons, ... */
-	UPROPERTY(EditDefaultsOnly, meta=(TitleProperty="{AbilityTag} - {Icon}"), Category="AbilityInformation")
+	UPROPERTY(EditDefaultsOnly, meta=(TitleProperty="{AbilityName}"), Category="AbilityInformation")
 	TArray<FAuraAbilityData> AbilityDataList;
 
 	static const UAbilityDataAsset* GetFromGameState(const UObject* WorldContextObject);
-	static const FAuraAbilityData* GetAbilityFromGameState(const UObject* WorldContextObject, const FGameplayTag& Tag);
 	static const FAuraAbilityData* GetAbilityFromGameState(const UObject* WorldContextObject, const FGameplayTagContainer& Tags);
 
 	static void UnlockAbilityByLevel(const UObject* WorldContextObject, class UAuraAbilitySystemComponent* ASC,

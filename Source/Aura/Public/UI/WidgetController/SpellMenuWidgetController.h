@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Aura/Aura.h"
 #include "UI/WidgetController/AuraWidgetController.h"
 #include "SpellMenuWidgetController.generated.h"
 
@@ -45,8 +46,9 @@ public:
 	bool EquipAbility();
 	/**
 	 * @param AbilityTag
-	 * @param AbilityID: -1 (INDEX_NONE) to unequip ability
+	 * @param AbilityID: 0 (None) to unequip ability
 	 */
 	UFUNCTION(BlueprintCallable)
-	void ChangeSpellInputSlot(const FGameplayTag& AbilityTag, const int32 AbilityID = -1);
+	void ChangeSpellInputSlot(const FGameplayTag& AbilityTag,
+		const EAuraAbilityInputID::Type AbilityID = EAuraAbilityInputID::None);
 };

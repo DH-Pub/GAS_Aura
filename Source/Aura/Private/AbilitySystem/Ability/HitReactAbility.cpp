@@ -4,41 +4,96 @@
 #include "AbilitySystem/Ability/HitReactAbility.h"
 
 #include "AbilitySystemComponent.h"
-#include "AuraEffectTypes.h"
+#include "AuraAbilityLibrary.h"
 #include "AuraGameplayTags.h"
+#include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/Ability/DamageAbility.h"
 #include "Character/AuraCharacterBase.h"
+#include "Components/CapsuleComponent.h"
 
 UHitReactAbility::UHitReactAbility()
 {
-	SetAssetTags(FGameplayTagContainer(AuraGameplayTags::Character_State_HitReact)); // so that Death can cancel this
+	SetAssetTags(FGameplayTagContainer(AuraGameplayTags::State_HitReact)); // so that Death can cancel this
 	CancelAbilitiesWithTag = FGameplayTagContainer(AuraGameplayTags::Generic_Ability_Cancelable);
-	ActivationOwnedTags.AddTag(AuraGameplayTags::Character_State_HitReact);
-	ActivationOwnedTags.AddTag(AuraGameplayTags::Character_State_Block_Movement);
-	ActivationBlockedTags.AddTag(AuraGameplayTags::Character_State_Death);
+	BlockAbilitiesWithTag = FGameplayTagContainer(AuraGameplayTags::Generic_Ability_Blockable);
+	ActivationOwnedTags.AddTag(AuraGameplayTags::State_HitReact);
+	ActivationOwnedTags.AddTag(AuraGameplayTags::State_Block_Movement_Speed);
+	ActivationOwnedTags.AddTag(AuraGameplayTags::State_Block_Movement_Rotation);
+	ActivationBlockedTags.AddTag(AuraGameplayTags::State_Death);
 
 	bRetriggerInstancedAbility = true;
 	NetExecutionPolicy = EGameplayAbilityNetExecutionPolicy::ServerInitiated;
 	NetSecurityPolicy = EGameplayAbilityNetSecurityPolicy::ServerOnly;
 
-	bStopRotation = true;
-
-	const int32 Idx = AbilityTriggers.Add(FAbilityTriggerData());
-	AbilityTriggers[Idx].TriggerTag = AuraGameplayTags::Character_State_HitReact;
-	AbilityTriggers[Idx].TriggerSource = EGameplayAbilityTriggerSource::GameplayEvent;
+	FAbilityTriggerData& Data = AbilityTriggers.AddDefaulted_GetRef();
+	Data.TriggerTag = AuraGameplayTags::State_HitReact;
+	Data.TriggerSource = EGameplayAbilityTriggerSource::GameplayEvent;
 }
 
 void UHitReactAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
 	const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
-{
+{	// if using ActivateAbility, beware that Super::ActivateAbility calls BP_ActivateAbility inside so do it before Super
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 	if (TriggerEventData == nullptr) return;
-	if (const FDamageEffectContext* DamageContext = FAuraEffectContext::GetContextStruct<FDamageEffectContext>(
-		TriggerEventData->ContextHandle))
+	const FGameplayAbilityTargetData* Data = TriggerEventData->TargetData.Get(0);
+	if (!Data || Data->GetScriptStruct() != FGATargetData_HitReact::StaticStruct()) return;
+	const FGATargetData_HitReact* HitReactData = static_cast<const FGATargetData_HitReact*>(Data);
+
+	HitReactTags = MoveTemp(const_cast<FGameplayTagContainer&>(TriggerEventData->TargetTags));
+	if (HitReactTags.HasTag(AuraGameplayTags::State_HitReact_PlayMontage))
 	{
-		if (!DamageContext->bKnockback) return;
-		const FVector KnockbackForce = DamageContext->KnockbackForce * DamageContext->DamageDirection;
-		AuraCharacter->LaunchCharacter(KnockbackForce, true, true);
-		// AuraCharacter->GetCharacterMovement()->AddImpulse(KnockbackForce * 100.f);
+		OnHitReact();
+	}
+
+	if (HitReactTags.HasTag(AuraGameplayTags::State_HitReact_Knockback) && HitReactData->KnockbackDistance > 0)
+	{
+		float Duration = HitReactData->KnockbackTime;
+		const FVector StartLoc = AuraCharacter->GetActorLocation();
+		const UCapsuleComponent* CapsuleComp = AuraCharacter->GetCapsuleComponent();
+		FVector MoveToLoc = StartLoc + HitReactData->KnockbackDirection * HitReactData->KnockbackDistance;
+		/** TODO: Split Mesh into Nav floor and Wall for knockback, make profiles for wall (mostly same as Nav floor)
+		 * or use different PhysMat
+		 * - Then UKismetSystemLibrary::CapsuleTraceSingleByProfile*/
+		TArray<FHitResult> OutHits;
+		const bool bHit = UAuraAbilityLibrary::TraceByChannel(this, StartLoc, MoveToLoc,
+			{AuraCharacter}, KnockbackDebug, OutHits, {ECC_WorldStatic},
+			true, CapsuleComp->GetScaledCapsuleRadius());
+
+		for (const FHitResult& Hit : OutHits)
+		{
+			if (Hit.bBlockingHit)
+			{
+				MoveToLoc = Hit.Location;
+				Duration *= Hit.Distance / HitReactData->KnockbackDistance;
+			}
+			break; // only get the first hit
+		}
+
+		if (HasAuthority(&CurrentActivationInfo))
+		{
+			Knockback(MoveToLoc, Duration, bHit); // AuraCharacter->LaunchCharacter();
+		}
+	}
+}
+
+void UHitReactAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
+	const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
+{
+	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
+
+	if (HasAuthority(&CurrentActivationInfo))
+	{
+		/** Hack to make sure client will have the same tags as server */
+		UAuraAbilitySystemComponent* ASC = AuraCharacter->GetAuraAbilitySystemComponent();
+		ASC->ClientUpdateOwnedTags(ASC->GetOwnedGameplayTags());
+	}
+}
+
+void UHitReactAbility::TryEndHitReact(const FGameplayTag Tag)
+{
+	HitReactTags.RemoveTag(Tag);
+	if (HitReactTags.Num() == 0)
+	{
+		K2_EndAbility();
 	}
 }

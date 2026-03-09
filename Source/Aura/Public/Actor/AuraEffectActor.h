@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Aura/Aura.h"
 #include "GameFramework/Actor.h"
 #include "AuraEffectActor.generated.h"
 
@@ -34,24 +35,24 @@ class AURA_API AAuraEffectActor : public AActor
 public:
 	AAuraEffectActor();
 protected:
-	void ApplyEffectToTarget(AActor* TargetActor, const FEffectType& EffectType);
+	void ApplyEffectToTarget(AActor* TargetActor, const FEffectType& EffectType, const FHitResult& SweepResult);
 	UFUNCTION(BlueprintCallable)
-	void OnOverlap(AActor* TargetActor);
+	void OnOverlap(AActor* TargetActor, const FHitResult& SweepResult);
 	UFUNCTION(BlueprintCallable)
 	void OnEndOverlap(AActor* TargetActor);
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Default")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Aura")
 	bool bDestroyOnEffectApplication = false;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Default")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Aura")
 	bool bApplyEffectsToEnemies = false;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Default")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Aura")
 	TArray<FEffectType> Effects;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Default")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Aura")
 	float ActorLevel = 1.f;
 private:
 	// Check if Actor is NOT Enemy and effect does not apply to enemy
-	bool IsNotForEnemy(const AActor* Actor) const {return Actor->ActorHasTag(FName("Enemy")) && !bApplyEffectsToEnemies;}
+	bool IsNotForEnemy(const AActor* Actor) const {return Actor->ActorHasTag(AuraActorTag_Enemy) && !bApplyEffectsToEnemies;}
 };

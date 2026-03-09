@@ -6,16 +6,16 @@
 #include "AbilitySystemComponent.h"
 #include "AuraEffectTypes.h"
 #include "AuraGameplayTags.h"
-#include "NiagaraFunctionLibrary.h"
+#include "AbilitySystem/Ability/DeathAbility.h"
 #include "Character/AuraCharacterBase.h"
 #include "Kismet/KismetMathLibrary.h"
 
 USummonAbility::USummonAbility()
 {
-	FGameplayTagContainer AssetTags(AuraGameplayTags::Ability_Summon);
-	SetAssetTags(AddGenericAssetTags(AssetTags));
-	ActivationOwnedTags.AddTag(AuraGameplayTags::Character_State_Block_Movement);
-	bStopRotation = true;
+	ActivationOwnedTags.AddTag(AuraGameplayTags::State_Block_Movement_Speed);
+	ActivationOwnedTags.AddTag(AuraGameplayTags::State_Block_Movement_Rotation);
+
+	AuraAbilityTag = AuraGameplayTags::Ability_Summon;
 }
 
 bool USummonAbility::CanActivateAbility(const FGameplayAbilitySpecHandle Handle,
@@ -35,6 +35,9 @@ void USummonAbility::SetSpawnLocations()
 	const float DeltaSpread = SpawnSpread / NumMinions;
 	const FVector LeftOfSpread = Forward.RotateAngleAxis(-SpawnSpread / 2.f, FVector::UpVector);
 
+	FGameplayCueParameters SummonCue;
+	SummonCue.Instigator = AuraCharacter;
+	UAbilitySystemComponent* ASC = AuraCharacter->GetAbilitySystemComponent();
 	for (int32 i = 0; i < NumMinions; i++)
 	{
 		const FVector Direction = LeftOfSpread.RotateAngleAxis(DeltaSpread * (i + 0.5) , FVector::UpVector);
@@ -44,17 +47,13 @@ void USummonAbility::SetSpawnLocations()
 		FHitResult Hit; FCollisionObjectQueryParams Params(ECC_WorldStatic);
 		GetWorld()->LineTraceSingleByObjectType(Hit, ChosenSpawnLocation + FVector(0.f, 0.f, 500.f),
 			ChosenSpawnLocation - FVector(0.f, 0.f, 400.f), Params);
-		if (Hit.Distance > UE_KINDA_SMALL_NUMBER)
+		if (Hit.bBlockingHit)
 		{
-			ChosenSpawnLocation = Hit.ImpactPoint;
-			SummonInfo.Locations.Add(ChosenSpawnLocation); // GC defaults only send 2 RPCs per frame, use context
+			CommitAbilityCost(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo);
+			SummonLocations.Add(SummonCue.Location = Hit.ImpactPoint);
+			ASC->ExecuteGameplayCue(AuraGameplayTags::GameplayCue_Shared_Summon, SummonCue);
 		} // else Hit nothing (No ground) => No spawn
 	}
-
-	const FGameplayEffectContextHandle EffectContextHandle = MakeEffectContext(CurrentSpecHandle, CurrentActorInfo);
-	FAuraEffectContext::ExtractAuraContext(EffectContextHandle)->SetInstancedStruct(FInstancedStruct::Make(SummonInfo));
-	UAbilitySystemComponent* InstigatorASC = GetAbilitySystemComponentFromActorInfo();
-	InstigatorASC->ExecuteGameplayCue(AuraGameplayTags::GameplayCue_Summon, EffectContextHandle);
 }
 
 void USummonAbility::PreActivate(const FGameplayAbilitySpecHandle Handle,
@@ -65,49 +64,42 @@ void USummonAbility::PreActivate(const FGameplayAbilitySpecHandle Handle,
 
 	SetSpawnLocations();
 	// Shuffle Locations
-	const int32 LastIndex = SummonInfo.Locations.Num() - 1;
+	const int32 LastIndex = SummonLocations.Num() - 1;
 	for (int32 i = 0; i <= LastIndex; ++i)
 	{
-		const int32 Index = FMath::RandRange(i, LastIndex);
-		SummonInfo.Locations.Swap(i, Index);
+		SummonLocations.Swap(i, FMath::RandRange(i, LastIndex));
 	}
 }
 
 void USummonAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
 	const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
 {
-	SummonInfo.Locations.Reset();
+	SummonLocations.Reset();
 	SpawnLocationIndex = 0;
 
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }
 
-bool USummonAbility::SpawnEnemiesByLocations()
+void USummonAbility::OnRemoveAbility(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec)
 {
-	if (SpawnLocationIndex >= SummonInfo.Locations.Num()) return false;
-
-	FVector SpawnLocation = SummonInfo.Locations[SpawnLocationIndex++];
-	SpawnLocation.Z += 70.f; // Above ground
-	FTransform SpawnTransform;
-	SpawnTransform.SetLocation(SpawnLocation);
-	FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(AuraCharacter->GetActorLocation(), SpawnLocation);
-	LookAtRotation.Pitch = LookAtRotation.Roll = 0.f;
-	SpawnTransform.SetRotation(LookAtRotation.Quaternion());
-
-	AAuraCharacterBase* SpawnedCharacter = GetWorld()->SpawnActorDeferred<AAuraCharacterBase>(GetRandomMinionsClass(), SpawnTransform,
-		AuraCharacter, /*Cast<Pawn>*/AuraCharacter, ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn);
-	AuraCharacter->AddNewSummon(SpawnedCharacter);
-	SpawnedCharacter->FinishSpawning(SpawnTransform);
-	return true;
+	Super::OnRemoveAbility(ActorInfo, Spec);
+	UDeathAbility::KillAllSummons(AuraCharacter);
 }
 
-void USummonAbility::SummonCueFromEffectContext(const FGameplayCueParameters& Parameters, UNiagaraSystem* Effect)
+bool USummonAbility::SpawnEnemiesByLocations()
 {
-	if (const FSummonCueInfo* SummonInfo = FAuraEffectContext::GetContextStruct<FSummonCueInfo>(Parameters.EffectContext))
-	{
-		for (auto& Loc : SummonInfo->Locations)
-		{
-			UNiagaraFunctionLibrary::SpawnSystemAtLocation(Parameters.GetInstigator(), Effect, Loc);
-		}
-	}
+	if (SpawnLocationIndex >= SummonLocations.Num()) return false;
+
+	FVector SpawnLocation = SummonLocations[SpawnLocationIndex++];
+	SpawnLocation.Z += 70.f; // Above ground
+	FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(AuraCharacter->GetActorLocation(), SpawnLocation);
+	LookAtRotation.Pitch = LookAtRotation.Roll = 0.f;
+	const FTransform SpawnTransform(LookAtRotation, SpawnLocation);
+
+	AAuraCharacterBase* SpawnedCharacter = GetWorld()->SpawnActorDeferred<AAuraCharacterBase>(GetRandomMinionsClass(),
+		SpawnTransform, AuraCharacter, /*Cast<Pawn>*/AuraCharacter,
+		ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn);
+	AuraCharacter->Summons.Add(SpawnedCharacter);
+	SpawnedCharacter->FinishSpawning(SpawnTransform);
+	return true;
 }

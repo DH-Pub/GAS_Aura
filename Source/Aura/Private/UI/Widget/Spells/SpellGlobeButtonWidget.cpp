@@ -20,25 +20,29 @@ void USpellGlobeButtonWidget::SetWidgetController(UAuraWidgetController* InWidge
 	Super::SetWidgetController(InWidgetController);
 }
 
-void USpellGlobeButtonWidget::ReceiveAbilityData(const FAuraAbilityData& AbilityData, const FPlayerAbilityData& PlayerData)
+void USpellGlobeButtonWidget::ReceiveAbilityData(const FGameplayAbilitySpec& AbilitySpec,
+	const FAuraAbilityData& AbilityData)
 {
 	if (!AbilityData.GetAuraAbilityTag().MatchesTagExact(AbilityTag)) return;
 
-	StatusTag = PlayerData.StatusTag;
-	if (StatusTag.MatchesTagExact(AuraGameplayTags::Ability_Status_Locked))
+	const FGameplayTagContainer& Tags = AbilitySpec.GetDynamicSpecSourceTags();
+	if (Tags.HasTagExact(AuraGameplayTags::Ability_Status_Locked))
 	{
+		StatusTag = AuraGameplayTags::Ability_Status_Locked;
 		bDragEnable = false;
 		Image_SpellIcon->SetBrushFromTexture(LockedTexture);
 		Image_Background->SetBrushFromMaterial(LockedMaterial);
 	}
-	else if (StatusTag.MatchesTagExact(AuraGameplayTags::Ability_Status_Eligible))
+	else if (Tags.HasTagExact(AuraGameplayTags::Ability_Status_Eligible))
 	{
+		StatusTag = AuraGameplayTags::Ability_Status_Eligible;
 		bDragEnable = false;
 		Image_SpellIcon->SetBrushFromTexture(AbilityData.Icon);
 		Image_Background->SetBrushFromMaterial(LockedMaterial);
 	}
-	else if (!StatusTag.IsValid())
+	else
 	{	// not under any status
+		StatusTag = FGameplayTag::EmptyTag;
 		bDragEnable = true;
 		Image_SpellIcon->SetBrushFromTexture(AbilityData.Icon);
 		Image_Background->SetBrushFromMaterial(AbilityData.BackgroundMaterial);
@@ -65,8 +69,8 @@ void USpellGlobeButtonWidget::NativePreConstruct()
 }
 void USpellGlobeButtonWidget::NativeDestruct()
 {
-	Super::NativeDestruct();
 	if (SpellMenuWC) SpellMenuWC->GetASC()->AbilityDataDelegate.RemoveAll(this);
+	Super::NativeDestruct();
 }
 
 

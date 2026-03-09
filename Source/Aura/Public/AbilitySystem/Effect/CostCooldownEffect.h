@@ -4,32 +4,23 @@
 
 #include "CoreMinimal.h"
 #include "GameplayEffect.h"
+#include "GameplayEffectExecutionCalculation.h"
 #include "GameplayModMagnitudeCalculation.h"
 #include "CostCooldownEffect.generated.h"
 
 /**
- * Cost Mana =======================================================================================================
+ * Calculate and apply cost
  */
 UCLASS()
-class UMMC_AbilityManaCost : public UGameplayModMagnitudeCalculation
+class UExecCalc_AbilityCosts : public UGameplayEffectExecutionCalculation
 {
 	GENERATED_BODY()
 public:
-	UMMC_AbilityManaCost();
-	virtual float CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const override;
+	UExecCalc_AbilityCosts();
+	virtual void Execute_Implementation(const FGameplayEffectCustomExecutionParameters& ExecutionParams,
+		FGameplayEffectCustomExecutionOutput& OutExecutionOutput) const override;
 };
 
-/**
- * Cost Health =======================================================================================================
- */
-UCLASS()
-class UMMC_AbilityHealthCost : public UGameplayModMagnitudeCalculation
-{
-	GENERATED_BODY()
-public:
-	UMMC_AbilityHealthCost();
-	virtual float CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const override;
-};
 
 /**
  * Cooldown =======================================================================================================
@@ -41,16 +32,14 @@ class AURA_API UMMC_CooldownDuration : public UGameplayModMagnitudeCalculation
 public:
 	UMMC_CooldownDuration();
 	virtual float CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const override;
-	/* For UI Display */
-	TPair<float, float> GetBaseCooldownAndReductionPercent(const FGameplayEffectSpec& Spec) const;
+	static float GetCooldownReductionPercent(const float Intelligence);
 private:
 	FGameplayEffectAttributeCaptureDefinition IntelligenceDef;
-	float GetCooldownReductionPercent(const float Intelligence) const;
 };
 
 
 /**
- *
+ * Cost Cooldown GameplayEffect ==============================================================================
  */
 UCLASS()
 class AURA_API UCostEffect : public UGameplayEffect
@@ -58,4 +47,11 @@ class AURA_API UCostEffect : public UGameplayEffect
 	GENERATED_BODY()
 public:
 	UCostEffect();
+};
+UCLASS()
+class AURA_API UCooldownEffect : public UGameplayEffect
+{
+	GENERATED_BODY()
+public:
+	UCooldownEffect();
 };

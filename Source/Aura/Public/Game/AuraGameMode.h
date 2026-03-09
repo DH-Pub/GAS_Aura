@@ -17,10 +17,14 @@ public:
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 	virtual void Logout(AController* Exiting) override;
 
+	static AAuraGameMode* Get(const UObject* WorldContextObject);
+
 	UPROPERTY()
 	TArray<TObjectPtr<class AAuraPlayerController>> PlayerControllers;
 
-
 	UPROPERTY(EditDefaultsOnly, Category=Default)
 	const TObjectPtr<const class UCharacterClassDataAsset> CharacterClassData;
+
+	UPROPERTY(EditDefaultsOnly, Category="Aura")
+	TSubclassOf<class UGameplayEffect> DeathEffect;
 };

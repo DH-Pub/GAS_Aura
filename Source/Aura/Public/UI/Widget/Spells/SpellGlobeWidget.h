@@ -7,10 +7,6 @@
 #include "GlobeWidgetInput.h"
 #include "SpellGlobeWidget.generated.h"
 
-enum class EAuraAbilityPassiveID : uint8;
-enum class EAuraAbilityInputID : uint8;
-class UProgressBar;
-class UTextBlock;
 class UImage;
 /**
  * Spell globes in-game HUD, with cooldown
@@ -33,7 +29,7 @@ protected:
 	TObjectPtr<class UOverlayWidgetController> OverlayWC;
 
 	UPROPERTY(BlueprintReadWrite, meta=(BindWidget))
-	TObjectPtr<UProgressBar> Progress_Cooldown;
+	TObjectPtr<class UProgressBar> Progress_Cooldown;
 	UPROPERTY(BlueprintReadWrite, meta=(BindWidget))
 	TObjectPtr<UImage> Image_SpellIcon; // Icon of spell
 
@@ -44,26 +40,23 @@ protected:
 	const FName WheelPercentParam = FName("Percentage");
 
 	UPROPERTY(BlueprintReadWrite, meta=(BindWidget))
-	TObjectPtr<UTextBlock> Text_Cooldown; // Cooldown Remaining
+	TObjectPtr<class UTextBlock> Text_Cooldown; // Cooldown Remaining
 
 
-	UFUNCTION(BlueprintCallable, meta=(ExpandBoolAsExecs = "ReturnValue"))
-	bool SuccessUpdateAbilityData(const struct FAuraAbilityData& InAbilityData, const struct FPlayerAbilityData& InPlayerData,
-		FGameplayTagContainer& OutCooldownTags);
+	UFUNCTION(BlueprintCallable)
+	void SuccessUpdateAbilityData(const struct FGameplayAbilitySpec& AbilitySpec, const struct FAuraAbilityData& Data);
+	void CheckAbilityCooldown();
+	FGameplayTagContainer CooldownTags;
 
-	UPROPERTY(BlueprintReadWrite)
-	TObjectPtr<class UAsync_CooldownChange> WaitCDTask;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Default|Properties")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Aura|Properties")
 	float Frequency = 0.05f;
 
-	bool bOnCooldown = false;
 	UPROPERTY(BlueprintReadWrite)
 	float CooldownDuration = 0.f;
 	UPROPERTY(BlueprintReadWrite)
 	float TimeRemaining = 0.f;
-	UFUNCTION(BlueprintCallable)
-	void UpdateCooldown(float InTime, float InDuration = -1.f);
+	/*UFUNCTION(BlueprintCallable)
+	void UpdateCooldown();*/
 	UFUNCTION(BlueprintCallable)
 	void EndCooldown();
 

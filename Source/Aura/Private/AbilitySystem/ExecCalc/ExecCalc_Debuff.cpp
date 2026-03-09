@@ -14,26 +14,17 @@ UExecCalc_Debuff::UExecCalc_Debuff()
 {
 }
 void UExecCalc_Debuff::Execute_Implementation(const FGameplayEffectCustomExecutionParameters& ExecutionParams,
-                                              FGameplayEffectCustomExecutionOutput& OutExecutionOutput) const
+	FGameplayEffectCustomExecutionOutput& OutExecutionOutput) const
 {
-	/* Boilerplate ~ */
-	const UAbilitySystemComponent* TargetASC = ExecutionParams.GetTargetAbilitySystemComponent();
-	AActor* TargetAvatar = TargetASC ? TargetASC->GetAvatarActor() : nullptr;
-
 	const FGameplayEffectSpec& Spec = ExecutionParams.GetOwningSpec();
-	FAggregatorEvaluateParameters EvaluateParameters;
-	EvaluateParameters.SourceTags = Spec.CapturedSourceTags.GetAggregatedTags();
-	EvaluateParameters.TargetTags = Spec.CapturedTargetTags.GetAggregatedTags();
-	/* ~ End Boilerplate */
 
-	if (const UDamageAbility* DamageAbility = Cast<UDamageAbility>(Spec.GetEffectContext().GetAbilityInstance_NotReplicated()))
+	float Damage = 0.f;
+	for (const auto& [Tag, Value] : Spec.SetByCallerTagMagnitudes)
 	{
-		Spec.GetContext().AddOrigin(TargetAvatar->GetActorLocation());
-		float Damage = DamageAbility->DebuffDamage.GetValueAtLevel(DamageAbility->GetAbilityLevel());
-		Damage *= Spec.GetStackCount();
-		OutExecutionOutput.AddOutputModifier(FGameplayModifierEvaluatedData(
-			UAuraAttributeSet::GetIncomingDamageAttribute(), EGameplayModOp::Override, Damage));
+		if (AuraGameplayTags::DebuffTypeArray.Contains(Tag)) Damage += Value;
 	}
+	Damage *= Spec.GetStackCount();
+	if (Damage > UE_KINDA_SMALL_NUMBER) AURA_ADD_OUTPUT_MODIFIER(GetIncomingDamageAttribute(), Override, Damage)
 }
 
 
@@ -41,5 +32,5 @@ void UExecCalc_Debuff::Execute_Implementation(const FGameplayEffectCustomExecuti
 bool UDebuffRequirement::CanApplyGameplayEffect_Implementation(const UGameplayEffect* GameplayEffect,
 	const FGameplayEffectSpec& Spec, UAbilitySystemComponent* ASC) const
 {
-	return !ASC->HasMatchingGameplayTag(AuraGameplayTags::Character_State_Death);
+	return true;
 }

@@ -18,7 +18,7 @@ struct FGameplayAbilityTargetData_AimData : public FGameplayAbilityTargetData
 	virtual TArray<TWeakObjectPtr<AActor>> GetActors() const override {return {TargetActor};}
 
 	UPROPERTY()
-	FVector AimDirection = FVector();
+	FVector_NetQuantizeNormal AimDirection = FVector::ZeroVector;
 	float ActivatedTime = 0.f;
 	virtual FTransform GetOrigin() const override
 	{
@@ -49,15 +49,12 @@ struct FGameplayAbilityTargetData_AimData : public FGameplayAbilityTargetData
 };
 template<>
 struct TStructOpsTypeTraits<FGameplayAbilityTargetData_AimData> : public TStructOpsTypeTraitsBase2<FGameplayAbilityTargetData_AimData>
-{
-	enum
-	{
-		WithNetSerializer = true // This is REQUIRED for FGameplayAbilityTargetDataHandle net serialization to work
-	};
+{	// This is REQUIRED for FGameplayAbilityTargetDataHandle net serialization to work
+	enum {WithNetSerializer = true};
 };
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FMouseTargetDataSignature/*, const FGameplayAbilityTargetDataHandle&, Data*/,
-	const FVector&, CursorHit, AActor*, Target);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FMouseTargetDataSignature/*, const FGameplayAbilityTargetDataHandle&, Data*/,
+	const FVector&, Direction, const FVector&, CursorHit, AActor*, Target);
 /**
  *	Send Input Data to remote (Client -> Server)
  *  Used in GameplayAbility BP (ex: GA_FireBolt)

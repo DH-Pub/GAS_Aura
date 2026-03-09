@@ -7,10 +7,8 @@
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/SpringArmComponent.h"
-#include "NiagaraComponent.h"
-#include "AbilitySystem/Ability/AttributesEventAbility.h"
 #include "AbilitySystem/Data/CharacterClassDataAsset.h"
-#include "Character/AuraHeroComponent.h"
+#include "Character/Component/AuraHeroComponent.h"
 #include "Components/WidgetComponent.h"
 #include "Input/AuraInputComponent.h"
 #include "Player/AuraPlayerController.h"
@@ -44,10 +42,6 @@ AAuraPlayer::AAuraPlayer()
 	CameraCapsule->SetCollisionResponseToAllChannels(ECR_Ignore);
 	CameraCapsule->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Overlap);
 
-	LevelUpNiagaraComponent = CreateDefaultSubobject<UNiagaraComponent>("LevelUpNiagara");
-	LevelUpNiagaraComponent->SetupAttachment(GetRootComponent());
-	LevelUpNiagaraComponent->bAutoActivate = false;
-
 	LevelUpWidgetComponent = CreateDefaultSubobject<UWidgetComponent>("LevelUpWidget");
 	LevelUpWidgetComponent->SetupAttachment(GetRootComponent());
 	LevelUpWidgetComponent->SetRelativeLocation(FVector(0.f, 0.f, 120.f));
@@ -57,9 +51,9 @@ AAuraPlayer::AAuraPlayer()
 
 void AAuraPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {	// Super::SetupPlayerInputComponent(PlayerInputComponent); // Super only check(PlayerInputComponent);
-	if (UAuraHeroComponent* HeroComp = FindComponentByClass<UAuraHeroComponent>())
+	if (UAuraHeroComponent* Comp = FindComponentByClass<UAuraHeroComponent>())
 	{
-		HeroComp->SetAuraHeroInputComponent(Cast<UAuraInputComponent>(PlayerInputComponent));
+		Comp->SetAuraHeroInputComponent(Cast<UAuraInputComponent>(InputComponent));
 	}
 }
 
@@ -81,17 +75,6 @@ int32 AAuraPlayer::GetCharacterLevel_Implementation() const
 	return AuraPlayerState->GetPlayerLevel();
 }
 
-void AAuraPlayer::MulticastLevelUpEffects_Implementation(const int32 Level)
-{
-	if (IsValid(LevelUpNiagaraComponent))
-	{
-		const FRotator CameraRotation = Camera->GetComponentRotation();
-		LevelUpNiagaraComponent->SetWorldRotation(FRotator(-CameraRotation.Pitch, CameraRotation.Yaw + 180., 0.));
-		LevelUpNiagaraComponent->Activate(true);
-	}
-	CharacterWC->OnLevelUpDelegate.Broadcast(Level);
-}
-
 void AAuraPlayer::BeginPlay()
 {
 	Super::BeginPlay();
@@ -105,9 +88,9 @@ void AAuraPlayer::InitAuraCharacter()
 {
 	AAuraPlayerState* AuraPS = GetPlayerState<AAuraPlayerState>(); // Every Client has access to every PlayerState
 	AbilitySystemComponent = AuraPS->GetAuraAbilitySystemComponent();
-	AbilitySystemComponent->InitAuraASC(AuraPS, this);
+	AbilitySystemComponent->InitAbilityActorInfo(AuraPS, this);
 	AttributeSet = AuraPS->GetAuraAttributeSet();
-	if (AAuraPlayerController* AuraPC = Cast<AAuraPlayerController>(GetController()))	// Server and local client
+	if (AAuraPlayerController* AuraPC = Cast<AAuraPlayerController>(GetController())) // Server and local client
 	{	// Only Local Client can get HUD
 		if (AAuraHUD* AuraHUD = AuraPC->GetHUD<AAuraHUD>()) AuraHUD->InitAuraHUD(AuraPC, AuraPS, this);
 	}
@@ -117,8 +100,5 @@ void AAuraPlayer::InitAuraCharacter()
 		constexpr float Level = 1.f;
 		ClassData->InitializeDefaultAttributes(CharacterClass, Level, AbilitySystemComponent);
 		ClassData->GiveStartupAbilities(this);
-
-		// For Character to receive level up and upgrade Attributes, Skills
-		AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(UAttributesEventAbility::StaticClass(), 1));
 	}
 }

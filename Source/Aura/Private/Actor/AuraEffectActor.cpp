@@ -5,7 +5,6 @@
 
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemGlobals.h"
-#include "AuraEffectTypes.h"
 
 AAuraEffectActor::AAuraEffectActor()
 {
@@ -14,16 +13,17 @@ AAuraEffectActor::AAuraEffectActor()
 	SetRootComponent(CreateDefaultSubobject<USceneComponent>("SceneRoot"));
 }
 
-void AAuraEffectActor::ApplyEffectToTarget(AActor* TargetActor, const FEffectType& EffectType)
+void AAuraEffectActor::ApplyEffectToTarget(AActor* TargetActor, const FEffectType& EffectType, const FHitResult& SweepResult)
 {
 	if (UAbilitySystemComponent* TargetASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(TargetActor))
 	{
 		check(EffectType.GameplayEffectClass);
-		const FGameplayEffectSpecHandle SpecHandle = TargetASC->MakeOutgoingSpec(EffectType.GameplayEffectClass, ActorLevel,
-			FGameplayEffectContextHandle());
-		FAuraEffectContext* AuraContext = FAuraEffectContext::ExtractAuraContext(SpecHandle.Data->GetContext());
-		AuraContext->SetEffectCauser(this);
-		AuraContext->SetShowDamageOnTarget(true);
+		const FGameplayEffectSpecHandle SpecHandle = TargetASC->MakeOutgoingSpec(EffectType.GameplayEffectClass,
+			ActorLevel, FGameplayEffectContextHandle());
+		FGameplayEffectContext* EffectContext = SpecHandle.Data->GetContext().Get();
+		EffectContext->SetEffectCauser(this);
+		EffectContext->AddHitResult(SweepResult);
+		// FAuraEffectContext* AuraContext = FAuraEffectContext::ExtractAuraContext(SpecHandle.Data->GetContext());
 		TargetASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data);
 
 		if (bDestroyOnEffectApplication) Destroy();
@@ -31,7 +31,7 @@ void AAuraEffectActor::ApplyEffectToTarget(AActor* TargetActor, const FEffectTyp
 }
 
 
-void AAuraEffectActor::OnOverlap(AActor* TargetActor)
+void AAuraEffectActor::OnOverlap(AActor* TargetActor, const FHitResult& SweepResult)
 {
 	if (IsNotForEnemy(TargetActor)) return;
 
@@ -41,7 +41,7 @@ void AAuraEffectActor::OnOverlap(AActor* TargetActor)
 		{
 		case EEffectApplicationPolicy::ApplyOnOverlap:
 		case EEffectApplicationPolicy::ApplyOnOverlapAndRemoveOnEnd:
-			ApplyEffectToTarget(TargetActor, Effect);
+			ApplyEffectToTarget(TargetActor, Effect, SweepResult);
 		default: break;
 		}
 	}
@@ -57,16 +57,15 @@ void AAuraEffectActor::OnEndOverlap(AActor* TargetActor)
 		case EEffectApplicationPolicy::ApplyOnOverlapAndRemoveOnEnd:
 			if (Effect.GameplayEffectClass.GetDefaultObject()->DurationPolicy == EGameplayEffectDurationType::Infinite)
 			{
-				if (UAbilitySystemComponent* TargetAbilitySystem = UAbilitySystemGlobals::
+				if (UAbilitySystemComponent* TargetASC = UAbilitySystemGlobals::
 					GetAbilitySystemComponentFromActor(TargetActor))
 				{
-					TargetAbilitySystem->RemoveActiveGameplayEffectBySourceEffect(Effect.GameplayEffectClass,
-						TargetAbilitySystem, 1);
+					TargetASC->RemoveActiveGameplayEffectBySourceEffect(Effect.GameplayEffectClass, TargetASC, 1);
 				}
 			}
 			break;
 		case EEffectApplicationPolicy::ApplyOnEndOverlap:
-			ApplyEffectToTarget(TargetActor, Effect);
+			ApplyEffectToTarget(TargetActor, Effect, FHitResult());
 			break;
 		default:
 			break;

@@ -14,7 +14,7 @@
 void USpellMenuWidgetController::BindCallbacksDependencies()
 {
 	GetPlayerState()->OnSpellPointsChangedDelegate.RemoveAll(this);
-	GetPlayerState()->OnSpellPointsChangedDelegate.AddLambda([&](const int32 Points)
+	GetPlayerState()->OnSpellPointsChangedDelegate.AddWeakLambda(this, [this](const int32 Points)
 	{
 		SpellPoints = Points;
 		SpellPointsToUIDelegate.Broadcast(SpellPoints);
@@ -48,17 +48,18 @@ void USpellMenuWidgetController::UpdateButtonsAndDescriptions(const bool bClick)
 		if (const UCostCooldownAbility* AuraAbility = Cast<UCostCooldownAbility>(Spec->NonReplicatedInstances[0]))
 		{
 			FAbilityDetails Details(Spec->Level);
-			AuraAbility->GetAbilityDetailsCostCooldown(Details);
+			AuraAbility->GetAbilityDetails(Details);
 			AuraAbility->GetDescription(Details, Description);
 
 			FAbilityDetails ChangeDetails(Spec->Level + 1);
-			AuraAbility->GetAbilityDetailsCostCooldown(ChangeDetails);
+			AuraAbility->GetAbilityDetails(ChangeDetails);
 			AuraAbility->GetLevelChangeDescription(Details, ChangeDetails, NextLvDescription);
 		}
 	}
 	else if (AbilityTag.IsValid()) // Has no Activatable Ability with Tag
 	{
-		if (const FAuraAbilityData* Data = UAbilityDataAsset::GetAbilityFromGameState(this, AbilityTag))
+		if (const FAuraAbilityData* Data = UAbilityDataAsset::GetAbilityFromGameState(this,
+			FGameplayTagContainer(AbilityTag)))
 		{	// Description = UAuraGameplayAbility::GetLockedDescription(Data->LevelRequirement);
 			Description = AuraHUD->GetLockedDescription(Data->LevelRequirement);
 		}
@@ -77,7 +78,7 @@ bool USpellMenuWidgetController::EquipAbility()
 	if (SelectedSpellGlobe && SelectedSpellGlobe->AbilityTag.IsValid())
 	{
 		if (const FAuraAbilityData* Data = UAbilityDataAsset::GetAbilityFromGameState(this,
-			SelectedSpellGlobe->AbilityTag))
+			FGameplayTagContainer(SelectedSpellGlobe->AbilityTag)))
 		{
 			UpdateButtonsAndDescriptions(true);
 			return Data->AbilityClass->GetDefaultObject<UAuraGameplayAbility>()->ActivationPolicy == EAuraActivationPolicy::OnSpawn;
@@ -86,11 +87,12 @@ bool USpellMenuWidgetController::EquipAbility()
 	return false;
 }
 
-void USpellMenuWidgetController::ChangeSpellInputSlot(const FGameplayTag& AbilityTag, const int32 AbilityID)
+void USpellMenuWidgetController::ChangeSpellInputSlot(const FGameplayTag& AbilityTag,
+	const EAuraAbilityInputID::Type AbilityID)
 {
 	if (const FGameplayAbilitySpec* Spec = GetASC()->GetSpecFromAbilityTag(AbilityTag))
 	{
-		if (Spec->InputID == AbilityID) return; // "Change" to the same slot
+		if (Spec->InputID == AbilityID) return; // Same Slot
 
 		ClearSelected();
 		GetASC()->ServerChangeAbilitySlot(AbilityTag, AbilityID);

@@ -20,6 +20,8 @@ public:
 	virtual void Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,
 		const FAnimNotifyEventReference& EventReference) override;
 protected:
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(GameplayTagFilter="GameplayEventTagsCategory.Montage"))
+	/*UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(GameplayTagFilter="GameplayEvent.Montage"))
+	FGameplayTagContainer EventTags;*/
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(GameplayTagFilter="GameplayEvent.Montage"))
 	FGameplayTag EventTag;
 };

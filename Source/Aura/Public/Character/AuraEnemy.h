@@ -29,10 +29,10 @@ public:
 	virtual void MulticastHandleDeath_Implementation(const FVector& HitImpulse) override;
 	//~ End Combat Interface
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Default")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Aura")
 	float LifeSpan = 5.f;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Default")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UWidgetComponent> HealthBar;
 
 	UPROPERTY()
@@ -42,11 +42,11 @@ protected:
 	virtual void InitAuraCharacter() override;
 
 	// No need to replicate because we only check AI-Controlled on the server
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Default")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Aura")
 	int32 Level = 1;
 
 	UPROPERTY()
 	TObjectPtr<class UEnemyWidgetController> HealthBarController;
-	UPROPERTY(EditAnywhere, Category="Default")
+	UPROPERTY(EditAnywhere, Category="Aura")
 	TSubclassOf<UEnemyWidgetController> HealthBarControllerClass;
 };

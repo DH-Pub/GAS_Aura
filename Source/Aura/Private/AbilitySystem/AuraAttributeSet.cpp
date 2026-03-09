@@ -4,35 +4,34 @@
 #include "AbilitySystem/AuraAttributeSet.h"
 
 #include "AbilitySystemBlueprintLibrary.h"
-#include "AuraEffectTypes.h"
-#include "AuraGameplayTags.h"
 #include "Net/UnrealNetwork.h" // DOREPLIFETIME_CONDITION_NOTIFY
 #include "GameplayEffectExtension.h" // FGameplayEffectModCallbackData.EvaluatedData
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
-#include "AbilitySystem/Ability/DamageAbility.h"
 #include "AbilitySystem/Effect/VitalsResetEffect.h"
 #include "Character/AuraCharacterBase.h"
+#include "Game/AuraGameMode.h"
 #include "Player/AuraPlayerState.h"
 
 FEffectProperties::FEffectProperties(const FGameplayEffectModCallbackData& Data)
 {
 	SourceASC = Data.EffectSpec.GetEffectContext().GetOriginalInstigatorAbilitySystemComponent();
-	if (IsValid(SourceASC) && SourceASC->AbilityActorInfo.IsValid() && SourceASC->AbilityActorInfo->AvatarActor.IsValid())
+	if (IsValid(SourceASC) && SourceASC->AbilityActorInfo.IsValid())
 	{
 		SourceCharacter = Cast<AAuraCharacterBase>(SourceASC->AbilityActorInfo->AvatarActor.Get());
 		SourceController = SourceASC->AbilityActorInfo->PlayerController.Get();
-		if (SourceController && SourceCharacter == nullptr) SourceCharacter = Cast<AAuraCharacterBase>(SourceController->GetPawn());
-		else if (SourceController == nullptr && SourceCharacter) SourceController = SourceCharacter->GetController();
+		if (SourceController && !SourceCharacter) SourceCharacter = Cast<AAuraCharacterBase>(SourceController->GetPawn());
+		else if (!SourceController && SourceCharacter) SourceController = SourceCharacter->GetController();
 	}
 
 	// Target should be the owner of this AttributeSet
-	if (const TSharedPtr<FGameplayAbilityActorInfo> TargetAbilityActorInfo = Data.Target.AbilityActorInfo;
-		TargetAbilityActorInfo.IsValid() && TargetAbilityActorInfo->AvatarActor.IsValid())
+	const TSharedPtr<FGameplayAbilityActorInfo> TargetAbilityActorInfo = Data.Target.AbilityActorInfo;
+	if (TargetAbilityActorInfo.IsValid() && TargetAbilityActorInfo->AvatarActor.IsValid())
 	{
 		TargetController = TargetAbilityActorInfo->PlayerController.Get();
 		TargetCharacter = Cast<AAuraCharacterBase>(TargetAbilityActorInfo->AvatarActor.Get());
 	}
 }
+
 
 UAuraAttributeSet::UAuraAttributeSet()
 {
@@ -73,8 +72,8 @@ void UAuraAttributeSet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, MovementSpeed, COND_None, REPNOTIFY_Always);
 
 	// Meta
-	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, IncomingDamage, COND_None, REPNOTIFY_Always)
-	DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, IncomingXP, COND_None, REPNOTIFY_Always)
+	// DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, IncomingDamage, COND_None, REPNOTIFY_Always)
+	// DOREPLIFETIME_CONDITION_NOTIFY(UAuraAttributeSet, IncomingXP, COND_None, REPNOTIFY_Always)
 }
 
 #pragma endregion
@@ -98,8 +97,8 @@ void UAuraAttributeSet::PostAttributeChange(const FGameplayAttribute& Attribute,
 {
 	Super::PostAttributeChange(Attribute, OldValue, NewValue);
 	// float CurrentPercent = GetHealth()/OldValue; // If there is a change in MaxValue, Keep percentage of Vitals
-	if (Attribute == GetMaxHealthAttribute()) SetHealth(GetHealth()/OldValue * GetMaxHealth());
-	else if (Attribute == GetMaxManaAttribute()) SetMana(GetMana()/OldValue * GetMaxMana());
+	if (Attribute == GetMaxHealthAttribute()) SetHealth(GetHealth() * GetMaxHealth()/OldValue);
+	else if (Attribute == GetMaxManaAttribute()) SetMana(GetMana() * GetMaxMana()/OldValue);
 }
 
 
@@ -108,93 +107,40 @@ void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 {
 	Super::PostGameplayEffectExecute(Data);
 
-	FEffectProperties Props(Data);
-	if (Data.EvaluatedData.Attribute == GetIncomingDamageAttribute()) HandleIncomingDamage(Data, Props);
-	else if (Data.EvaluatedData.Attribute == GetIncomingXPAttribute()) HandleIncomingXP(Data, Props);
+	const FGameplayAttribute& DataAttribute = Data.EvaluatedData.Attribute;
+	const FEffectProperties Props(Data);
+	if (DataAttribute == GetIncomingDamageAttribute()) HandleIncomingDamage(Data, Props);
+	else if (DataAttribute == GetIncomingXPAttribute()) HandleIncomingXP(Data, Props);
 }
 
 void UAuraAttributeSet::HandleIncomingDamage(const FGameplayEffectModCallbackData& Data, const FEffectProperties& Props)
 {
-	if (Data.Target.HasMatchingGameplayTag(AuraGameplayTags::Character_State_Death)) return;
 	const float LocalIncomingDamage = GetIncomingDamage(); // SetIncomingDamage(0.f); // Old Damage overriden in ExecCalc_Damage
 	if (LocalIncomingDamage < UE_KINDA_SMALL_NUMBER) return;
 	const float OldHealth = GetHealth();
 	SetHealth(FMath::Clamp(OldHealth - LocalIncomingDamage, 0.f, GetMaxHealth()));
 
-	FDamageEffectContext* DamageContext = FAuraEffectContext::GetOrMakeContextStructPtr<FDamageEffectContext>(
-		Data.EffectSpec.GetContext());
-	DamageContext->TargetActor = Props.TargetCharacter;
-	FGameplayEventData Payload; Payload.ContextHandle = Data.EffectSpec.GetContext();
 	if (GetHealth() < UE_KINDA_SMALL_NUMBER)
 	{
-		Data.Target.HandleGameplayEvent(AuraGameplayTags::Character_State_Death, &Payload);
-	}
-	else if (Data.EffectSpec.GetDynamicAssetTags().HasTagExact(AuraGameplayTags::Character_State_HitReact))
-	{	// Data.Target.UpdateTagMap(, 1); // AddLooseGameplayTag() SetTagMapCount()
-		Data.Target.HandleGameplayEvent(AuraGameplayTags::Character_State_HitReact, &Payload);
+		if (const AAuraGameMode* GameMode = AAuraGameMode::Get(this))
+		{
+			const FGameplayEffectSpecHandle SpecHandle = Props.SourceASC->MakeOutgoingSpec(
+				GameMode->DeathEffect, 1.f, Data.EffectSpec.GetContext()); // Props.SourceASC->MakeEffectContext()
+			Data.Target.ApplyGameplayEffectSpecToSelf(*SpecHandle.Data);
+		}
 	}
 }
 
 void UAuraAttributeSet::HandleIncomingXP(const FGameplayEffectModCallbackData& Data, const FEffectProperties& Props)
 {	// in GE_EventBased Attributes.Meta.IncomingXP set to "Override"
-	if (AAuraPlayerState* AuraPS = Props.TargetController->GetPlayerState<AAuraPlayerState>())
-	{	// Source==Target is the owner, since GA_ListenForEvents applies GE_EventIncomingXP to self
-		const int32 OldLevel = AuraPS->GetPlayerLevel();
-		AuraPS->AddToXP(GetIncomingXP());
-		if (OldLevel < AuraPS->GetPlayerLevel())
-		{
-			const FGameplayEffectSpecHandle SpecHandle = Data.Target.MakeOutgoingSpec(
-				UVitalsResetEffect::StaticClass(), 1.f, Data.Target.MakeEffectContext());
-			Data.Target.ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
-		}
+	AAuraPlayerState* AuraPS = Cast<AAuraPlayerState>(GetOuter());
+	if (!AuraPS) return;
+	const int32 OldLevel = AuraPS->GetPlayerLevel();
+	AuraPS->AddToXP(GetIncomingXP());
+	if (OldLevel < AuraPS->GetPlayerLevel())
+	{
+		const FGameplayEffectSpecHandle SpecHandle = Data.Target.MakeOutgoingSpec(
+			UVitalsResetEffect::StaticClass(), 1.f, Data.Target.MakeEffectContext());
+		Data.Target.ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
 	}
 }
-
-
-// OnRep ---------------------------------------------------------------------------------------------------------------
-#pragma region Secondary
-void UAuraAttributeSet::OnRep_Armor(const FGameplayAttributeData& OldArmor) const
-{
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, Armor, OldArmor);
-}
-void UAuraAttributeSet::OnRep_ArmorPenetration(const FGameplayAttributeData& OldArmorPenetration) const
-{
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, ArmorPenetration, OldArmorPenetration);
-}
-
-void UAuraAttributeSet::OnRep_BlockChance(const FGameplayAttributeData& OldBlockChance) const
-{
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, BlockChance, OldBlockChance);
-}
-
-void UAuraAttributeSet::OnRep_CriticalHitChance(const FGameplayAttributeData& OldCriticalHitChance) const
-{
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, CriticalHitChance, OldCriticalHitChance);
-}
-void UAuraAttributeSet::OnRep_CriticalHitDamage(const FGameplayAttributeData& OldCriticalHitDamage) const
-{
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, CriticalHitDamage, OldCriticalHitDamage);
-}
-void UAuraAttributeSet::OnRep_CriticalHitResistance(const FGameplayAttributeData& OldCriticalHitResistance) const
-{
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, CriticalHitResistance, OldCriticalHitResistance);
-}
-
-void UAuraAttributeSet::OnRep_HealthRegeneration(const FGameplayAttributeData& OldHealthRegeneration) const
-{
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, HealthRegeneration, OldHealthRegeneration);
-}
-void UAuraAttributeSet::OnRep_ManaRegeneration(const FGameplayAttributeData& OldManaRegeneration) const
-{
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, ManaRegeneration, OldManaRegeneration);
-}
-
-void UAuraAttributeSet::OnRep_MaxHealth(const FGameplayAttributeData& OldMaxHealth) const
-{
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, MaxHealth, OldMaxHealth);
-}
-void UAuraAttributeSet::OnRep_MaxMana(const FGameplayAttributeData& OldMaxMana) const
-{
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UAuraAttributeSet, MaxMana, OldMaxMana);
-}
-#pragma endregion

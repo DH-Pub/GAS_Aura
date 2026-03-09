@@ -27,10 +27,8 @@ public:
 	UFUNCTION(BlueprintGetter)
 	UCapsuleComponent* GetCameraCapsule() {return CameraCapsule;}
 
-	UPROPERTY(VisibleAnywhere, Category=Default)
-	TObjectPtr<class UNiagaraComponent> LevelUpNiagaraComponent;
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastLevelUpEffects(int32 Level);
+	UPROPERTY()
+	TObjectPtr<UCharacterWidgetController> CharacterWC;
 protected:
 	virtual void BeginPlay() override;
 	virtual void InitAuraCharacter() override;
@@ -42,10 +40,8 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintGetter=GetCameraCapsule)
 	TObjectPtr<UCapsuleComponent> CameraCapsule;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Default|Character")
-	TObjectPtr<UWidgetComponent> LevelUpWidgetComponent;
-	UPROPERTY()
-	TObjectPtr<UCharacterWidgetController> CharacterWC;
-	UPROPERTY(EditAnywhere, Category = "Default|CharacterWidgetClass")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UWidgetComponent> LevelUpWidgetComponent; //TODO: use AuraWorldUserWidget
+	UPROPERTY(EditAnywhere, Category = "Aura|CharacterWidgetClass")
 	TSubclassOf<UCharacterWidgetController> CharacterWidgetClass;
 };
