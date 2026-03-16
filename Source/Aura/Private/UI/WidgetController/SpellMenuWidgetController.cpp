@@ -3,8 +3,8 @@
 
 #include "UI/WidgetController/SpellMenuWidgetController.h"
 
-#include "AuraGameplayTags.h"
-#include "AbilitySystem/Ability/CostCooldownAbility.h"
+#include "AuraTag.h"
+#include "AbilitySystem/Ability/AuraGameplayAbility.h"
 #include "AbilitySystem/Data/AbilityDataAsset.h"
 #include "Player/AuraPlayerState.h"
 #include "UI/HUD/AuraHUD.h"
@@ -35,17 +35,17 @@ void USpellMenuWidgetController::ClearSelected()
 
 void USpellMenuWidgetController::UpdateButtonsAndDescriptions(const bool bClick) const
 {
-	const FGameplayTag& AbilityTag = FocusSpellGlobe ? FocusSpellGlobe->AbilityTag : FGameplayTag();
+	const TSubclassOf AbilityClass = FocusSpellGlobe ? FocusSpellGlobe->AbilityClass : nullptr;
 	const FGameplayTag& StatusTag = FocusSpellGlobe ? FocusSpellGlobe->StatusTag : FGameplayTag();
-	const bool bSpendEnabled = SpellPoints > 0 && !StatusTag.MatchesTagExact(AuraGameplayTags::Ability_Status_Locked);
-	const bool bEquipEnabled = !StatusTag.MatchesTag(AuraGameplayTags::Ability_Status);
+	const bool bSpendEnabled = SpellPoints > 0 && !StatusTag.MatchesTagExact(AuraTag::Ability_Status_Locked);
+	const bool bEquipEnabled = !StatusTag.MatchesTag(AuraTag::Ability_Status);
 
 	FText Description;
 	FText NextLvDescription;
-	if (const FGameplayAbilitySpec* Spec = GetASC()->GetSpecFromAbilityTag(AbilityTag))
+	if (const FGameplayAbilitySpec* Spec = GetASC()->FindAbilitySpecFromClass(AbilityClass))
 	{
 		// Spec->GetAbilityInstances(); Spec->GetPrimaryInstance();
-		if (const UCostCooldownAbility* AuraAbility = Cast<UCostCooldownAbility>(Spec->NonReplicatedInstances[0]))
+		if (const UAuraGameplayAbility* AuraAbility = Cast<UAuraGameplayAbility>(Spec->NonReplicatedInstances[0]))
 		{
 			FAbilityDetails Details(Spec->Level);
 			AuraAbility->GetAbilityDetails(Details);
@@ -56,10 +56,9 @@ void USpellMenuWidgetController::UpdateButtonsAndDescriptions(const bool bClick)
 			AuraAbility->GetLevelChangeDescription(Details, ChangeDetails, NextLvDescription);
 		}
 	}
-	else if (AbilityTag.IsValid()) // Has no Activatable Ability with Tag
+	else if (AbilityClass) // Has no Activatable Ability with Tag
 	{
-		if (const FAuraAbilityData* Data = UAbilityDataAsset::GetAbilityFromGameState(this,
-			FGameplayTagContainer(AbilityTag)))
+		if (const FAuraAbilityData* Data = UAbilityDataAsset::GetDataFromGameState(this, AbilityClass))
 		{	// Description = UAuraGameplayAbility::GetLockedDescription(Data->LevelRequirement);
 			Description = AuraHUD->GetLockedDescription(Data->LevelRequirement);
 		}
@@ -70,31 +69,31 @@ void USpellMenuWidgetController::UpdateButtonsAndDescriptions(const bool bClick)
 
 void USpellMenuWidgetController::SpendPoint()
 {
-	if (SelectedSpellGlobe) GetASC()->ServerSpendSpellPoints(SelectedSpellGlobe->AbilityTag);
+	if (SelectedSpellGlobe) GetASC()->ServerSpendSpellPoints(SelectedSpellGlobe->AbilityClass.GetDefaultObject());
 }
 
 bool USpellMenuWidgetController::EquipAbility()
 {
-	if (SelectedSpellGlobe && SelectedSpellGlobe->AbilityTag.IsValid())
+	if (SelectedSpellGlobe && SelectedSpellGlobe->AbilityClass)
 	{
-		if (const FAuraAbilityData* Data = UAbilityDataAsset::GetAbilityFromGameState(this,
-			FGameplayTagContainer(SelectedSpellGlobe->AbilityTag)))
+		if (const FAuraAbilityData* Data = UAbilityDataAsset::GetDataFromGameState(this,
+			SelectedSpellGlobe->AbilityClass))
 		{
 			UpdateButtonsAndDescriptions(true);
-			return Data->AbilityClass->GetDefaultObject<UAuraGameplayAbility>()->ActivationPolicy == EAuraActivationPolicy::OnSpawn;
+			// Data->AbilityClass->GetDefaultObject<UAuraGameplayAbility>()->ActivationPolicy;
+			return Data->AbilityClass.GetDefaultObject()->ActivationPolicy == EAuraActivationPolicy::OnSpawn;
 		}
 	}
 	return false;
 }
 
-void USpellMenuWidgetController::ChangeSpellInputSlot(const FGameplayTag& AbilityTag,
+void USpellMenuWidgetController::ChangeSpellInputSlot(const TSubclassOf<UGameplayAbility> AbilityClass,
 	const EAuraAbilityInputID::Type AbilityID)
 {
-	if (const FGameplayAbilitySpec* Spec = GetASC()->GetSpecFromAbilityTag(AbilityTag))
+	if (const FGameplayAbilitySpec* Spec = GetASC()->FindAbilitySpecFromClass(AbilityClass))
 	{
 		if (Spec->InputID == AbilityID) return; // Same Slot
-
 		ClearSelected();
-		GetASC()->ServerChangeAbilitySlot(AbilityTag, AbilityID);
+		GetASC()->ServerChangeAbilitySlot(Spec->Ability, AbilityID);
 	}
 }

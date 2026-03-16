@@ -3,7 +3,7 @@
 
 #include "UI/WidgetController/OverlayWidgetController.h"
 
-#include "AuraGameplayTags.h"
+#include "AuraTag.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "AbilitySystem/Data/AbilityDataAsset.h"

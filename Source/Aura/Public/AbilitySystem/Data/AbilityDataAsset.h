@@ -3,7 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameplayTagContainer.h"
 #include "Engine/DataAsset.h"
 #include "AbilityDataAsset.generated.h"
 
@@ -25,8 +24,6 @@ struct FAuraAbilityData
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TSubclassOf<class UAuraGameplayAbility> AbilityClass = nullptr;
-	const FGameplayTag& GetAuraAbilityTag() const;
-	FGameplayTagContainer GetDataAssetTags() const; // This is not being used
 };
 
 /**
@@ -42,7 +39,7 @@ public:
 	TArray<FAuraAbilityData> AbilityDataList;
 
 	static const UAbilityDataAsset* GetFromGameState(const UObject* WorldContextObject);
-	static const FAuraAbilityData* GetAbilityFromGameState(const UObject* WorldContextObject, const FGameplayTagContainer& Tags);
+	static const FAuraAbilityData* GetDataFromGameState(const UObject* WorldContextObject, const UClass* AbilityClass);
 
 	static void UnlockAbilityByLevel(const UObject* WorldContextObject, class UAuraAbilitySystemComponent* ASC,
 		const int32 CharacterLevel);

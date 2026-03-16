@@ -5,17 +5,15 @@
 
 #include "AbilitySystemComponent.h"
 #include "AuraEffectTypes.h"
-#include "AuraGameplayTags.h"
+#include "AuraTag.h"
 #include "AbilitySystem/Ability/DeathAbility.h"
 #include "Character/AuraCharacterBase.h"
 #include "Kismet/KismetMathLibrary.h"
 
 USummonAbility::USummonAbility()
 {
-	ActivationOwnedTags.AddTag(AuraGameplayTags::State_Block_Movement_Speed);
-	ActivationOwnedTags.AddTag(AuraGameplayTags::State_Block_Movement_Rotation);
-
-	AuraAbilityTag = AuraGameplayTags::Ability_Summon;
+	ActivationOwnedTags.AddTag(AuraTag::State_Block_Movement_Speed);
+	ActivationOwnedTags.AddTag(AuraTag::State_Block_Movement_Rotation);
 }
 
 bool USummonAbility::CanActivateAbility(const FGameplayAbilitySpecHandle Handle,
@@ -51,7 +49,7 @@ void USummonAbility::SetSpawnLocations()
 		{
 			CommitAbilityCost(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo);
 			SummonLocations.Add(SummonCue.Location = Hit.ImpactPoint);
-			ASC->ExecuteGameplayCue(AuraGameplayTags::GameplayCue_Shared_Summon, SummonCue);
+			ASC->ExecuteGameplayCue(AuraTag::GameplayCue_Shared_Summon, SummonCue);
 		} // else Hit nothing (No ground) => No spawn
 	}
 }

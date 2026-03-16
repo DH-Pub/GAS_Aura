@@ -3,6 +3,7 @@
 
 #include "UI/Widget/Spells/SpellGlobeWidget.h"
 
+#include "AbilitySystem/Ability/AuraGameplayAbility.h"
 #include "AbilitySystem/AsyncTask/Async_CooldownChange.h"
 #include "AbilitySystem/Data/AbilityDataAsset.h"
 #include "Components/Image.h"
@@ -43,14 +44,13 @@ void USpellGlobeWidget::SuccessUpdateAbilityData(const FGameplayAbilitySpec& Abi
 {
 	if (AbilityID != AbilitySpec.InputID)
 	{	// Not this Slot
-		if (AbilityTag.MatchesTagExact(Data.GetAuraAbilityTag()))
+		if (AbilityClass == Data.AbilityClass)
 		{	// Ability saved to this Slot is moved out
 			ClearGlobe();
 		}
 		return;
 	}
-	// Update AbilityTag to compare with next FAuraAbilityData when SuccessUpdateAbilityData called
-	AbilityTag = Data.GetAuraAbilityTag();
+	AbilityClass = Data.AbilityClass; // Update Class to compare with next FAuraAbilityData
 
 	FSlateBrush ResourceObj; ResourceObj.SetResourceObject(Data.Icon);
 	Image_SpellIcon->SetBrush(ResourceObj);
@@ -130,11 +130,23 @@ void USpellGlobeWidget::CheckAbilityCooldown()
 
 void USpellGlobeWidget::EndCooldown()
 {
-	if (AbilityTag.IsValid()) Image_Background->SetBrushTintColor(FSlateColor(FLinearColor::White));
+	if (AbilityClass) Image_Background->SetBrushTintColor(FSlateColor(FLinearColor::White));
 	Progress_Cooldown->SetPercent(0.f);
 	Image_WheelProgress->SetVisibility(ESlateVisibility::Collapsed);
 	Text_Cooldown->SetVisibility(ESlateVisibility::Collapsed);
 	GetWorld()->GetTimerManager().ClearTimer(CooldownTimerHandle);
+}
+
+void USpellGlobeWidget::ClearGlobe()
+{
+	Super::ClearGlobe();
+
+	CooldownTags.Reset();
+	FSlateBrush ClearBrush = FSlateBrush();
+	ClearBrush.TintColor = FSlateColor(FLinearColor(1.f, 1.f, 1.f, 0.f));
+	Image_SpellIcon->SetBrush(ClearBrush);
+	Image_Background->SetBrush(ClearBrush);
+	EndCooldown();
 }
 
 // Function for CooldownTimerHandle
@@ -151,15 +163,4 @@ void USpellGlobeWidget::UpdateByTimerHandle()
 	WheelMaterialInstance->SetScalarParameterValue(WheelPercentParam, CooldownPercent);
 	Text_Cooldown->SetText(UKismetTextLibrary::Conv_DoubleToText(TimeRemaining, HalfToEven, false,
 		true, 1, 3, 1, 1));
-}
-
-void USpellGlobeWidget::ClearGlobe()
-{
-	AbilityTag = FGameplayTag::EmptyTag;
-	CooldownTags.Reset();
-	FSlateBrush ClearBrush = FSlateBrush();
-	ClearBrush.TintColor = FSlateColor(FLinearColor(1.f, 1.f, 1.f, 0.f));
-	Image_SpellIcon->SetBrush(ClearBrush);
-	Image_Background->SetBrush(ClearBrush);
-	EndCooldown();
 }

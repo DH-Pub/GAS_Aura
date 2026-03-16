@@ -3,7 +3,7 @@
 
 #include "Player/AuraPlayerState.h"
 
-#include "AuraGameplayTags.h"
+#include "AuraTag.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "AbilitySystem/Data/AbilityDataAsset.h"
@@ -79,7 +79,7 @@ void AAuraPlayerState::OnRep_Level(const int32 OldLevel) const
 			if (GetPawn()) Params.Location = GetPawn()->GetActorLocation();
 			Params.Normal = -PC->PlayerCameraManager->GetActorForwardVector();
 			Params.Instigator = GetPawn();
-			AbilitySystemComponent->InvokeGameplayCueEvent(AuraGameplayTags::GameplayCue_Shared_LevelUp,
+			AbilitySystemComponent->InvokeGameplayCueEvent(AuraTag::GameplayCue_Shared_LevelUp,
 				EGameplayCueEvent::Executed, Params);
 
 			if (const AAuraPlayer* Chara = Cast<AAuraPlayer>(GetPawn()))

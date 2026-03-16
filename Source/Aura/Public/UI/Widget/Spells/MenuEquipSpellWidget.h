@@ -19,10 +19,10 @@ protected:
 	virtual void NativePreConstruct() override;
 	virtual void NativeDestruct() override;
 
+	virtual void ClearGlobe() override;
+
 	UFUNCTION()
 	void ReceiveAbilityData(const struct FGameplayAbilitySpec& AbilitySpec, const struct FAuraAbilityData& Data);
-	UFUNCTION(BlueprintCallable)
-	void ClearGlobe();
 
 	UPROPERTY(BlueprintReadWrite, meta=(BindWidget))
 	TObjectPtr<UImage> Image_SpellIcon;

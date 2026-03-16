@@ -3,6 +3,7 @@
 
 #include "UI/Widget/Spells/MenuEquipSpellWidget.h"
 
+#include "AbilitySystem/Ability/AuraGameplayAbility.h"
 #include "AbilitySystem/Data/AbilityDataAsset.h"
 #include "Components/Image.h"
 #include "Components/OverlaySlot.h"
@@ -28,12 +29,20 @@ void UMenuEquipSpellWidget::NativeDestruct()
 	Super::NativeDestruct();
 }
 
+void UMenuEquipSpellWidget::ClearGlobe()
+{
+	Super::ClearGlobe();
+
+	CurrentIcon = CurrentBackground = DefaultBackground;
+	Image_Background->SetBrush(CurrentBackground);
+	Image_SpellIcon->SetBrush(CurrentIcon);
+}
+
 void UMenuEquipSpellWidget::ReceiveAbilityData(const FGameplayAbilitySpec& AbilitySpec, const FAuraAbilityData& Data)
 {
-	const FGameplayTag& DataAbilityTag = Data.GetAuraAbilityTag();
 	if (AbilitySpec.InputID == AbilityID)
 	{
-		AbilityTag = DataAbilityTag;
+		AbilityClass = Data.AbilityClass;
 
 		FSlateBrush Brush;
 		Brush.SetResourceObject(Data.Icon);
@@ -44,13 +53,5 @@ void UMenuEquipSpellWidget::ReceiveAbilityData(const FGameplayAbilitySpec& Abili
 		CurrentBackground = Brush; // UWidgetBlueprintLibrary::MakeBrushFromMaterial
 		Image_Background->SetBrush(Brush);
 	}
-	else if (DataAbilityTag.MatchesTagExact(AbilityTag)) ClearGlobe();
-}
-
-void UMenuEquipSpellWidget::ClearGlobe()
-{
-	AbilityTag = FGameplayTag::EmptyTag;
-	CurrentIcon = CurrentBackground = DefaultBackground;
-	Image_Background->SetBrush(CurrentBackground);
-	Image_SpellIcon->SetBrush(CurrentIcon);
+	else if (Data.AbilityClass == AbilityClass) ClearGlobe();
 }

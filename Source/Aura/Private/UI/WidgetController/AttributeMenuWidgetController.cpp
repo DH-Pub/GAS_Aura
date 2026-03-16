@@ -3,7 +3,7 @@
 
 #include "UI/WidgetController/AttributeMenuWidgetController.h"
 
-#include "AuraGameplayTags.h"
+#include "AuraTag.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "AbilitySystem/Ability/AttributesEventAbility.h"
@@ -59,7 +59,7 @@ void UAttributeMenuWidgetController::ApplyUpgrades()
 	AttributeTargetData.Data.Empty();
 	// Broadcast to disable buttons
 	AttributePointsToUIDelegate.Broadcast(AttributePoints - Data->TotalPointsAllocating(), 0);
-	GetASC()->ServerHandleGameplayEvent(AuraGameplayTags::Attributes, FGameplayAbilityTargetDataHandle(Data));
+	GetASC()->ServerHandleGameplayEvent(AuraTag::Attributes, FGameplayAbilityTargetDataHandle(Data));
 }
 
 void UAttributeMenuWidgetController::AllocatePointToAttribute(const FGameplayTag& AttributeTag, const int32 Points)

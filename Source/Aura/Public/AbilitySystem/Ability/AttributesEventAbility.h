@@ -94,15 +94,8 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category="Aura|Attribute")
 	TSubclassOf<UGameplayEffect> AttributeEffect;
-};
 
-
-/**
- * Increase/Decrease Attributes
- */
-UCLASS()
-class AURA_API UAttributeEventEffect : public UGameplayEffect
-{
-	GENERATED_BODY()
-	UAttributeEventEffect();
+	/* Separate GE because there were issue "CurrentModcallbackData was not consumed For attribute" */
+	UPROPERTY(EditDefaultsOnly, Category="Aura|Attribute")
+	TSubclassOf<UGameplayEffect> XPEffect;
 };

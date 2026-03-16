@@ -21,11 +21,7 @@ struct FAbilityDetails
 	float CostHealth = 0.f;
 
 	UPROPERTY(BlueprintReadOnly)
-	float BaseCooldown = 0.f;
-	UPROPERTY(BlueprintReadOnly, meta=(Units="Percent"))
-	float CooldownReduction = 0.f; // %
-	UPROPERTY(BlueprintReadOnly)
-	float CalculatedCooldown = 0.f;
+	float Cooldown = 0.f;
 
 	UPROPERTY(BlueprintReadOnly)
 	int32 ProjectileNums = 0;
@@ -57,10 +53,6 @@ public:
 		const FGameplayTagContainer* SourceTags = nullptr, const FGameplayTagContainer* TargetTags = nullptr,
 		FGameplayTagContainer* OptionalRelevantTags = nullptr) const override;
 
-	// Added to GetDynamicSpecSourceTags() and also used for CD
-	UPROPERTY(EditDefaultsOnly, Category="Tags", meta=(GameplayTagFilter="Ability"))
-	FGameplayTag AuraAbilityTag = FGameplayTag::EmptyTag;
-
 	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<class AAuraCharacterBase> AuraCharacter = nullptr;
 
@@ -88,6 +80,7 @@ protected:
 
 
 public:
+	virtual void GetAbilityDetails(FAbilityDetails& Details) const {};
 	UFUNCTION(BlueprintImplementableEvent, Category="Description") // Override this in each ability's BP
 	void GetDescription(const FAbilityDetails& Details, FText& OutDescription) const;
 	UFUNCTION(BlueprintImplementableEvent, Category="Description") // Override this in each ability's BP

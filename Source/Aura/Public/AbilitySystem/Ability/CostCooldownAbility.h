@@ -47,5 +47,5 @@ private:
 public:
 	void GetCost(FAbilityDetails& Details) const;
 	void GetCooldownAndReduction(FAbilityDetails& Details) const;
-	virtual void GetAbilityDetails(FAbilityDetails& Details) const;
+	virtual void GetAbilityDetails(FAbilityDetails& Details) const override;
 };

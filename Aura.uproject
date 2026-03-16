@@ -16,6 +16,7 @@
 				"EnhancedInput",
 				"AIModule",
 				"StateTreeModule",
+				"PropertyBindingUtils",
 				"Niagara"
 			]
 		}
@@ -38,6 +39,14 @@
 		},
 		{
 			"Name": "GameplayStateTree",
+			"Enabled": true
+		},
+		{
+			"Name": "StateTree",
+			"Enabled": true
+		},
+		{
+			"Name": "PropertyBindingUtils",
 			"Enabled": true
 		}
 	]

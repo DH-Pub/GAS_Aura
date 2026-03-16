@@ -8,7 +8,7 @@
 
 /**
  * //TODO: This is not being used
- * This is to load old AuraGameplayTags from the course inside StartInitialLoading()
+ * This is to load old AuraTag from the course inside StartInitialLoading()
  *
  * Project Settings -> Engine -> General -> Default Classes -> Advanced -> Asset Manager Class
  *

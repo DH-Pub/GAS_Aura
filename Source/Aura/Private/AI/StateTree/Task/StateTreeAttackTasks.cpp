@@ -33,7 +33,7 @@ EStateTreeRunStatus FStateTree_Attack::EnterState(FStateTreeExecutionContext& Co
 	OtherTags.RemoveSingleSwap(WeightTag);
 
 	UAuraAbilitySystemComponent* ASC = UAuraAbilitySystemGlobals::GetAuraASC(Actor);
-	if (!ASC->TryActivateAbilityByDynamicTag(WeightTag))
+	if (!ASC->TryActivateAbilitiesByTag(FGameplayTagContainer(WeightTag)))
 	{
 		const int32 LastIdx = OtherTags.Num() - 1;
 		for (int32 i = 0; i < LastIdx; ++i)
@@ -42,7 +42,7 @@ EStateTreeRunStatus FStateTree_Attack::EnterState(FStateTreeExecutionContext& Co
 		}
 		for (const FGameplayTag& Tag : OtherTags)
 		{
-			if (ASC->TryActivateAbilityByDynamicTag(Tag)) break;
+			if (ASC->TryActivateAbilitiesByTag(FGameplayTagContainer(Tag))) break;
 		}
 	}
 	return EStateTreeRunStatus::Succeeded;

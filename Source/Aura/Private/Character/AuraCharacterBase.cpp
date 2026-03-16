@@ -5,7 +5,7 @@
 
 #include "AbilitySystemGlobals.h"
 #include "Components/CapsuleComponent.h"
-#include "AuraGameplayTags.h"
+#include "AuraTag.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "Character/Component/AuraMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
@@ -86,8 +86,7 @@ UAbilitySystemComponent* AAuraCharacterBase::GetAbilitySystemComponent() const {
 
 bool AAuraCharacterBase::IsDead_Implementation() const
 {
-	return AbilitySystemComponent ?
-		AbilitySystemComponent->HasMatchingGameplayTag(AuraGameplayTags::State_Death) : true;
+	return AbilitySystemComponent ? AbilitySystemComponent->HasMatchingGameplayTag(AuraTag::State_Death) : true;
 }
 
 int32 AAuraCharacterBase::GetCharacterLevel_Implementation() const {return 1;}
@@ -151,7 +150,7 @@ void AAuraCharacterBase::MulticastHandleDeath_Implementation(const FVector& HitI
 
 FOnGameplayEffectTagCountChanged& AAuraCharacterBase::GetOnDeathDelegate() const
 {
-	return AbilitySystemComponent->RegisterGameplayTagEvent(AuraGameplayTags::State_Death,
+	return AbilitySystemComponent->RegisterGameplayTagEvent(AuraTag::State_Death,
 		EGameplayTagEventType::NewOrRemoved);
 }
 

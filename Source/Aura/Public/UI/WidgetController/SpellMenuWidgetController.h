@@ -45,10 +45,10 @@ public:
 	UFUNCTION(BlueprintCallable, meta=(ReturnDisplayName="IsPassive"))
 	bool EquipAbility();
 	/**
-	 * @param AbilityTag
+	 * @param AbilityClass
 	 * @param AbilityID: 0 (None) to unequip ability
 	 */
 	UFUNCTION(BlueprintCallable)
-	void ChangeSpellInputSlot(const FGameplayTag& AbilityTag,
+	void ChangeSpellInputSlot(const TSubclassOf<UGameplayAbility> AbilityClass,
 		const EAuraAbilityInputID::Type AbilityID = EAuraAbilityInputID::None);
 };

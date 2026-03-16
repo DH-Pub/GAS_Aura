@@ -8,12 +8,6 @@
 #include "AbilitySystemLog.h"
 #include "GameFramework/PlayerState.h"
 
-bool EnableSuppressCuesOnGameplayCueManager = true;
-static FAutoConsoleVariableRef CVarEnableSuppressCuesOnGameplayCueManager(
-	TEXT("AbilitySystem.GameplayCue.EnableSuppressCuesOnGameplayCueManager"),
-	EnableSuppressCuesOnGameplayCueManager, TEXT("Allows the GameplayCueManager to suppress cues when "
-	"the bSuppressGameplayCues is set on the target AbilitySystemComponent"), ECVF_Default );
-
 void UAuraCueManager::InvokeGameplayCueExecuted_FromSpec(UAbilitySystemComponent* OwningComponent,
 	const FGameplayEffectSpec& Spec, FPredictionKey PredictionKey)
 {	// Super::InvokeGameplayCueExecuted_FromSpec(OwningComponent, Spec, PredictionKey);
@@ -23,7 +17,8 @@ void UAuraCueManager::InvokeGameplayCueExecuted_FromSpec(UAbilitySystemComponent
 		return;
 	}
 
-	if (EnableSuppressCuesOnGameplayCueManager && OwningComponent && OwningComponent->bSuppressGameplayCues) return;
+	// if (EnableSuppressCuesOnGameplayCueManager && OwningComponent && OwningComponent->bSuppressGameplayCues) return;
+	if (OwningComponent && OwningComponent->bSuppressGameplayCues) return;
 
 	FGameplayCuePendingExecute PendingCue;
 	// Transform the GE Spec into GameplayCue parameters here (on the server)

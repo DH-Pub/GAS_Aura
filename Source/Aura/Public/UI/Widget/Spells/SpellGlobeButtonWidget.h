@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "AuraGameplayTags.h"
+#include "AuraTag.h"
 #include "GameplayTagContainer.h"
 #include "GlobeWidget.h"
 #include "SpellGlobeButtonWidget.generated.h"
@@ -26,9 +26,9 @@ public:
 	FVector2D ButtonWidthHeight = FVector2D(40., 40.);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Aura", meta=(GameplayTagFilter="Ability"))
-	FGameplayTag AbilityTag = FGameplayTag();
+	TSubclassOf<class UAuraGameplayAbility> AbilityClass; // To compare and get
 	UPROPERTY(BlueprintReadOnly)
-	FGameplayTag StatusTag = AuraGameplayTags::Ability_Status_Locked;
+	FGameplayTag StatusTag = AuraTag::Ability_Status_Locked;
 
 	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<class USpellMenuWidgetController> SpellMenuWC;

@@ -5,7 +5,7 @@
 
 #include "AbilitySystemComponent.h"
 #include "AuraAbilitySystemGlobals.h"
-#include "AuraGameplayTags.h"
+#include "AuraTag.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "AbilitySystem/Data/CharacterClassDataAsset.h"
 #include "AuraEffectTypes.h"
@@ -38,6 +38,7 @@ struct FAuraDamageStatics
 	// FAuraDamageStatics() {/*DEFINE_ATTRIBUTE_CAPTUREDEF(UAuraAttributeSet, CriticalHitChance, Source, false);*/}
 };
 static const FAuraDamageStatics& DamageStatics() {static FAuraDamageStatics S; return S;}
+
 UExecCalc_Damage::UExecCalc_Damage()
 {
 	RelevantAttributesToCapture.Append(DamageStatics().DefArray);
@@ -75,10 +76,10 @@ void UExecCalc_Damage::Execute_Implementation(const FGameplayEffectCustomExecuti
 		Damage += TypeDamage * ResistedMultiplier;
 		return true;
 	};
-	DmgDebuffCalc(AuraGameplayTags::Damage_Fire, DamageStatics().TargetFireResDef) ?
-	true : DmgDebuffCalc(AuraGameplayTags::Damage_Lightning, DamageStatics().TargetLightningResDef) ?
-	true : DmgDebuffCalc(AuraGameplayTags::Damage_Arcane, DamageStatics().TargetArcaneResDef) ?
-	true : DmgDebuffCalc(AuraGameplayTags::Damage_Physical, DamageStatics().TargetPhysicalResDef);
+	DmgDebuffCalc(AuraTag::Damage_Fire, DamageStatics().TargetFireResDef) ?
+	true : DmgDebuffCalc(AuraTag::Damage_Lightning, DamageStatics().TargetLightningResDef) ?
+	true : DmgDebuffCalc(AuraTag::Damage_Arcane, DamageStatics().TargetArcaneResDef) ?
+	true : DmgDebuffCalc(AuraTag::Damage_Physical, DamageStatics().TargetPhysicalResDef);
 
 	auto GetAttributeMagnitude = [&](const FGameplayEffectAttributeCaptureDefinition& Def)
 	{
@@ -99,7 +100,7 @@ void UExecCalc_Damage::Execute_Implementation(const FGameplayEffectCustomExecuti
 	FGameplayTagContainer CueTargetTags;
 	if (FMath::FRandRange(0.f, 100.f) < TargetBlockChance)
 	{
-		CueTargetTags.AddTag(AuraGameplayTags::Damage_Blocked);
+		CueTargetTags.AddTag(AuraTag::Damage_Blocked);
 		Damage *= .5f;
 	}
 
@@ -129,7 +130,7 @@ void UExecCalc_Damage::Execute_Implementation(const FGameplayEffectCustomExecuti
 	const float EffectiveCritChance = FMath::Max(SourceCritChance - TargetCritRes * EffectiveCritResCoefficient, 0.f);
 	if (FMath::RandRange(UE_SMALL_NUMBER, 100.f) < EffectiveCritChance)
 	{
-		CueTargetTags.AddTag(AuraGameplayTags::Damage_Crit);
+		CueTargetTags.AddTag(AuraTag::Damage_Crit);
 		const float CritDmg = GetAttributeMagnitudeClamped(DamageStatics().SourceCritDamageDef);
 		Damage *= (1 + CritDmg);
 	}
@@ -153,6 +154,6 @@ void UExecCalc_Damage::Execute_Implementation(const FGameplayEffectCustomExecuti
 		{
 			CueParams.Location = TargetAvatar->GetActorLocation();
 		}
-		TargetASC->ExecuteGameplayCue(AuraGameplayTags::GameplayCue_Shared_Damage, CueParams);
+		TargetASC->ExecuteGameplayCue(AuraTag::GameplayCue_Shared_Damage, CueParams);
 	}
 }

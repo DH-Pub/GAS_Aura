@@ -8,7 +8,7 @@
 
 // Project Settings -> Project - GameplayTags -> ✅Fast Replication & Add "Commonly Replicated Tags"
 
-namespace AuraGameplayTags // Automatically add to Gameplay Tag List
+namespace AuraTag // Automatically add to Gameplay Tag List
 {
 #pragma region Attributes
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Attributes)
@@ -62,11 +62,13 @@ namespace AuraGameplayTags // Automatically add to Gameplay Tag List
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Status) //TODO: Delete all Status this
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Status_Locked)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Status_Eligible) // Reached Level requirement to unlock this Ability
-#pragma endregion
 
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Generic_Ability)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Generic_Ability_Cancelable) // This Ability can be canceled by most
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Generic_Ability_Blockable) // This Ability can be blocked by most
+
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Cancelable_Generic) // This Active Ability can be canceled by most
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Cancelable_Passive_Generic)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Blockable_Generic)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Blockable_Passive_Generic)
+#pragma endregion
 
 
 #pragma region Effect

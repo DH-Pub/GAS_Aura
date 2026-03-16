@@ -3,7 +3,7 @@
 
 #include "AbilitySystem/Data/AttributeDataAsset.h"
 
-#include "AuraGameplayTags.h"
+#include "AuraTag.h"
 
 #if WITH_EDITOR
 void UAttributeDataAsset::PopulateDataAsset()

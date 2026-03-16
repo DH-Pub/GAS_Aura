@@ -4,25 +4,23 @@
 #include "AbilitySystem/Ability/CostCooldownAbility.h"
 
 #include "AbilitySystemGlobals.h"
-#include "AuraGameplayTags.h"
+#include "AuraTag.h"
 #include "AbilitySystem/AuraAttributeSet.h"
-#include "AbilitySystem/Effect/CostCooldownEffect.h"
+#include "AbilitySystem/ModMagCalc/MMC_CooldownDuration.h"
 
 UE_DEFINE_GAMEPLAY_TAG(TAG_Cooldown_Duration, "Cooldown.Duration")
 
 UCostCooldownAbility::UCostCooldownAbility()
 {
-	FGameplayTagContainer Tags(AuraGameplayTags::Generic_Ability_Blockable);
-	Tags.AddTagFast(AuraGameplayTags::Generic_Ability_Cancelable);
+	FGameplayTagContainer Tags(AuraTag::Ability_Blockable_Generic);
+	Tags.AddTagFast(AuraTag::Ability_Cancelable_Generic);
 	SetAssetTags(Tags);
 
-	BlockAbilitiesWithTag.AddTag(AuraGameplayTags::Generic_Ability_Blockable);
+	BlockAbilitiesWithTag.AddTag(AuraTag::Ability_Blockable_Generic);
 
-	ActivationBlockedTags.AddTag(AuraGameplayTags::State_HitReact);
-	ActivationBlockedTags.AddTag(AuraGameplayTags::State_Death);
+	ActivationBlockedTags.AddTag(AuraTag::State_HitReact);
+	ActivationBlockedTags.AddTag(AuraTag::State_Death);
 	// ActivationRequiredTags.AddTag();
-
-	CostGameplayEffectClass = UCostEffect::StaticClass();
 }
 
 const FGameplayTagContainer* UCostCooldownAbility::GetCooldownTags() const
@@ -30,7 +28,7 @@ const FGameplayTagContainer* UCostCooldownAbility::GetCooldownTags() const
 	if (CooldownTags.IsEmpty()) return Super::GetCooldownTags();
 	FGameplayTagContainer* MutableTags = const_cast<FGameplayTagContainer*>(&TempCooldownTags);
 	MutableTags->Reset(); // MutableTags writes to the TempCooldownTags on the CDO so clear it in case the CD tags change (to another slot)
-	MutableTags->AppendTags(CooldownTags); // MutableTags->AddTag(AuraAbilityTag);
+	MutableTags->AppendTags(CooldownTags);
 	if (const FGameplayTagContainer* ParentTags = Super::GetCooldownTags()) MutableTags->AppendTags(*ParentTags);
 	return MutableTags;
 }
@@ -57,19 +55,21 @@ void UCostCooldownAbility::ApplyCooldown(const FGameplayAbilitySpecHandle Handle
 	const int32 Level = GetAbilityLevel(Handle, ActorInfo);
 	const float BaseCD = CooldownDuration.GetValueAtLevel(Level);
 	if (BaseCD < .006f) return;
-	const FGameplayEffectSpecHandle SpecHandle = MakeOutgoingGameplayEffectSpec(UCooldownEffect::StaticClass(), Level);
-	SpecHandle.Data->DynamicGrantedTags.AppendTags(CooldownTags); // if DurMag:SetByCaller ->SetByCallerMagnitudes
-	SpecHandle.Data->SetSetByCallerMagnitude(TAG_Cooldown_Duration, BaseCD);
-	ApplyGameplayEffectSpecToOwner(Handle, ActorInfo, ActivationInfo, SpecHandle);
+	if (const UGameplayEffect* CooldownGE = GetCooldownGameplayEffect())
+	{
+		const FGameplayEffectSpecHandle SpecHandle = MakeOutgoingGameplayEffectSpec(CooldownGE->GetClass(), Level);
+		SpecHandle.Data->DynamicGrantedTags.AppendTags(CooldownTags); // if DurMag:SetByCaller ->SetByCallerMagnitudes
+		SpecHandle.Data->SetSetByCallerMagnitude(TAG_Cooldown_Duration, BaseCD);
+		ApplyGameplayEffectSpecToOwner(Handle, ActorInfo, ActivationInfo, SpecHandle);
+	}
 }
 
 bool UCostCooldownAbility::CheckCost(const FGameplayAbilitySpecHandle Handle,
 	const FGameplayAbilityActorInfo* ActorInfo, FGameplayTagContainer* OptionalRelevantTags) const
-{	// return Super::CheckCost(Handle, ActorInfo, OptionalRelevantTags);
+{
 	if (const UGameplayEffect* CostGE = GetCostGameplayEffect())
 	{
 		UAbilitySystemComponent* ASC = ActorInfo->AbilitySystemComponent.Get();
-		// SCOPE_CYCLE_COUNTER(STAT_GameplayEffectsCanApplyAttributeModifiers);
 		FGameplayEffectSpec	Spec(CostGE, MakeEffectContext(Handle, ActorInfo), GetAbilityLevel(Handle, ActorInfo));
 
 		FGameplayEffectCustomExecutionOutput ExecutionOutput;
@@ -84,24 +84,8 @@ bool UCostCooldownAbility::CheckCost(const FGameplayAbilitySpecHandle Handle,
 				return false;
 			}
 		}
-
-	#pragma region UGameplayAbility Default // Using Modifiers
-		for (const FGameplayModifierInfo& ModDef : Spec.Def->Modifiers)
-		{	// It only makes sense to check additive operators
-			if (ModDef.ModifierOp != EGameplayModOp::Additive || !ModDef.Attribute.IsValid()) continue;
-			// Attribute.GetNumericValueChecked(ASC->GetAttributeSubobject(Attribute.GetAttributeSetClass()));
-			const float CurrentValue = ASC->GetNumericAttribute(ModDef.Attribute);
-			float CostValue; ModDef.ModifierMagnitude.AttemptCalculateMagnitude(Spec, CostValue);
-			if (CurrentValue + CostValue < 0.f)
-			{
-				const FGameplayTag& CostTag = UAbilitySystemGlobals::Get().ActivateFailCostTag;
-				if (OptionalRelevantTags && CostTag.IsValid()) OptionalRelevantTags->AddTag(CostTag);
-				return false;
-			}
-		}
-	#pragma endregion
 	}
-	return true;
+	return Super::CheckCost(Handle, ActorInfo, OptionalRelevantTags);
 }
 
 void UCostCooldownAbility::ApplyCost(const FGameplayAbilitySpecHandle Handle,
@@ -113,7 +97,7 @@ void UCostCooldownAbility::ApplyCost(const FGameplayAbilitySpecHandle Handle,
 
 void UCostCooldownAbility::GetCostExecutionOutput(UAbilitySystemComponent* ASC, FGameplayEffectSpec& Spec,
 	FGameplayEffectCustomExecutionOutput& ExecutionOutput) const
-{
+{	// Spec.CaptureAttributeDataFromTarget(ASC); // This is not needed for UGameplayEffectExecutionCalculation to get Attribute
 	const FPredictionKey PredictionKey = ASC->GetPredictionKeyForNewAction();
 	for (const FGameplayEffectExecutionDefinition& CurExecDef : Spec.Def->Executions)
 	{
@@ -129,35 +113,40 @@ void UCostCooldownAbility::GetCostExecutionOutput(UAbilitySystemComponent* ASC, 
 #pragma region GetCostCooldowns
 void UCostCooldownAbility::GetCost(FAbilityDetails& Details) const
 {
-	auto GetCost = [this, &Details](const FGameplayTag& Tag)
+	if (const UGameplayEffect* CostGE = GetCostGameplayEffect())
 	{
-		if (const FScalableFloat* Cost = AbilityCosts.Find(Tag))
+		FGameplayEffectSpec	Spec(CostGE, MakeEffectContext(GetCurrentAbilitySpecHandle(), CurrentActorInfo), Details.Level);
+		FGameplayEffectCustomExecutionOutput ExecutionOutput;
+		GetCostExecutionOutput(GetAbilitySystemComponentFromActorInfo(), Spec, ExecutionOutput);
+		for (FGameplayModifierEvaluatedData& Data : ExecutionOutput.GetOutputModifiersRef())
 		{
-			const float Result = Cost->GetValueAtLevel(Details.Level);
-			return static_cast<int32>(Result * 10.f) / 10.f;
+			if (Data.Attribute == UAuraAttributeSet::GetManaAttribute())
+			{
+				Details.CostMana = -Data.Magnitude;
+			}
+			else if (Data.Attribute == UAuraAttributeSet::GetHealthAttribute())
+			{
+				Details.CostHealth = -Data.Magnitude;
+			}
 		}
-		return 0.f;
-	};
-	Details.CostMana = GetCost(AuraGameplayTags::Attributes_Vital_Mana);
-	Details.CostHealth = GetCost(AuraGameplayTags::Attributes_Vital_Health);
+	}
 }
 void UCostCooldownAbility::GetCooldownAndReduction(FAbilityDetails& Details) const
 {
-	/*const TSubclassOf<UCooldownEffect> CooldownEffect = UCooldownEffect::StaticClass();
-	const FGameplayEffectSpecHandle SpecHandle = MakeOutgoingGameplayEffectSpec(CooldownEffect, Details.Level);
-	Details.BaseCooldown = CooldownDuration.GetValueAtLevel(Details.Level);
-	if (const TSubclassOf<UGameplayModMagnitudeCalculation> ModCalcClass =
-		CooldownEffect->GetDefaultObject<UCooldownEffect>()->DurationMagnitude.GetCustomMagnitudeCalculationClass())
-	{	if (const UMMC_CooldownDuration* CalcCDO = ModCalcClass->GetDefaultObject<UMMC_CooldownDuration>())
-		{Details.CalculatedCooldown = CalcCDO->CalculateBaseMagnitude(Spec);}
-	}*/
-	Details.BaseCooldown = static_cast<int32>(CooldownDuration.GetValueAtLevel(Details.Level) * 10.f) / 10.f;
-	const UAbilitySystemComponent* ASC = CurrentActorInfo->AbilitySystemComponent.Get();
-	Details.CooldownReduction = UMMC_CooldownDuration::GetCooldownReductionPercent(
-		ASC->GetNumericAttribute(UAuraAttributeSet::GetIntelligenceAttribute()));
-
-	Details.CalculatedCooldown = Details.BaseCooldown * (1 - Details.CooldownReduction);
-	Details.CalculatedCooldown = static_cast<int32>(Details.CalculatedCooldown * 10.f) / 10.f;
+	if (UGameplayEffect* CooldownEffect = GetCooldownGameplayEffect())
+	{	// ASC->CanApplyAttributeModifiers(
+		FGameplayEffectSpec	Spec(CooldownEffect, MakeEffectContext(CurrentSpecHandle, CurrentActorInfo), Details.Level);
+		Spec.SetByCallerTagMagnitudes.Add(TAG_Cooldown_Duration, CooldownDuration.GetValueAtLevel(Details.Level));
+		Spec.CaptureAttributeDataFromTarget(GetAbilitySystemComponentFromActorInfo());
+		GetAbilitySystemComponentFromActorInfo()->GetOwnedGameplayTags(Spec.CapturedTargetTags.GetActorTags());
+		if (const TSubclassOf<UGameplayModMagnitudeCalculation> ModCalcClass =
+			CooldownEffect->DurationMagnitude.GetCustomMagnitudeCalculationClass())
+		{
+			Details.Cooldown = ModCalcClass.GetDefaultObject()->CalculateBaseMagnitude(Spec);
+			/*if (const UMMC_CooldownDuration* CalcCDO = ModCalcClass->GetDefaultObject<UMMC_CooldownDuration>())
+			{Details.CalculatedCooldown = CalcCDO->CalculateBaseMagnitude(Spec);}*/
+		}
+	}
 }
 void UCostCooldownAbility::GetAbilityDetails(FAbilityDetails& Details) const
 {

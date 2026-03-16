@@ -23,7 +23,6 @@ void AAuraEffectActor::ApplyEffectToTarget(AActor* TargetActor, const FEffectTyp
 		FGameplayEffectContext* EffectContext = SpecHandle.Data->GetContext().Get();
 		EffectContext->SetEffectCauser(this);
 		EffectContext->AddHitResult(SweepResult);
-		// FAuraEffectContext* AuraContext = FAuraEffectContext::ExtractAuraContext(SpecHandle.Data->GetContext());
 		TargetASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data);
 
 		if (bDestroyOnEffectApplication) Destroy();

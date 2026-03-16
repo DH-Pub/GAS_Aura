@@ -6,7 +6,7 @@
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemGlobals.h"
 #include "AuraAbilityLibrary.h"
-#include "AuraGameplayTags.h"
+#include "AuraTag.h"
 #include "Kismet/GameplayStatics.h"
 #include "AbilitySystem/Ability/AttributesEventAbility.h"
 #include "Character/AuraCharacterBase.h"
@@ -51,7 +51,7 @@ void UDamageAbility::ApplyAbilityEffectsToTarget(const AActor* InTarget, TArray<
 	if (FMath::RandRange(UE_SMALL_NUMBER, 1.f) < KnockbackChance)
 	{
 		FGameplayEventData HitReactPayload;
-		HitReactPayload.TargetTags.AddTag(AuraGameplayTags::State_HitReact_Knockback);
+		HitReactPayload.TargetTags.AddTag(AuraTag::State_HitReact_Knockback);
 		FGATargetData_HitReact* Data = new FGATargetData_HitReact();
 		*Data = HitReactTargetData;
 		Data->KnockbackDirection = InDirection.IsNearlyZero() ?
@@ -62,7 +62,7 @@ void UDamageAbility::ApplyAbilityEffectsToTarget(const AActor* InTarget, TArray<
 			Data->HitWallEffectSpecHandle = MakeOutgoingGameplayEffectSpec(HitWallEffect.EffectClass, GetAbilityLevel());
 		}
 		HitReactPayload.TargetData = FGameplayAbilityTargetDataHandle(Data);
-		TargetASC->HandleGameplayEvent(AuraGameplayTags::State_HitReact, &HitReactPayload);
+		TargetASC->HandleGameplayEvent(AuraTag::State_HitReact, &HitReactPayload);
 	}
 }
 
@@ -116,8 +116,8 @@ bool UDamageAbility::ExecuteCueShowDamage(const FGameplayCueParameters& Paramete
 	const APlayerController* LocalPlayerController = GEngine->GetFirstLocalPlayerController(PC->GetWorld());
 	if (LocalPlayerController == nullptr || LocalPlayerController != PC) return false; // if damage dealer isn't local*/
 
-	bBlocked = Parameters.AggregatedTargetTags.HasTag(AuraGameplayTags::Damage_Blocked);
-	bCrit = Parameters.AggregatedTargetTags.HasTag(AuraGameplayTags::Damage_Crit);
+	bBlocked = Parameters.AggregatedTargetTags.HasTag(AuraTag::Damage_Blocked);
+	bCrit = Parameters.AggregatedTargetTags.HasTag(AuraTag::Damage_Crit);
 
 	if (Parameters.RawMagnitude < UE_KINDA_SMALL_NUMBER) return false;
 	return true; // Play sound and spawn niagara but don't show text dmg if not set
@@ -130,7 +130,7 @@ void UDamageAbility::GetAbilityDetails(FAbilityDetails& Details) const
 	{
 		for (const auto& [Tag, ScalableFloat] : Effect.SetByCallerTagMagnitudes)
 		{
-			if (!AuraGameplayTags::DamageTypeArray.Contains(Tag)) continue;
+			if (!AuraTag::DamageTypeArray.Contains(Tag)) continue;
 			Details.Damage = static_cast<int32>(ScalableFloat.GetValueAtLevel(Details.Level) * 10.f) / 10.f;
 		}
 	}

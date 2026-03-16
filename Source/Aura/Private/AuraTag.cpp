@@ -1,10 +1,10 @@
 // Copyright Hung
 
 
-#include "AuraGameplayTags.h"
+#include "AuraTag.h"
 
 
-namespace AuraGameplayTags
+namespace AuraTag
 {
 #pragma region Attributes
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attributes,"Attributes","==PARENT==")
@@ -60,14 +60,13 @@ namespace AuraGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Status, "Ability.Status", "")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Status_Locked, "Ability.Status.Locked", "")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Status_Eligible, "Ability.Status.Eligible", "Reached Lv Requirement to unlock")
+
+
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Cancelable_Generic, "Ability.Cancelable.Generic", "This ability can be blocked by most things")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Blockable_Generic, "Ability.Blockable.Generic", "")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Cancelable_Passive_Generic, "Ability.Cancelable.Passive.Generic", "")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Blockable_Passive_Generic, "Ability.Blockable.Passive.Generic", "")
 #pragma endregion
-
-
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Generic_Ability, "Generic.Ability", "")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Generic_Ability_Cancelable, "Generic.Ability.Cancelable",
-		"Genric Tag for Ability that can be canceled when another is triggered (Dash to cancel attack, ...), before EndAbility")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Generic_Ability_Blockable, "Generic.Ability.Blockable",
-		"Genric Tag for Ability that can't be activated when others are actives. (ex: HitReact, ...)")
 
 
 #pragma region Effect

@@ -62,8 +62,9 @@ protected:
 
 	UPROPERTY(BlueprintReadWrite, Category="Properties")
 	FTimerHandle CooldownTimerHandle;
+
+	virtual void ClearGlobe() override;
 private:
 	UFUNCTION()
 	void UpdateByTimerHandle();
-	virtual void ClearGlobe();
 };

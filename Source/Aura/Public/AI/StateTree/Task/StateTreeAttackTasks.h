@@ -1,7 +1,7 @@
 // Copyright Hung
 
 #pragma once
-#include "AuraGameplayTags.h"
+#include "AuraTag.h"
 #include "StateTreeTaskBase.h"
 #include "StateTreeAttackTasks.generated.h"
 

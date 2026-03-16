@@ -19,6 +19,12 @@ struct FAuraAbilityActorInfo : public FGameplayAbilityActorInfo
 
 	FAuraAbilityActorInfo(){}
 
+	UPROPERTY(BlueprintReadOnly, Category = "ActorInfo")
+	TWeakObjectPtr<class AAuraCharacterBase> AuraAvatar;
+
+	UPROPERTY(BlueprintReadOnly, Category = "ActorInfo")
+	TWeakObjectPtr<class UAuraAbilitySystemComponent> AuraASC;
+
 	virtual void InitFromActor(AActor* InOwnerActor, AActor* InAvatarActor,
 		UAbilitySystemComponent* InAbilitySystemComponent) override;
 	// virtual void SetAvatarActor(AActor* AvatarActor) override;

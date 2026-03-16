@@ -5,7 +5,7 @@
 
 #include "AbilitySystemComponent.h"
 #include "AuraAbilityLibrary.h"
-#include "AuraGameplayTags.h"
+#include "AuraTag.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/Ability/DamageAbility.h"
 #include "Character/AuraCharacterBase.h"
@@ -13,20 +13,20 @@
 
 UHitReactAbility::UHitReactAbility()
 {
-	SetAssetTags(FGameplayTagContainer(AuraGameplayTags::State_HitReact)); // so that Death can cancel this
-	CancelAbilitiesWithTag = FGameplayTagContainer(AuraGameplayTags::Generic_Ability_Cancelable);
-	BlockAbilitiesWithTag = FGameplayTagContainer(AuraGameplayTags::Generic_Ability_Blockable);
-	ActivationOwnedTags.AddTag(AuraGameplayTags::State_HitReact);
-	ActivationOwnedTags.AddTag(AuraGameplayTags::State_Block_Movement_Speed);
-	ActivationOwnedTags.AddTag(AuraGameplayTags::State_Block_Movement_Rotation);
-	ActivationBlockedTags.AddTag(AuraGameplayTags::State_Death);
+	SetAssetTags(FGameplayTagContainer(AuraTag::State_HitReact)); // so that Death can cancel this
+	CancelAbilitiesWithTag = FGameplayTagContainer(AuraTag::Ability_Cancelable_Generic);
+	BlockAbilitiesWithTag = FGameplayTagContainer(AuraTag::Ability_Blockable_Generic);
+	ActivationOwnedTags.AddTag(AuraTag::State_HitReact);
+	ActivationOwnedTags.AddTag(AuraTag::State_Block_Movement_Speed);
+	ActivationOwnedTags.AddTag(AuraTag::State_Block_Movement_Rotation);
+	ActivationBlockedTags.AddTag(AuraTag::State_Death);
 
 	bRetriggerInstancedAbility = true;
 	NetExecutionPolicy = EGameplayAbilityNetExecutionPolicy::ServerInitiated;
 	NetSecurityPolicy = EGameplayAbilityNetSecurityPolicy::ServerOnly;
 
 	FAbilityTriggerData& Data = AbilityTriggers.AddDefaulted_GetRef();
-	Data.TriggerTag = AuraGameplayTags::State_HitReact;
+	Data.TriggerTag = AuraTag::State_HitReact;
 	Data.TriggerSource = EGameplayAbilityTriggerSource::GameplayEvent;
 }
 
@@ -40,12 +40,12 @@ void UHitReactAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
 	const FGATargetData_HitReact* HitReactData = static_cast<const FGATargetData_HitReact*>(Data);
 
 	HitReactTags = MoveTemp(const_cast<FGameplayTagContainer&>(TriggerEventData->TargetTags));
-	if (HitReactTags.HasTag(AuraGameplayTags::State_HitReact_PlayMontage))
+	if (HitReactTags.HasTag(AuraTag::State_HitReact_PlayMontage))
 	{
 		OnHitReact();
 	}
 
-	if (HitReactTags.HasTag(AuraGameplayTags::State_HitReact_Knockback) && HitReactData->KnockbackDistance > 0)
+	if (HitReactTags.HasTag(AuraTag::State_HitReact_Knockback) && HitReactData->KnockbackDistance > 0)
 	{
 		float Duration = HitReactData->KnockbackTime;
 		const FVector StartLoc = AuraCharacter->GetActorLocation();

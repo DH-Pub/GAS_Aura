@@ -5,7 +5,7 @@
 
 #include "AbilitySystemComponent.h"
 #include "AuraEffectTypes.h"
-#include "AuraGameplayTags.h"
+#include "AuraTag.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "AbilitySystem/Ability/DamageAbility.h"
 #include "AbilitySystem/ExecCalc/ExecCalc_Damage.h"
@@ -21,7 +21,7 @@ void UExecCalc_Debuff::Execute_Implementation(const FGameplayEffectCustomExecuti
 	float Damage = 0.f;
 	for (const auto& [Tag, Value] : Spec.SetByCallerTagMagnitudes)
 	{
-		if (AuraGameplayTags::DebuffTypeArray.Contains(Tag)) Damage += Value;
+		if (AuraTag::DebuffTypeArray.Contains(Tag)) Damage += Value;
 	}
 	Damage *= Spec.GetStackCount();
 	if (Damage > UE_KINDA_SMALL_NUMBER) AURA_ADD_OUTPUT_MODIFIER(GetIncomingDamageAttribute(), Override, Damage)

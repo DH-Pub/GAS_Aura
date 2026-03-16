@@ -4,18 +4,17 @@
 #include "AbilitySystem/Ability/AttributesEventAbility.h"
 
 #include "AbilitySystemComponent.h"
-#include "AuraGameplayTags.h"
-#include "AbilitySystem/AuraAttributeSet.h"
+#include "AuraTag.h"
 #include "Player/AuraPlayerState.h"
 
 UAttributesEventAbility::UAttributesEventAbility()
 {
-	NetExecutionPolicy = EGameplayAbilityNetExecutionPolicy::ServerInitiated;
-	NetSecurityPolicy = EGameplayAbilityNetSecurityPolicy::ClientOrServer;
+	NetExecutionPolicy = EGameplayAbilityNetExecutionPolicy::ServerOnly;
+	NetSecurityPolicy = EGameplayAbilityNetSecurityPolicy::ServerOnly;
 	bRetriggerInstancedAbility = true;
 
 	FAbilityTriggerData& Data = AbilityTriggers.AddDefaulted_GetRef();
-	Data.TriggerTag = AuraGameplayTags::Attributes;
+	Data.TriggerTag = AuraTag::Attributes;
 	Data.TriggerSource = EGameplayAbilityTriggerSource::GameplayEvent;
 }
 
@@ -39,13 +38,13 @@ void UAttributesEventAbility::ActivateAbility(const FGameplayAbilitySpecHandle H
 {
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 	if (!HasAuthority(&ActivationInfo) || !TriggerEventData || !AuraPS) return;
-	const FGameplayEffectSpecHandle EffectSpecHandle = MakeOutgoingGameplayEffectSpec(AttributeEffect, 1.f);
-	FGameplayEffectSpec* Spec = EffectSpecHandle.Data.Get();
-	Spec->SetByCallerTagMagnitudes = GetCurrentAbilitySpec()->SetByCallerTagMagnitudes;
 
+	FGameplayEffectSpecHandle SpecHandle;
 	const FGameplayTag& EventTag = TriggerEventData->EventTag;
-	if (EventTag.MatchesTagExact(AuraGameplayTags::Attributes))
+	if (EventTag.MatchesTagExact(AuraTag::Attributes))
 	{
+		SpecHandle = MakeOutgoingGameplayEffectSpec(AttributeEffect, 1.f); // SetByCaller is copied here
+		FGameplayEffectSpec* Spec = SpecHandle.Data.Get();
 		const FGameplayAbilityTargetData* Data = TriggerEventData->TargetData.Get(0); ensure(Data);
 		if (AuraPS && Data->GetScriptStruct() != FGameplayAbilityTargetData_AttributeData::StaticStruct()) return;
 		const FGameplayAbilityTargetData_AttributeData* AttributeData =
@@ -56,40 +55,19 @@ void UAttributesEventAbility::ActivateAbility(const FGameplayAbilitySpecHandle H
 			if (Mag < 0)
 			{	// Does not allow Client to send -Mag
 				AuraPS->AddToAttributePoints(0); // To reset UI on Client
-				EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
+				EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 				return;
 			}
 			TotalPoints += Mag;
-			Spec->SetSetByCallerMagnitude(Tag, Mag);
+			Spec->SetByCallerTagMagnitudes.FindOrAdd(Tag) = Mag;
 		}
 		AuraPS->AddToAttributePoints(-TotalPoints);
 	}
-	else if (EventTag.MatchesTagExact(AuraGameplayTags::Attributes_Meta_IncomingXP))
+	else if (EventTag.MatchesTagExact(AuraTag::Attributes_Meta_IncomingXP))
 	{
-		Spec->SetSetByCallerMagnitude(EventTag, TriggerEventData->EventMagnitude);
+		SpecHandle = GetAbilitySystemComponentFromActorInfo()->MakeOutgoingSpec(
+			XPEffect, 1.f, FGameplayEffectContextHandle());
+		SpecHandle.Data->SetByCallerTagMagnitudes.FindOrAdd(EventTag) = TriggerEventData->EventMagnitude;
 	}
-	GetAbilitySystemComponentFromActorInfo()->ApplyGameplayEffectSpecToSelf(*Spec);
-}
-
-
-// ====================== GE_Attribute ==============================================
-UAttributeEventEffect::UAttributeEventEffect()
-{
-	DurationPolicy = EGameplayEffectDurationType::Instant;
-
-#define ADD_EFFECT_MODIFIER(Property, Op, Tag)\
-{\
-	FGameplayModifierInfo& Info = Modifiers.AddDefaulted_GetRef();\
-	Info.Attribute = UAuraAttributeSet::Property; Info.ModifierOp = EGameplayModOp::Op;\
-	FSetByCallerFloat SetByCallerFloat; SetByCallerFloat.DataTag = AuraGameplayTags::Tag;\
-	Info.ModifierMagnitude = FGameplayEffectModifierMagnitude(SetByCallerFloat);\
-}
-
-	ADD_EFFECT_MODIFIER(GetStrengthAttribute(), AddBase, Attributes_Primary_Strength);
-	ADD_EFFECT_MODIFIER(GetIntelligenceAttribute(), AddBase, Attributes_Primary_Intelligence);
-	ADD_EFFECT_MODIFIER(GetResilienceAttribute(), AddBase, Attributes_Primary_Resilience);
-	ADD_EFFECT_MODIFIER(GetVigorAttribute(), AddBase, Attributes_Primary_Vigor);
-	ADD_EFFECT_MODIFIER(GetIncomingXPAttribute(), Override, Attributes_Meta_IncomingXP);
-
-#undef ADD_EFFECT_MODIFIER
+	ApplyGameplayEffectSpecToOwner(Handle, ActorInfo, ActivationInfo, SpecHandle);
 }

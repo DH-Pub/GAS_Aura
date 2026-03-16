@@ -14,7 +14,7 @@
 #include "Game/AuraGameMode.h"
 
 UDeathAbility::UDeathAbility()
-{	//TODO: Make this Passive, Grant Ability When Apply Effect
+{
 	ActivationPolicy = EAuraActivationPolicy::OnSpawn;
 
 	NetExecutionPolicy = EGameplayAbilityNetExecutionPolicy::ServerInitiated;
@@ -35,7 +35,7 @@ void UDeathAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, con
 	if (!HasAuthority(&CurrentActivationInfo)) return;
 	const FGameplayEffectContextHandle ContextHandle = GetGrantedByEffectContext();
 	/*GetAbilitySystemComponentFromActorInfo()->RemoveActiveEffectsWithTags(
-		FGameplayTagContainer(AuraGameplayTags::Effect_RemoveOnDeath));*/ // RemoveActiveEffectsWithGrantedTags() Clear all
+		FGameplayTagContainer(AuraTag::Effect_RemoveOnDeath));*/ // RemoveActiveEffectsWithGrantedTags() Clear all
 	// GetAbilitySystemComponentFromActorInfo()->RemoveAllGameplayCues()
 	if (ContextHandle.IsValid())
 	{

@@ -3,7 +3,7 @@
 
 #include "Character/Component/AuraMovementComponent.h"
 
-#include "AuraGameplayTags.h"
+#include "AuraTag.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 #include "Character/AuraCharacterBase.h"
@@ -69,7 +69,7 @@ void UAuraMovementComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 
 float UAuraMovementComponent::GetMaxSpeed() const
 {
-	if (AuraASC && AuraASC->HasMatchingGameplayTag(AuraGameplayTags::State_Block_Movement_Speed))
+	if (AuraASC && AuraASC->HasMatchingGameplayTag(AuraTag::State_Block_Movement_Speed))
 	{
 		return 0;
 	}
@@ -78,7 +78,7 @@ float UAuraMovementComponent::GetMaxSpeed() const
 
 FRotator UAuraMovementComponent::GetDeltaRotation(float DeltaTime) const
 {
-	if (AuraASC && AuraASC->HasMatchingGameplayTag(AuraGameplayTags::State_Block_Movement_Rotation))
+	if (AuraASC && AuraASC->HasMatchingGameplayTag(AuraTag::State_Block_Movement_Rotation))
 	{
 		return FRotator();
 	}

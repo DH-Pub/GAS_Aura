@@ -4,7 +4,7 @@
 #include "AbilitySystem/Data/CharacterClassDataAsset.h"
 
 #include "AbilitySystemBlueprintLibrary.h"
-#include "AuraGameplayTags.h"
+#include "AuraTag.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/Ability/AuraGameplayAbility.h"
 #include "Character/AuraCharacterBase.h"
@@ -55,7 +55,7 @@ void UCharacterClassDataAsset::SendXPToDeathCauser(UAbilitySystemComponent* Caus
 	const FCharacterClassDefaultInfo* Info = GetClassDefaultInfo(DeadCharacter->CharacterClass);
 	Payload.EventMagnitude = Info ? Info->XPReward.GetValueAtLevel(DeadCharacter->GetCharacterLevel()) : 0;
 	if (Payload.EventMagnitude < UE_KINDA_SMALL_NUMBER) return;
-	Payload.EventTag = AuraGameplayTags::Attributes_Meta_IncomingXP;
+	Payload.EventTag = AuraTag::Attributes_Meta_IncomingXP;
 	Causer->HandleGameplayEvent(Payload.EventTag, &Payload); // Last Hit player
 
 	Payload.EventMagnitude *= .85f; // For allies

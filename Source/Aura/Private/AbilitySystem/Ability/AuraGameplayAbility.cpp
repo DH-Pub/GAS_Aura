@@ -4,7 +4,7 @@
 #include "AbilitySystem/Ability/AuraGameplayAbility.h"
 
 #include "AbilitySystemGlobals.h"
-#include "AuraGameplayTags.h"
+#include "AuraTag.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "Character/AuraCharacterBase.h"
 
@@ -26,15 +26,15 @@ bool UAuraGameplayAbility::CanActivateAbility(const FGameplayAbilitySpecHandle H
 		case EAuraActivationPolicy::InputHolding:
 		case EAuraActivationPolicy::InputStart:
 			if (ActorInfo->AbilitySystemComponent->HasMatchingGameplayTag(
-				AuraGameplayTags::State_Block_Input)) return false;
+				AuraTag::State_Block_Input)) return false;
 			// if (Spec->InputID == 0) return false; // Invalid input set on an Input Ability
 			break;
 		default: break;
 		}
 		for (const FGameplayTag& Tag : SpecTags)
 		{
-			if (Tag.MatchesTagExact(AuraGameplayTags::Ability_Status_Eligible) ||
-				Tag.MatchesTagExact(AuraGameplayTags::Ability_Status_Locked)) return false;
+			if (Tag.MatchesTagExact(AuraTag::Ability_Status_Eligible) ||
+				Tag.MatchesTagExact(AuraTag::Ability_Status_Locked)) return false;
 		}
 	}
 	return Super::CanActivateAbility(Handle, ActorInfo, SourceTags, TargetTags, OptionalRelevantTags);
@@ -56,8 +56,16 @@ void UAuraGameplayAbility::PreActivate(const FGameplayAbilitySpecHandle Handle,
 		 * This is a hack, when ability is interrupted right after client's activation
 		 * Which EndAbility on Client, but Blocked on Server so Server correction for GameplayTagCountContainer never came
 		 */
-		FGameplayTagContainer Tags(ActivationOwnedTags);
-		// if (!Tags.IsEmpty()) AuraCharacter->GetAuraAbilitySystemComponent()->ServerCheckTags(Tags);
+		if (!ActivationOwnedTags.IsEmpty())
+		{
+			TWeakObjectPtr WeakThis = this;
+			GetWorld()->GetTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this,
+			[this, WeakThis]()
+			{
+				if (!WeakThis.IsValid()) return;
+				AuraCharacter->GetAuraAbilitySystemComponent()->ServerCheckTags(ActivationOwnedTags);
+			}));
+		}
 	}
 }
 
@@ -79,25 +87,6 @@ void UAuraGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, c
 			World->GetTimerManager().ClearTimer(EndHandle);
 		}
 	}
-
-	if (HasAuthority(&CurrentActivationInfo))
-	{
-
-	}
-	else if (IsPredictingClient())
-	{
-		/**
-		 * This is a hack, when ability is interrupted right after client's activation
-		 * Which EndAbility on Client, but Blocked on Server so Server correction for GameplayTagCountContainer never came
-		 */
-		const FGameplayTagContainer& OwnedTags = GetAbilitySystemComponentFromActorInfo()->GetOwnedGameplayTags();
-		FGameplayTagContainer Tags; Tags.AppendMatchingTags(ActivationOwnedTags, OwnedTags);
-		if (const FGameplayTagContainer* CDTags = GetCooldownTags())
-		{
-			Tags.AppendMatchingTags(*CDTags, OwnedTags);
-		}
-		// if (!Tags.IsEmpty()) AuraCharacter->GetAuraAbilitySystemComponent()->ServerCheckTags(Tags);
-	}
 }
 
 /**
@@ -118,7 +107,6 @@ void UAuraGameplayAbility::OnAvatarSet(const FGameplayAbilityActorInfo* ActorInf
 	FGameplayAbilitySpec& AbilitySpec = const_cast<FGameplayAbilitySpec&>(Spec);
 	if (StartupInputID != EAuraAbilityInputID::None) AbilitySpec.InputID = StartupInputID;
 
-	if (AuraAbilityTag.IsValid()) AbilitySpec.GetDynamicSpecSourceTags().AddTag(AuraAbilityTag);
 	ActorInfo->AbilitySystemComponent->MarkAbilitySpecDirty(AbilitySpec);
 }
 
