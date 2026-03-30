@@ -7,7 +7,6 @@
 #include "AuraEffectTypes.h"
 #include "AuraTag.h"
 #include "AbilitySystem/AuraAttributeSet.h"
-#include "AbilitySystem/Ability/DamageAbility.h"
 #include "AbilitySystem/ExecCalc/ExecCalc_Damage.h"
 
 UExecCalc_Debuff::UExecCalc_Debuff()

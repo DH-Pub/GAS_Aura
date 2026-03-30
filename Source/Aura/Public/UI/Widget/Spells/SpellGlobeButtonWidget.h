@@ -20,7 +20,7 @@ public:
 	virtual void SetWidgetController(UAuraWidgetController* InWidgetController) override;
 
 	UFUNCTION(BlueprintCallable)
-	void ReceiveAbilityData(const struct FGameplayAbilitySpec& AbilitySpec, const struct FAuraAbilityData& AbilityData);
+	void ReceiveAbilityData(const struct FGameplayAbilitySpec& AbilitySpec, const struct FAuraAbilityData& Data);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Aura|Properties")
 	FVector2D ButtonWidthHeight = FVector2D(40., 40.);

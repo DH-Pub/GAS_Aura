@@ -6,9 +6,9 @@
 #include "AuraTag.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/AuraAttributeSet.h"
-#include "AbilitySystem/Data/AbilityDataAsset.h"
 #include "AbilitySystem/Data/LevelUpDataAsset.h"
 #include "Player/AuraPlayerState.h"
+#include "UI/HUD/AuraHUD.h"
 
 /*template<typename T = FTableRowBase> UE_DEPRECATED(all, "just loop through Data Table")
 static T* GetDataTableRowByTag(UDataTable* DataTable, const FGameplayTag& Tag)
@@ -23,19 +23,16 @@ void UOverlayWidgetController::BindCallbacksDependencies()
 	GetPlayerState()->OnXPChangedDelegate.RemoveAll(this);
 	GetPlayerState()->OnXPChangedDelegate.AddUObject(this, &UOverlayWidgetController::BroadcastXPToUI);
 	// Receive broadcast from AuraAbilitySystemComponent
-	GetASC()->EffectAssetTags.RemoveAll(this);
+	/*GetASC()->EffectAssetTags.RemoveAll(this);
 	GetASC()->EffectAssetTags.AddWeakLambda(this, [this](const FGameplayTagContainer& AssetTags)
 	{
-		TArray<FMessageRow*> RowArray; MessageDataTable->GetAllRows(/*Whatever*/TEXT("EffectAssetTags"), RowArray);
+		TArray<FMessageRow*> RowArray; AuraHUD->MessageDataTable->GetAllRows(/*Whatever#1#TEXT("EffectAssetTags"), RowArray);
 		for (const FGameplayTag& Tag : AssetTags)
 		{	// MessageTableDelegate.Broadcast(*GetDataTableRowByTag<FMessageRow>(MessageDataTable, Tag));
 			if (!Tag.MatchesTag(MessageTags::Message)) continue;
-			for (const FMessageRow* Row : RowArray)
-			{
-				if (Row->MessageTag.MatchesTagExact(Tag)) {MessageTableDelegate.Broadcast(*Row); return;}
-			}
+			for (const FMessageRow* Row : RowArray) if (Row->MessageTag.MatchesTagExact(Tag)) {MessageTableDelegate.Broadcast(*Row); return;}
 		}
-	});
+	});*/
 }
 
 void UOverlayWidgetController::BroadcastInitialValues()

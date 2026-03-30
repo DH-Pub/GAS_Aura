@@ -33,7 +33,7 @@ void UAuraAbilityLibrary::AddAdditionalTraceIgnoreActors(TArray<AActor*>& Ignore
 
 bool UAuraAbilityLibrary::TraceByChannel(const UObject* WorldContextObject, const FVector& Start, const FVector& End,
 	const TArray<AActor*>& ActorsToIgnore, EDrawDebugTrace::Type DrawDebugType, TArray<FHitResult>& OutHits,
-	const TArray<TEnumAsByte<ECollisionChannel>>& Channels, const bool bTraceType, const float SweepRadius, const bool bTraceComplex)
+	const TArray<TEnumAsByte<ECollisionChannel>>& Channels, const float SweepRadius, const bool bTraceType, const bool bTraceComplex)
 {
 	static const FName SphereTraceName(TEXT("Trace"));
 	FCollisionQueryParams Params(SphereTraceName, SCENE_QUERY_STAT_ONLY(KismetTraceUtils), bTraceComplex);
@@ -59,11 +59,11 @@ bool UAuraAbilityLibrary::TraceByChannel(const UObject* WorldContextObject, cons
 		}
 	}
 	else
-	{
+	{	// UCollisionProfile::Get()->ConvertToObjectType(ECC_Pawn)
 		FCollisionObjectQueryParams ObjectParams;
 		for (const ECollisionChannel Channel : Channels) {ObjectParams.AddObjectTypesToQuery(Channel);}
 		if (SweepRadius > 0.f)
-		{
+		{	// UKismetSystemLibrary::SphereTraceMultiForObjects
 			World->SweepMultiByObjectType(HitResults, Start, End, FQuat::Identity, ObjectParams,
 				FCollisionShape::MakeSphere(SweepRadius), Params);
 		}
@@ -134,12 +134,12 @@ void UAuraAbilityLibrary::SortActorsByClosest(TArray<AActor*>& Actors, const FVe
 
 bool UAuraAbilityLibrary::GetLiveCharactersInRadius(const UObject* WorldContextObject, TArray<AActor*>& OutActors,
 	const TArray<AActor*>& ActorsToIgnore, const float Radius, const FVector& Origin, const bool bShowDebug)
-{
+{	// UKismetSystemLibrary::SphereOverlapActors();
 	const UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
 	if (World == nullptr) return false;
 	FCollisionQueryParams Params; Params.AddIgnoredActors(ActorsToIgnore);
 	Params.bReturnPhysicalMaterial = true; // Params.bReturnFaceIndex = !UPhysicsSettings::Get()->bSuppressFaceRemapTable;
-	// UKismetSystemLibrary::SphereOverlapActors();
+
 	TArray<FOverlapResult> Results;
 	World->OverlapMultiByObjectType(Results, Origin, FQuat::Identity,
 		FCollisionObjectQueryParams(ECC_Pawn)/*FCollisionObjectQueryParams(FCollisionObjectQueryParams::InitType::AllDynamicObjects)*/,

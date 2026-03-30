@@ -52,6 +52,7 @@ namespace AuraTag // Automatically add to Gameplay Tag List
 	// Abilities with CD =============================================================================================
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Fire_FireBolt) // UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Fire_FireBolt_Cooldown)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Lightning_Electrocute)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Arcane_ArcaneShards)
 	//================================================================================================================
 
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Passive_HaloOfProtection)
@@ -66,8 +67,8 @@ namespace AuraTag // Automatically add to Gameplay Tag List
 
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Cancelable_Generic) // This Active Ability can be canceled by most
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Cancelable_Passive_Generic)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Blockable_Generic)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Blockable_Passive_Generic)
+	// UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Blockable_Generic)
+	// UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Blockable_Passive_Generic)
 #pragma endregion
 
 
@@ -85,6 +86,9 @@ namespace AuraTag // Automatically add to Gameplay Tag List
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_HitReact_Stun)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_HitReact_Shocked)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Death)
+
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Ability) // Cast Ability State
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Ability_Generic)
 
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_HitReact_Knockback) // For Send Event
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_HitReact_PlayMontage) // For Send Event
@@ -161,13 +165,23 @@ namespace AuraTag // Automatically add to Gameplay Tag List
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Melee_Pierce_Impact)
 
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Shared_LevelUp)
+
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Passive_HaloOfProtection)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Passive_LifeSiphon)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Passive_ManaSiphon)
 #pragma endregion
 }
 
 
 namespace MessageTags
 {
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Message)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Pickup)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Pickup_HealthCrystal)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Pickup_HealthPotion)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Pickup_ManaCrystal)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Pickup_ManaPotion)
+
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Message) //TODO: DEPRECATED, Remove this
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Message_HealthCrystal)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Message_HealthPotion)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Message_ManaCrystal)

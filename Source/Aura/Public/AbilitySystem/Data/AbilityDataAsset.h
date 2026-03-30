@@ -11,6 +11,9 @@ struct FAuraAbilityData
 {
 	GENERATED_BODY()
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TSubclassOf<class UAuraGameplayAbility> AbilityClass = nullptr;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Details")
 	FText AbilityName;
 
@@ -21,9 +24,6 @@ struct FAuraAbilityData
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	int32 LevelRequirement = 1;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	TSubclassOf<class UAuraGameplayAbility> AbilityClass = nullptr;
 };
 
 /**
@@ -35,10 +35,10 @@ class AURA_API UAbilityDataAsset : public UDataAsset
 	GENERATED_BODY()
 public:
 	/** Data Asset list of all abilities with icons, ... */
-	UPROPERTY(EditDefaultsOnly, meta=(TitleProperty="{AbilityName}"), Category="AbilityInformation")
+	UPROPERTY(EditDefaultsOnly, meta=(ForceInlineRow, TitleProperty="{AbilityName}"), Category="AbilityInformation")
 	TArray<FAuraAbilityData> AbilityDataList;
 
-	static const UAbilityDataAsset* GetFromGameState(const UObject* WorldContextObject);
+	static const UAbilityDataAsset* Get(const UObject* WorldContextObject);
 	static const FAuraAbilityData* GetDataFromGameState(const UObject* WorldContextObject, const UClass* AbilityClass);
 
 	static void UnlockAbilityByLevel(const UObject* WorldContextObject, class UAuraAbilitySystemComponent* ASC,

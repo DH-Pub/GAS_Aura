@@ -24,14 +24,14 @@ void UCharacterClassDataAsset::InitializeDefaultAttributes(const ECharacterClass
 	const FCharacterClassDefaultInfo* ClassDefaultInfo = GetClassDefaultInfo(CharacterClass);
 	const FGameplayEffectContextHandle ContextHandle = ASC->MakeEffectContext();
 
-	const FGameplayEffectSpecHandle PrimaryAttrSpecHandle = ASC->MakeOutgoingSpec(ClassDefaultInfo->PrimaryAttributes, Level, ContextHandle);
-	ASC->ApplyGameplayEffectSpecToSelf(*PrimaryAttrSpecHandle.Data);
+	const FGameplayEffectSpecHandle PrimarySpecHandle = ASC->MakeOutgoingSpec(ClassDefaultInfo->PrimaryAttributes, Level, ContextHandle);
+	ASC->ApplyGameplayEffectSpecToSelf(*PrimarySpecHandle.Data);
 
-	const FGameplayEffectSpecHandle SecondaryAttrSpecHandle = ASC->MakeOutgoingSpec(SecondaryAttributes, Level, ContextHandle);
-	ASC->ApplyGameplayEffectSpecToSelf(*SecondaryAttrSpecHandle.Data);
+	const FGameplayEffectSpecHandle SecondarySpecHandle = ASC->MakeOutgoingSpec(SecondaryAttributes, Level, ContextHandle);
+	ASC->ApplyGameplayEffectSpecToSelf(*SecondarySpecHandle.Data);
 
-	const FGameplayEffectSpecHandle VitalAttrSpecHandle = ASC->MakeOutgoingSpec(VitalAttributes, Level, ContextHandle);
-	ASC->ApplyGameplayEffectSpecToSelf(*VitalAttrSpecHandle.Data);
+	const FGameplayEffectSpecHandle VitalSpecHandle = ASC->MakeOutgoingSpec(VitalAttributes, Level, ContextHandle);
+	ASC->ApplyGameplayEffectSpecToSelf(*VitalSpecHandle.Data);
 }
 
 /* Make sure to check HasAuthority() before calling this */

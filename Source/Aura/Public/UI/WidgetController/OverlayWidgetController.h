@@ -45,20 +45,19 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "GAS|Attributes")
 	FOnVitalAttributeChanged OnMaxManaChanged;
 
+	/**
+	 * Set in WBP_Overlay
+	 * For AAuraHUD::AddWidgetToRootCanvasPanel
+	 */
 	UPROPERTY(BlueprintReadWrite)
 	TObjectPtr<class UOverlay> Overlay_Screen;
+
 	UPROPERTY(BlueprintAssignable)
-	FMessageTableSignature MessageTableDelegate; // Item Pickup Message
+	FMessageTableSignature MessageTableDelegate; //TODO: DEPRECATED using GameplayCue Item Pickup Message
 
 	UPROPERTY(BlueprintAssignable)
 	FOnXPChangedSignature OnXPPercentChangedDelegate; // Send XP% and Level to UI
 protected:
-	UE_DEPRECATED(all, "Using MessageDataTable but this can be used")
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Aura|WidgetData")
-	TObjectPtr<class UMessageInfo> MessageInfo;
-	UPROPERTY(EditDefaultsOnly, Category="Aura|MessageData")
-	TObjectPtr<UDataTable> MessageDataTable;
-
 	UFUNCTION()
 	void BroadcastXPToUI(int32 XP = 0) const;
 };

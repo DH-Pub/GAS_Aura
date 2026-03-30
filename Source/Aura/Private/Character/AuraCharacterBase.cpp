@@ -175,7 +175,7 @@ void AAuraCharacterBase::GetLifetimeReplicatedProps(TArray<class FLifetimeProper
 	// DOREPLIFETIME_CONDITION_NOTIFY(AAuraCharacterBase, CombatTarget, COND_SkipOwner, REPNOTIFY_Always)
 }
 
-// Called in PossessedBy, which is called only on server or standalone
+// Called on Server in PossessedBy
 void AAuraCharacterBase::AddCharacterStartupAbilities() const
 {
 	if (!HasAuthority()) return; // Grant ability from server

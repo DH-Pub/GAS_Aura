@@ -17,12 +17,10 @@ struct FAuraCheckTags
 	FGameplayTag Tag;
 	UPROPERTY()
 	bool bExist = false;
-
 	bool NetSerialize(FArchive& Ar, class UPackageMap* Map, bool& bOutSuccess)
 	{
-		bOutSuccess |= Tag.NetSerialize_Packed(Ar, Map, bOutSuccess);
 		Ar << bExist;
-		return bOutSuccess;
+		return bOutSuccess |= Tag.NetSerialize_Packed(Ar, Map, bOutSuccess);
 	}
 };
 template<>
@@ -31,6 +29,15 @@ struct TStructOpsTypeTraits<FAuraCheckTags> : public TStructOpsTypeTraitsBase2<F
 	enum {WithNetSerializer = true};
 };
 
+USTRUCT()
+struct FUnlockedAbilityData
+{
+	GENERATED_BODY()
+	UPROPERTY(VisibleAnywhere)
+	TSubclassOf<class UAuraGameplayAbility> AbilityClass;
+	UPROPERTY(VisibleAnywhere)
+	int32 Level = 0;
+};
 
 /**
  * Used to broadcast Effects (Health potions, ...)
@@ -38,10 +45,8 @@ struct TStructOpsTypeTraits<FAuraCheckTags> : public TStructOpsTypeTraitsBase2<F
  */
 DECLARE_MULTICAST_DELEGATE_OneParam(FEffectAssetTags, const FGameplayTagContainer& /* AssetTags */);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FAbilityDataSignature, const FGameplayAbilitySpec&, AbilitySpec,
-	const FAuraAbilityData&, Data); //TODO: No need for this to be dynamic
+	const FAuraAbilityData&, Data);
 DECLARE_MULTICAST_DELEGATE(FOnApplyingStatFinished)
-
-DECLARE_MULTICAST_DELEGATE_OneParam(FDeactivatePassiveAbility, const FGameplayTag&);
 /**
  *
  */
@@ -52,7 +57,8 @@ class AURA_API UAuraAbilitySystemComponent : public UAbilitySystemComponent
 public:
 	virtual void InitAbilityActorInfo(AActor* InOwnerActor, AActor* InAvatarActor) override;
 
-	void AddCharacterAbilities(const TArray<TSubclassOf<class UAuraGameplayAbility>>& StartupActives); // in PossessedBy
+	// Called on Server in PossessedBy
+	void AddCharacterAbilities(const TArray<TSubclassOf<class UAuraGameplayAbility>>& StartupActives);
 
 	TArray<FGameplayAbilitySpecHandle> InputHeldHandles; // Handles for Abilities that activates on holding input
 	void AbilityInputPressed(const int32 InputID);
@@ -66,24 +72,15 @@ public:
 	virtual FActiveGameplayEffectHandle ApplyGameplayEffectSpecToSelf(const FGameplayEffectSpec& GameplayEffect,
 		FPredictionKey PredictionKey = FPredictionKey()) override;
 	virtual void OnGameplayEffectDurationChange(struct FActiveGameplayEffect& ActiveEffect) override;
+	virtual void OnPredictiveGameplayCueCatchup(FGameplayTag Tag) override;
 protected:
 	virtual void OnTagUpdated(const FGameplayTag& Tag, bool TagExists) override;
-	// virtual void OnRep_ActivateAbilities() override;
 	virtual void OnGiveAbility(FGameplayAbilitySpec& AbilitySpec) override;
 	virtual void OnRemoveAbility(FGameplayAbilitySpec& AbilitySpec) override;
 
-	virtual void OnPredictiveGameplayCueCatchup(FGameplayTag Tag) override;
 
 
 public:
-	FDeactivatePassiveAbility OnDeactivatePassive;
-
-	FEffectAssetTags EffectAssetTags; // Convert OnGameplayEffectAppliedDelegateToSelf to Client RPC for UI use
-	// Remote Procedure Calls (RPCs) Broadcast EffectAssetTags
-	UFUNCTION(Client, Reliable)
-	void ClientEffectApplied(UAbilitySystemComponent* AbilitySystemComponent, const FGameplayEffectSpec& EffectSpec,
-		FActiveGameplayEffectHandle ActiveGameplayEffectHandle);
-
 	UPROPERTY(BlueprintAssignable, Category = "GAS|AbilityData")
 	FAbilityDataSignature AbilityDataDelegate;// Send AbilityData to UI (Icon, Tag, ...)
 	void UpdateAbilityData(const FGameplayAbilitySpec& AbilitySpec) const;
@@ -93,13 +90,6 @@ public:
 	void BroadcastAllAbilityData();
 	FTimerHandle BroadcastDelegateTimer; // Prevent Repeated Call
 
-	UFUNCTION(Server, Reliable, BlueprintCallable)
-	void ServerCheckTags(FGameplayTagContainer TagsToCheck);
-	UFUNCTION(Client, Reliable)
-	void ClientResponseTagsCheck(const TArray<FAuraCheckTags>& TagsCount);
-	UFUNCTION(Client, Reliable)
-	void ClientUpdateOwnedTags(FGameplayTagContainer Tags);
-
 	UFUNCTION(Server, Reliable)
 	void ServerHandleGameplayEvent(const FGameplayTag& Tag, FGameplayAbilityTargetDataHandle DataHandle);
 
@@ -107,10 +97,10 @@ public:
 	void ServerSpendSpellPoints(const UGameplayAbility* AbilityCDO); // Send CDO because cannot send TSubclassOf
 	UFUNCTION(Server, Reliable)
 	void ServerChangeAbilitySlot(const UGameplayAbility* AbilityCDO, const int32 AbilityID);
+	void HandlePassive(FGameplayAbilitySpec& Spec);
+
 	UFUNCTION(Client, Reliable)
-	void ClientRefreshAbilityDataAndClearInput(); // Tell client to refresh after server finish update
-	UFUNCTION(Client, Reliable)
-	void ClientRefreshAbilityData(); // Tell client to refresh after server finish update
+	void ClientRefreshAbilityData(const bool bClearInput); // Tell client to refresh after server finish update
 	FTimerHandle ClientRefreshTimer;
 	bool bClearClientInput = false;
 };

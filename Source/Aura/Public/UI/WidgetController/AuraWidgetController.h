@@ -30,28 +30,22 @@ public:
 	/**
 	 * Create WidgetController if none and BindCallbacksDependencies()
 	 * @tparam ControllerT
-	 * @param Outer
-	 * @param InCharacter
+	 * @param Character
 	 * @param WC TObjectPtr ref or else nullptr
-	 * @param WCClass
 	 * @return
 	 */
 	template <typename ControllerT = UAuraWidgetController>
-	static ControllerT* CreateOrGetWidgetController(UObject* Outer, class AAuraCharacterBase* InCharacter,
-		TObjectPtr<ControllerT>& WC, const TSubclassOf<UAuraWidgetController> WCClass)
+	static ControllerT* CreateOrGetWidgetController(TObjectPtr<ControllerT>& WC, class AAuraCharacterBase* Character)
 	{
-		checkf(WCClass, TEXT("Widget Controller Class uninitialized, please fill out in BP_AuraHUD"));
-		if (WC == nullptr || InCharacter != WC->Character)
+		if (WC == nullptr || Character != WC->Character)
 		{
-			if (WC == nullptr) WC = NewObject<ControllerT>(Outer, WCClass);
-			WC->SetCharacter(InCharacter);
+			if (WC == nullptr) WC = NewObject<ControllerT>(Character, ControllerT::StaticClass());
+			WC->SetCharacter(Character);
 			WC->BindCallbacksDependencies();
 		}
 		return WC;
 	}
 
-	UFUNCTION(BlueprintPure, meta=(CompactNodeTitle="PlayerController"))
-	AController* GetPlayerController() const;
 	UFUNCTION(BlueprintPure, meta=(CompactNodeTitle="PlayerState"))
 	class AAuraPlayerState* GetPlayerState() const; // Do not call this in AI's WidgetController
 	UFUNCTION(BlueprintPure, meta=(CompactNodeTitle="ASC"))
@@ -76,6 +70,12 @@ protected:
 		}
 	}
 private:
+	/**
+	 * TODO: Instead of Character, Add GetAuraASC() or GetAuraAttributeSet() to ICombatInterface
+	 * because owner of ASC and AS can be non-Character (PlayerState)
+	 */
+	/*UPROPERTY()
+	TScriptInterface<class ICombatInterface> SourceInterface;*/
 	UPROPERTY()
 	TObjectPtr<AAuraCharacterBase> Character;
 	void SetCharacter(AAuraCharacterBase* InCharacter);

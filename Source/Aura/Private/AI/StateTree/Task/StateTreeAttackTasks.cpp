@@ -3,9 +3,9 @@
 
 #include "AI/StateTree/Task/StateTreeAttackTasks.h"
 
-#include "AuraAbilitySystemGlobals.h"
+#include "AbilitySystemComponent.h"
+#include "AbilitySystemGlobals.h"
 #include "StateTreeExecutionContext.h"
-#include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AI/AuraAIController.h"
 #include "Character/AuraEnemy.h"
 
@@ -32,7 +32,7 @@ EStateTreeRunStatus FStateTree_Attack::EnterState(FStateTreeExecutionContext& Co
 	}
 	OtherTags.RemoveSingleSwap(WeightTag);
 
-	UAuraAbilitySystemComponent* ASC = UAuraAbilitySystemGlobals::GetAuraASC(Actor);
+	UAbilitySystemComponent* ASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(Actor);
 	if (!ASC->TryActivateAbilitiesByTag(FGameplayTagContainer(WeightTag)))
 	{
 		const int32 LastIdx = OtherTags.Num() - 1;

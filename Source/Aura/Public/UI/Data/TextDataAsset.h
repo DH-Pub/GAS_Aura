@@ -23,10 +23,10 @@ struct FAuraMessageInfo // Use this or FMessageRow (FTableRowBase)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(MultiLine))
 	FText Message = FText();
 };
-/*
+/**
  *
  */
-UCLASS()
+UCLASS(BlueprintType)
 class AURA_API UMessageInfo : public UDataAsset
 {
 	GENERATED_BODY()

@@ -12,7 +12,8 @@ struct FAbilityDetails
 {
 	GENERATED_BODY()
 	FAbilityDetails(){}
-	explicit FAbilityDetails(const int32 Level) : Level(Level){}
+	explicit FAbilityDetails(const int32 Level, UAbilitySystemComponent* InASC) :
+		Level(Level), AbilitySystemComponent(InASC){}
 	UPROPERTY(BlueprintReadOnly)
 	int32 Level = 0;
 	UPROPERTY(BlueprintReadOnly)
@@ -27,6 +28,8 @@ struct FAbilityDetails
 	int32 ProjectileNums = 0;
 	UPROPERTY(BlueprintReadOnly)
 	float Damage = 0.f;
+
+	TWeakObjectPtr<UAbilitySystemComponent> AbilitySystemComponent; // ASC for to check for cost/CD
 };
 
 UENUM(BlueprintType)
@@ -53,6 +56,9 @@ public:
 		const FGameplayTagContainer* SourceTags = nullptr, const FGameplayTagContainer* TargetTags = nullptr,
 		FGameplayTagContainer* OptionalRelevantTags = nullptr) const override;
 
+	virtual void OnAvatarSet(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec) override;
+	virtual void OnRemoveAbility(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec) override;
+
 	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<class AAuraCharacterBase> AuraCharacter = nullptr;
 
@@ -64,21 +70,14 @@ public:
 	TEnumAsByte<EAuraAbilityInputID::Type> StartupInputID = EAuraAbilityInputID::None; //TODO: Testing, remove this
 
 protected:
-	virtual void PreActivate(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
-		const FGameplayAbilityActivationInfo ActivationInfo, FOnGameplayAbilityEnded::FDelegate* OnGameplayAbilityEndedDelegate,
-		const FGameplayEventData* TriggerEventData = nullptr) override;
-	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
-		const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
-	virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
-		const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
-
-	virtual void OnAvatarSet(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec) override;
-
+	const struct FAuraAbilityActorInfo* GetAuraActorInfo() const; // Not being used
 	UFUNCTION(BlueprintCallable)
-	void DelayEndAbility(const float Time); // Call EndAbility() after Time
-	FTimerHandle EndHandle;
+	class UAuraAbilitySystemComponent* GetAuraASC() const;
 
-
+	UFUNCTION(BlueprintImplementableEvent)
+	void BP_OnAvatarSet();
+	UFUNCTION(BlueprintImplementableEvent)
+	void BP_OnRemoveAbility();
 public:
 	virtual void GetAbilityDetails(FAbilityDetails& Details) const {};
 	UFUNCTION(BlueprintImplementableEvent, Category="Description") // Override this in each ability's BP

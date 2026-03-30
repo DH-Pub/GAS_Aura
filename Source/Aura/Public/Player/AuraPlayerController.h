@@ -50,7 +50,7 @@ public:
 	TObjectPtr<class UAuraAbilitySystemComponent> AuraASC;
 
 	UPROPERTY()
-	TObjectPtr<class AAuraEnemy> CursorHitEnemy;
+	TObjectPtr<class AAuraEnemy> CursorHitEnemy; // UPROPERTY() TScriptInterface<class ICombatInterface> CursorHit;
 protected:
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
@@ -104,9 +104,9 @@ private: //TODO: Move all below to AuraHeroComponent
 
 	UPROPERTY(BlueprintGetter=GetCursorHitResult, meta=(AllowPrivateAccess))
 	FHitResult CursorHitResult;
+	void UpdateAim();
 	void CursorTick(); // Cursor HitResult
 
-	void UpdateAim();
 	UFUNCTION(Server, Reliable)
 	void ServerSetCharacterAimDirection(const FVector_NetQuantizeNormal& Aim);
 };

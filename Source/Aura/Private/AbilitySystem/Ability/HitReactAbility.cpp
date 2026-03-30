@@ -6,7 +6,6 @@
 #include "AbilitySystemComponent.h"
 #include "AuraAbilityLibrary.h"
 #include "AuraTag.h"
-#include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/Ability/DamageAbility.h"
 #include "Character/AuraCharacterBase.h"
 #include "Components/CapsuleComponent.h"
@@ -15,7 +14,6 @@ UHitReactAbility::UHitReactAbility()
 {
 	SetAssetTags(FGameplayTagContainer(AuraTag::State_HitReact)); // so that Death can cancel this
 	CancelAbilitiesWithTag = FGameplayTagContainer(AuraTag::Ability_Cancelable_Generic);
-	BlockAbilitiesWithTag = FGameplayTagContainer(AuraTag::Ability_Blockable_Generic);
 	ActivationOwnedTags.AddTag(AuraTag::State_HitReact);
 	ActivationOwnedTags.AddTag(AuraTag::State_Block_Movement_Speed);
 	ActivationOwnedTags.AddTag(AuraTag::State_Block_Movement_Rotation);
@@ -57,7 +55,7 @@ void UHitReactAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
 		TArray<FHitResult> OutHits;
 		const bool bHit = UAuraAbilityLibrary::TraceByChannel(this, StartLoc, MoveToLoc,
 			{AuraCharacter}, KnockbackDebug, OutHits, {ECC_WorldStatic},
-			true, CapsuleComp->GetScaledCapsuleRadius());
+			CapsuleComp->GetScaledCapsuleRadius());
 
 		for (const FHitResult& Hit : OutHits)
 		{
@@ -73,19 +71,6 @@ void UHitReactAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
 		{
 			Knockback(MoveToLoc, Duration, bHit); // AuraCharacter->LaunchCharacter();
 		}
-	}
-}
-
-void UHitReactAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
-	const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
-{
-	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
-
-	if (HasAuthority(&CurrentActivationInfo))
-	{
-		/** Hack to make sure client will have the same tags as server */
-		UAuraAbilitySystemComponent* ASC = AuraCharacter->GetAuraAbilitySystemComponent();
-		ASC->ClientUpdateOwnedTags(ASC->GetOwnedGameplayTags());
 	}
 }
 

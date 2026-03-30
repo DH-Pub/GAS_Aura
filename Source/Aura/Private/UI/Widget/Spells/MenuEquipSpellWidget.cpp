@@ -53,5 +53,5 @@ void UMenuEquipSpellWidget::ReceiveAbilityData(const FGameplayAbilitySpec& Abili
 		CurrentBackground = Brush; // UWidgetBlueprintLibrary::MakeBrushFromMaterial
 		Image_Background->SetBrush(Brush);
 	}
-	else if (Data.AbilityClass == AbilityClass) ClearGlobe();
+	else if (AbilityClass == Data.AbilityClass) ClearGlobe();
 }

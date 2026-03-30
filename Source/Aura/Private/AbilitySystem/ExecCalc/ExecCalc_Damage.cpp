@@ -27,6 +27,8 @@ struct FAuraDamageStatics
 	AURA_ATTR_DEFINE_DEF(TargetArcaneResDef, GetArcaneResistanceAttribute(), Target, false)
 	AURA_ATTR_DEFINE_DEF(TargetPhysicalResDef, GetPhysicalResistanceAttribute(), Target, false)
 
+	AURA_ATTR_DEFINE_DEF(TargetHealthDef, GetHealthAttribute(), Target, false)
+
 	/*FGameplayEffectAttributeCaptureDefinition SourceCritDamageDef, SourceArmorPenDef,
 	TargetArmorDef, TargetBlockChanceDef, TargetCritHitResDef,
 	TargetFireResDef, TargetLightningResDef, TargetArcaneResDef, TargetPhysicalResDef;*/
@@ -34,6 +36,7 @@ struct FAuraDamageStatics
 		SourceCritChanceDef, SourceCritDamageDef, SourceArmorPenDef,
 		TargetArmorDef, TargetBlockChanceDef, TargetCritHitResDef,
 		TargetFireResDef, TargetLightningResDef, TargetArcaneResDef, TargetPhysicalResDef,
+		TargetHealthDef,
 	};
 	// FAuraDamageStatics() {/*DEFINE_ATTRIBUTE_CAPTUREDEF(UAuraAttributeSet, CriticalHitChance, Source, false);*/}
 };
@@ -50,7 +53,7 @@ void UExecCalc_Damage::Execute_Implementation(const FGameplayEffectCustomExecuti
 {
 // #if WITH_SERVER_CODE
 	/* Boilerplate ~ */
-	const UAbilitySystemComponent* SourceASC = ExecutionParams.GetSourceAbilitySystemComponent(); // Get Form ExecutionParams.Spec
+	UAbilitySystemComponent* SourceASC = ExecutionParams.GetSourceAbilitySystemComponent(); // Get Form ExecutionParams.Spec
 	UAbilitySystemComponent* TargetASC = ExecutionParams.GetTargetAbilitySystemComponent();
 	AActor* SourceAvatar = SourceASC ? SourceASC->GetAvatarActor() : nullptr;
 	AActor* TargetAvatar = TargetASC ? TargetASC->GetAvatarActor() : nullptr;
@@ -133,6 +136,15 @@ void UExecCalc_Damage::Execute_Implementation(const FGameplayEffectCustomExecuti
 		CueTargetTags.AddTag(AuraTag::Damage_Crit);
 		const float CritDmg = GetAttributeMagnitudeClamped(DamageStatics().SourceCritDamageDef);
 		Damage *= (1 + CritDmg);
+	}
+
+	const float CurrentHealth = GetAttributeMagnitude(DamageStatics().TargetHealthDef);
+	const float DmgHealthDiff = Damage - CurrentHealth;
+	if (DmgHealthDiff > 0)
+	{	// Send Event to trigger any ability that activates on damaging other (source) or damaged (target)
+		FGameplayEventData Data;
+		// SourceASC->HandleGameplayEvent()
+		// TargetASC->HandleGameplayEvent();
 	}
 
 	AURA_ADD_OUTPUT_MODIFIER(GetIncomingDamageAttribute(), Override, Damage)

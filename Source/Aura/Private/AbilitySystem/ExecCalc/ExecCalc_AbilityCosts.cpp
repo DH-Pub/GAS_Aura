@@ -30,8 +30,7 @@ void UExecCalc_AbilityCosts::Execute_Implementation(const FGameplayEffectCustomE
 	ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(CostStatics().TargetIntelligenceDef, EvaluateParameters,
 		Intelligence);*/
 
-	if (const UCostCooldownAbility* Ability = Cast<UCostCooldownAbility>(
-		Spec.GetEffectContext().GetAbilityInstance_NotReplicated()))
+	if (const UCostCooldownAbility* Ability = Cast<UCostCooldownAbility>(Spec.GetEffectContext().GetAbility()))
 	{
 		FGameplayModifierEvaluatedData Data; Data.ModifierOp = EGameplayModOp::AddBase;
 		for (auto& [Tag, ScalableCost] : Ability->AbilityCosts)

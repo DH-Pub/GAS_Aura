@@ -22,14 +22,14 @@ public:
 
 	/** UKismetSystemLibrary::LineTrace SphereTrace ForObjects
 	 * @param Channels The channels used for trace or to trace for if is object type
-	 * @param bTraceType true: Trace Channel, else Trace for Objects
+	 * @param bTraceType true: Trace Channel, else Trace for Objects. ALL 'Channels' has to be the correct type
 	 * @param SweepRadius == 0.f: Line Trace, > 0.f: Sphere Sweep
 	 * @return OutHits.Num() > 0
 	 */
 	UFUNCTION(BlueprintCallable, meta=(DefaultToSelf="WorldContextObject"), Category="AuraLibrary")
 	static bool TraceByChannel(const UObject* WorldContextObject, const FVector& Start, const FVector& End,
 		const TArray<AActor*>& ActorsToIgnore, EDrawDebugTrace::Type DrawDebugType, TArray<FHitResult>& OutHits,
-		const TArray<TEnumAsByte<ECollisionChannel>>& Channels, const bool bTraceType = true, const float SweepRadius = 0.f,
+		const TArray<TEnumAsByte<ECollisionChannel>>& Channels, const float SweepRadius = 0.f, const bool bTraceType = true,
 		const bool bTraceComplex = false);
 
 	UFUNCTION(BlueprintCallable, meta=(DefaultToSelf="WorldContextObject"), Category="AuraLibrary")

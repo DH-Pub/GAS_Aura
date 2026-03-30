@@ -6,8 +6,6 @@
 #include "Character/AuraCharacterBase.h"
 #include "AuraPlayer.generated.h"
 
-class UCharacterWidgetController;
-class UWidgetComponent;
 /**
  *
  */
@@ -28,7 +26,7 @@ public:
 	UCapsuleComponent* GetCameraCapsule() {return CameraCapsule;}
 
 	UPROPERTY()
-	TObjectPtr<UCharacterWidgetController> CharacterWC;
+	TObjectPtr<class UCharacterWidgetController> CharacterWC;
 protected:
 	virtual void BeginPlay() override;
 	virtual void InitAuraCharacter() override;
@@ -41,7 +39,5 @@ protected:
 	TObjectPtr<UCapsuleComponent> CameraCapsule;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	TObjectPtr<UWidgetComponent> LevelUpWidgetComponent; //TODO: use AuraWorldUserWidget
-	UPROPERTY(EditAnywhere, Category = "Aura|CharacterWidgetClass")
-	TSubclassOf<UCharacterWidgetController> CharacterWidgetClass;
+	TObjectPtr<class UWidgetComponent> LevelUpWidgetComponent; //TODO: use AuraWorldUserWidget
 };

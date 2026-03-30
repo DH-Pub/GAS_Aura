@@ -35,6 +35,12 @@ public:
 
 	UPROPERTY() // Overlay is always available with this
 	TObjectPtr<UOverlayWidgetController> OverlayController;
+	/*UE_DEPRECATED(all, "Using MessageDataTable but this can be used")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Aura|Overlay")
+	TObjectPtr<class UMessageInfo> MessageInfo; // This is DEPRECATED, use MessageDataTable
+	UPROPERTY(EditDefaultsOnly, Category="Aura|Overlay")
+	TObjectPtr<UDataTable> MessageDataTable;*/
+
 	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<UAttributeMenuWidgetController> AttributeMenuController; // Widget created in OverlayWidget BP
 	UPROPERTY(BlueprintReadOnly)
@@ -73,10 +79,4 @@ public:
 private:
 	UPROPERTY(EditDefaultsOnly, Category="Aura")
 	TSubclassOf<UAuraUserWidget> OverlayWidgetClass; // For WBP_Overlay
-	UPROPERTY(EditDefaultsOnly, Category="Aura")
-	TSubclassOf<UOverlayWidgetController> OverlayWidgetControllerClass;
-	UPROPERTY(EditDefaultsOnly, Category="Aura")
-	TSubclassOf<UAttributeMenuWidgetController> AttributeMenuWidgetControllerClass;
-	UPROPERTY(EditDefaultsOnly, Category="Aura")
-	TSubclassOf<USpellMenuWidgetController> SpellMenuWidgetControllerClass;
 };

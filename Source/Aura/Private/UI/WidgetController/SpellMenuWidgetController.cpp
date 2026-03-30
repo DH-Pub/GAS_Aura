@@ -44,14 +44,13 @@ void USpellMenuWidgetController::UpdateButtonsAndDescriptions(const bool bClick)
 	FText NextLvDescription;
 	if (const FGameplayAbilitySpec* Spec = GetASC()->FindAbilitySpecFromClass(AbilityClass))
 	{
-		// Spec->GetAbilityInstances(); Spec->GetPrimaryInstance();
-		if (const UAuraGameplayAbility* AuraAbility = Cast<UAuraGameplayAbility>(Spec->NonReplicatedInstances[0]))
+		if (const UAuraGameplayAbility* AuraAbility = AbilityClass.GetDefaultObject())
 		{
-			FAbilityDetails Details(Spec->Level);
+			FAbilityDetails Details(Spec->Level, GetASC());
 			AuraAbility->GetAbilityDetails(Details);
 			AuraAbility->GetDescription(Details, Description);
 
-			FAbilityDetails ChangeDetails(Spec->Level + 1);
+			FAbilityDetails ChangeDetails(Spec->Level + 1, GetASC());
 			AuraAbility->GetAbilityDetails(ChangeDetails);
 			AuraAbility->GetLevelChangeDescription(Details, ChangeDetails, NextLvDescription);
 		}
@@ -76,13 +75,9 @@ bool USpellMenuWidgetController::EquipAbility()
 {
 	if (SelectedSpellGlobe && SelectedSpellGlobe->AbilityClass)
 	{
-		if (const FAuraAbilityData* Data = UAbilityDataAsset::GetDataFromGameState(this,
-			SelectedSpellGlobe->AbilityClass))
-		{
-			UpdateButtonsAndDescriptions(true);
-			// Data->AbilityClass->GetDefaultObject<UAuraGameplayAbility>()->ActivationPolicy;
-			return Data->AbilityClass.GetDefaultObject()->ActivationPolicy == EAuraActivationPolicy::OnSpawn;
-		}
+		UpdateButtonsAndDescriptions(true);
+		// Data->AbilityClass->GetDefaultObject<UAuraGameplayAbility>()->ActivationPolicy;
+		return SelectedSpellGlobe->AbilityClass.GetDefaultObject()->ActivationPolicy == EAuraActivationPolicy::OnSpawn;
 	}
 	return false;
 }

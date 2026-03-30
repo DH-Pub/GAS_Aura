@@ -88,6 +88,8 @@ public:
 	int32 GetCharacterLevel() const;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Aura")
 	ECharacterClass CharacterClass;
+	UPROPERTY(EditDefaultsOnly, Category="Aura")
+	TObjectPtr<const class UAbilityDataAsset> AbilityDataAsset; //
 
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Category="Aura|Combat")
 	TObjectPtr<AActor> CombatTarget; // For AI use

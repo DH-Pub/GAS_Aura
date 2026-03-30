@@ -77,7 +77,7 @@ void UDamageAbility::MeleeTraceAndApplyEffects(const float Radius, const FVector
 
 	TArray<FHitResult> HitResults;
 	UAuraAbilityLibrary::TraceByChannel(this, Start, InLoc, {AuraCharacter},
-		DrawDebugType, HitResults, {ECC_AuraTrace_Effect}, true, Radius);
+		DrawDebugType, HitResults, {ECC_AuraTrace_Effect}, Radius);
 
 	UAbilitySystemComponent* ASC = CurrentActorInfo->AbilitySystemComponent.Get();
 	const float Level = GetAbilityLevel();

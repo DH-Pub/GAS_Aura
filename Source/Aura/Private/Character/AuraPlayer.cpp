@@ -79,9 +79,9 @@ void AAuraPlayer::BeginPlay()
 {
 	Super::BeginPlay();
 
+	UAuraWidgetController::CreateOrGetWidgetController<UCharacterWidgetController>(CharacterWC, this);
 	UAuraUserWidget* LevelUpWidget = Cast<UAuraUserWidget>(LevelUpWidgetComponent->GetUserWidgetObject());
-	UAuraWidgetController::CreateOrGetWidgetController(this, this, CharacterWC, CharacterWidgetClass);
-	LevelUpWidget->SetWidgetController(CharacterWC);
+	LevelUpWidget->SetWidgetController(CharacterWC); // Might make this Local player only
 }
 
 void AAuraPlayer::InitAuraCharacter()
@@ -90,6 +90,7 @@ void AAuraPlayer::InitAuraCharacter()
 	AbilitySystemComponent = AuraPS->GetAuraAbilitySystemComponent();
 	AbilitySystemComponent->InitAbilityActorInfo(AuraPS, this);
 	AttributeSet = AuraPS->GetAuraAttributeSet();
+
 	if (AAuraPlayerController* AuraPC = Cast<AAuraPlayerController>(GetController())) // Server and local client
 	{	// Only Local Client can get HUD
 		if (AAuraHUD* AuraHUD = AuraPC->GetHUD<AAuraHUD>()) AuraHUD->InitAuraHUD(AuraPC, AuraPS, this);

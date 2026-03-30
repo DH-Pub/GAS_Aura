@@ -3,6 +3,7 @@
 
 #include "Player/AuraPlayerController.h"
 
+#include "AuraAbilityLibrary.h"
 #include "EnhancedInputSubsystems.h"
 #include "NavigationPath.h"
 #include "NavigationSystem.h"
@@ -10,6 +11,7 @@
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/Data/AuraInputDataAsset.h"
 #include "AI/NavigationSystemBase.h"
+#include "Animation/AnimInstanceProxy.h"
 #include "Aura/Aura.h"
 #include "Character/AuraEnemy.h"
 #include "Character/AuraPlayer.h"
@@ -28,6 +30,7 @@ AAuraPlayerController::AAuraPlayerController()
 	Spline = CreateDefaultSubobject<USplineComponent>("Splines");
 }
 
+// This is only called for locally controlled PlayerControllers
 void AAuraPlayerController::PlayerTick(const float DeltaTime)
 {
 	Super::PlayerTick(DeltaTime);
@@ -216,6 +219,26 @@ void AAuraPlayerController::MoveMouseComplete(const FInputActionValue& InputActi
 	UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, ClickNiagara, CursorHitResult.ImpactPoint);
 }
 
+//TODO: Set Physical Material for Wall and Ground
+void AAuraPlayerController::UpdateAim()
+{	/*FVector2D MousePos; if (!GetMousePosition(MousePos.X, MousePos.Y)) return; GetHitResultAtScreenPosition();*/
+	/*const bool bHit =*/ GetHitResultUnderCursor(ECC_AuraTrace_Mouse, false, CursorHitResult);
+	/*DrawDebugLineTraceSingle(GetWorld(), CursorHitResult.TraceStart, CursorHitResult.TraceEnd,
+		EDrawDebugTrace::ForDuration, bHit, CursorHitResult, FColor::Red, FColor::Green, 5.f);*/
+
+	const FVector CharacterLocation = GetPawn()->GetActorLocation();
+	/*
+	 * We use a point at the same plane as character location:
+	 * - To improve click-accuracy from player's POV because projectiles are spawned near that plane
+	 * - Still get an accurate mouse-to-character direction even if character is on different altitude than HitResult ground (or none)
+	 */
+	FVector Intersection; float TIntersection;
+	UKismetMathLibrary::LinePlaneIntersection_OriginNormal(CursorHitResult.TraceStart, CursorHitResult.TraceEnd,
+		CharacterLocation, FVector::UpVector, TIntersection, Intersection);
+	AuraPawn->AimDirection = (Intersection - CharacterLocation).GetSafeNormal();
+	ServerSetCharacterAimDirection(AuraPawn->AimDirection);
+}
+
 void AAuraPlayerController::CursorTick()
 {
 	//CurrentCursorHitActor = CursorHitResult.GetActor(); // cast to IEnemyInterface, nullptr if can't (i.e. Floor -> nullptr)
@@ -230,10 +253,8 @@ void AAuraPlayerController::CursorTick()
 
 	if (CursorHitEnemy) return; // Has valid Hit to end here
 	TArray<FHitResult> Hits;
-	const TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes = {UCollisionProfile::Get()->ConvertToObjectType(ECC_Pawn)};
-	UKismetSystemLibrary::SphereTraceMultiForObjects(this,
-		CursorHitResult.TraceStart, CursorHitResult.TraceEnd, 50.f, ObjectTypes,
-		false, {GetPawn()}, EDrawDebugTrace::None, Hits, true);
+	UAuraAbilityLibrary::TraceByChannel(this, CursorHitResult.TraceStart, CursorHitResult.TraceEnd,
+		{GetPawn()}, EDrawDebugTrace::None, Hits, {ECC_Pawn}, 50.f, false);
 	float NearestDistance = UE_BIG_NUMBER;
 	for (const FHitResult& Hit : Hits)
 	{
@@ -250,25 +271,6 @@ void AAuraPlayerController::CursorTick()
 	// if (AActor* Nearest = UGameplayStatics::FindNearestActor(Intersection, HitActors, NearestDistance))
 	if (CursorHitEnemy) CursorHitEnemy->HighlightActor();
 	/*GetWorld()->OverlapMultiByObjectType();*/
-}
-
-//TODO: Set Physical Material for Wall and Ground
-void AAuraPlayerController::UpdateAim()
-{	// GetHitResultUnderCursor(ECC_Mouse, false, CursorHitResult);
-	FVector2D MousePos; if (!GetMousePosition(MousePos.X, MousePos.Y)) return;
-	GetHitResultAtScreenPosition(MousePos, ECC_AuraTrace_Mouse, false, CursorHitResult);
-
-	const FVector CharacterLocation = GetPawn()->GetActorLocation();
-	/*
-	 * We use a point at the same plane as character location:
-	 * - To improve click-accuracy from player's POV because projectiles are spawned near that plane
-	 * - Still get an accurate mouse-to-character direction even if character is on different altitude than HitResult ground (or none)
-	 */
-	FVector Intersection; float TIntersection;
-	UKismetMathLibrary::LinePlaneIntersection_OriginNormal(CursorHitResult.TraceStart, CursorHitResult.TraceEnd,
-		CharacterLocation, FVector::UpVector, TIntersection, Intersection);
-	AuraPawn->AimDirection = (Intersection - CharacterLocation).GetSafeNormal();
-	ServerSetCharacterAimDirection(AuraPawn->AimDirection);
 }
 
 // Change on server for UPROPERTY(Replicated/ReplicatedUsing) to work, else use AbilityTask_AimData

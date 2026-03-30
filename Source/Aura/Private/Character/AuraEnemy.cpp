@@ -8,7 +8,6 @@
 #include "Aura/Aura.h"
 #include "AbilitySystem/Data/CharacterClassDataAsset.h"
 #include "AI/AuraAIController.h"
-#include "Components/CapsuleComponent.h"
 #include "Components/WidgetComponent.h"
 #include "UI/Widget/AuraUserWidget.h"
 #include "UI/WidgetController/EnemyWidgetController.h"
@@ -67,15 +66,14 @@ void AAuraEnemy::BeginPlay()
 {
 	Super::BeginPlay();
 	InitAuraCharacter();
-
-	UAuraUserWidget* Widget = Cast<UAuraUserWidget>(HealthBar->GetUserWidgetObject());
-	UAuraWidgetController::CreateOrGetWidgetController(this, this, HealthBarController, HealthBarControllerClass);
-	Widget->SetWidgetController(HealthBarController);
 }
 
 void AAuraEnemy::InitAuraCharacter()
 {
 	AbilitySystemComponent->InitAbilityActorInfo(this, this);
+
+	UAuraWidgetController::CreateOrGetWidgetController<UEnemyWidgetController>(HealthBarController, this);
+	Cast<UAuraUserWidget>(HealthBar->GetUserWidgetObject())->SetWidgetController(HealthBarController);
 
 	if (const UCharacterClassDataAsset* ClassData = UCharacterClassDataAsset::GetFromGameMode(this))
 	{

@@ -46,6 +46,7 @@ private:
 
 public:
 	void GetCost(FAbilityDetails& Details) const;
-	void GetCooldownAndReduction(FAbilityDetails& Details) const;
+	void GetCooldown(FAbilityDetails& Details) const;
+	/** This can be called on CDO */
 	virtual void GetAbilityDetails(FAbilityDetails& Details) const override;
 };

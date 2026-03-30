@@ -47,6 +47,4 @@ protected:
 
 	UPROPERTY()
 	TObjectPtr<class UEnemyWidgetController> HealthBarController;
-	UPROPERTY(EditAnywhere, Category="Aura")
-	TSubclassOf<UEnemyWidgetController> HealthBarControllerClass;
 };

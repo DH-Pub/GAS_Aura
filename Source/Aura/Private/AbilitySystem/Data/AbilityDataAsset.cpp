@@ -9,7 +9,7 @@
 #include "Game/AuraGameState.h"
 #include "Misc/DataValidation.h"
 
-const UAbilityDataAsset* UAbilityDataAsset::GetFromGameState(const UObject* WorldContextObject)
+const UAbilityDataAsset* UAbilityDataAsset::Get(const UObject* WorldContextObject)
 {
 	AAuraGameState* GameState = AAuraGameState::Get(WorldContextObject);
 	return GameState ? GameState->AbilityDataAsset : nullptr;
@@ -18,7 +18,7 @@ const UAbilityDataAsset* UAbilityDataAsset::GetFromGameState(const UObject* Worl
 const FAuraAbilityData* UAbilityDataAsset::GetDataFromGameState(const UObject* WorldContextObject,
 	const UClass* AbilityClass)
 {
-	if (const UAbilityDataAsset* DA = GetFromGameState(WorldContextObject))
+	if (const UAbilityDataAsset* DA = Get(WorldContextObject))
 	{
 		for (const FAuraAbilityData& Data : DA->AbilityDataList)
 		{
@@ -31,7 +31,7 @@ const FAuraAbilityData* UAbilityDataAsset::GetDataFromGameState(const UObject* W
 void UAbilityDataAsset::UnlockAbilityByLevel(const UObject* WorldContextObject, UAuraAbilitySystemComponent* ASC,
 	const int32 CharacterLevel)
 {
-	for (const FAuraAbilityData& Data : GetFromGameState(WorldContextObject)->AbilityDataList)
+	for (const FAuraAbilityData& Data : Get(WorldContextObject)->AbilityDataList)
 	{	/* not enough lv or already has ability */
 		if (CharacterLevel < Data.LevelRequirement || ASC->FindAbilitySpecFromClass(Data.AbilityClass)) continue;
 		FGameplayAbilitySpec AbilitySpec(Data.AbilityClass, 1);

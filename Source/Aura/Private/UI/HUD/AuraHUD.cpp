@@ -22,14 +22,11 @@ void AAuraHUD::InitAuraHUD(AAuraPlayerController* PC, AAuraPlayerState* PS, AAur
 	OverlayWidget = CreateWidget<UAuraUserWidget>(GetWorld(), OverlayWidgetClass);
 	OverlayWidget->AddToViewport();
 	/* Create/Get WidgetController, BindCallbacksDependencies() */
-	UAuraWidgetController::CreateOrGetWidgetController<UOverlayWidgetController>(this, Character,
-		OverlayController, OverlayWidgetControllerClass);
+	UAuraWidgetController::CreateOrGetWidgetController<UOverlayWidgetController>(OverlayController, Character);
 	OverlayWidget->SetWidgetController(OverlayController);
 
-	UAuraWidgetController::CreateOrGetWidgetController<UAttributeMenuWidgetController>(this, Character,
-		AttributeMenuController, AttributeMenuWidgetControllerClass);
-	UAuraWidgetController::CreateOrGetWidgetController<USpellMenuWidgetController>(this, Character,
-		SpellMenuController, SpellMenuWidgetControllerClass);
+	UAuraWidgetController::CreateOrGetWidgetController<UAttributeMenuWidgetController>(AttributeMenuController, Character);
+	UAuraWidgetController::CreateOrGetWidgetController<USpellMenuWidgetController>(SpellMenuController, Character);
 }
 
 const TMap<FGameplayTag, FAuraAttributeData>& AAuraHUD::GetAttributeDataList() const

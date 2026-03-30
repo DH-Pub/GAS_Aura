@@ -8,7 +8,7 @@
 #include "Player/AuraPlayerState.h"
 #include "UI/HUD/AuraHUD.h"
 
-AController* UAuraWidgetController::GetPlayerController() const {return Character->GetController();}
+// AController* UAuraWidgetController::GetPlayerController() const {return Character->GetController();}
 AAuraPlayerState* UAuraWidgetController::GetPlayerState() const {return Character->GetPlayerState<AAuraPlayerState>();}
 UAuraAbilitySystemComponent* UAuraWidgetController::GetASC() const {return Character->GetAuraAbilitySystemComponent();}
 UAuraAttributeSet* UAuraWidgetController::GetAttributeSet() const {return Character->GetAttributeSet();}

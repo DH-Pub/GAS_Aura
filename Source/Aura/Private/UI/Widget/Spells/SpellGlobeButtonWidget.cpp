@@ -22,9 +22,9 @@ void USpellGlobeButtonWidget::SetWidgetController(UAuraWidgetController* InWidge
 }
 
 void USpellGlobeButtonWidget::ReceiveAbilityData(const FGameplayAbilitySpec& AbilitySpec,
-	const FAuraAbilityData& AbilityData)
+	const FAuraAbilityData& Data)
 {
-	if (AbilityData.AbilityClass != AbilityClass) return;
+	if (Data.AbilityClass != AbilityClass) return;
 
 	const FGameplayTagContainer& Tags = AbilitySpec.GetDynamicSpecSourceTags();
 	if (Tags.HasTagExact(AuraTag::Ability_Status_Locked))
@@ -38,15 +38,15 @@ void USpellGlobeButtonWidget::ReceiveAbilityData(const FGameplayAbilitySpec& Abi
 	{
 		StatusTag = AuraTag::Ability_Status_Eligible;
 		bDragEnable = false;
-		Image_SpellIcon->SetBrushFromTexture(AbilityData.Icon);
+		Image_SpellIcon->SetBrushFromTexture(Data.Icon);
 		Image_Background->SetBrushFromMaterial(LockedMaterial);
 	}
 	else
 	{	// not under any status
 		StatusTag = FGameplayTag::EmptyTag;
 		bDragEnable = true;
-		Image_SpellIcon->SetBrushFromTexture(AbilityData.Icon);
-		Image_Background->SetBrushFromMaterial(AbilityData.BackgroundMaterial);
+		Image_SpellIcon->SetBrushFromTexture(Data.Icon);
+		Image_Background->SetBrushFromMaterial(Data.BackgroundMaterial);
 	}
 
 	// Order: GiveAbility => Updating SpellPoints, but AbilityDataDelegate broadcast slower than OnSpellPointChangedDelegate
@@ -90,6 +90,7 @@ void USpellGlobeButtonWidget::NativeOnMouseLeave(const FPointerEvent& InMouseEve
 
 FReply USpellGlobeButtonWidget::NativeOnFocusReceived(const FGeometry& InGeometry, const FFocusEvent& InFocusEvent)
 {
+	if (!SpellMenuWC) return Super::NativeOnFocusReceived(InGeometry,InFocusEvent);
 	UGameplayStatics::PlaySound2D(this, ClickSound);
 	if (SpellMenuWC->SelectedSpellGlobe != this)
 	{

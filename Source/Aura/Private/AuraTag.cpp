@@ -51,6 +51,8 @@ namespace AuraTag
 	// UE_DEFINE_GAMEPLAY_TAG(Ability_Fire_FireBolt_Cooldown, "Ability.Fire.FireBolt.Cooldown")
 
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Lightning_Electrocute, "Ability.Lightning.Electrocute")
+
+	UE_DEFINE_GAMEPLAY_TAG(Ability_Arcane_ArcaneShards, "Ability.Arcane.ArcaneShards")
 	// ================================================================================================================
 
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Passive_HaloOfProtection, "Ability.Passive.HaloOfProtection")
@@ -63,9 +65,9 @@ namespace AuraTag
 
 
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Cancelable_Generic, "Ability.Cancelable.Generic", "This ability can be blocked by most things")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Blockable_Generic, "Ability.Blockable.Generic", "")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Cancelable_Passive_Generic, "Ability.Cancelable.Passive.Generic", "")
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Blockable_Passive_Generic, "Ability.Blockable.Passive.Generic", "")
+	// UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Blockable_Generic, "Ability.Blockable.Generic", "")
+	// UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Blockable_Passive_Generic, "Ability.Blockable.Passive.Generic", "")
 #pragma endregion
 
 
@@ -83,6 +85,9 @@ namespace AuraTag
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_HitReact_Stun, "State.HitReact.Stun", "")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_HitReact_Shocked, "State.HitReact.Shocked", "")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Death, "State.Death", "")
+
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Ability, "State.Ability", "Cast Ability")
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Ability_Generic, "State.Ability.Generic", "")
 
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_HitReact_Knockback, "State.HitReact.Knockback", "For Send Event")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_HitReact_PlayMontage, "State.HitReact.PlayMontage", "For Send Event")
@@ -137,11 +142,13 @@ namespace AuraTag
 
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(GameplayCue_Shared_Summon, "GameplayCue.Shared.Summon", "")
 
-
 	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Melee_Pierce_Impact, "GameplayCue.Melee.Pierce.Impact")
 
-
 	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Shared_LevelUp, "GameplayCue.Shared.LevelUp")
+
+	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Passive_HaloOfProtection, "GameplayCue.Passive.HaloOfProtection")
+	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Passive_LifeSiphon, "GameplayCue.Passive.LifeSiphon")
+	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Passive_ManaSiphon, "GameplayCue.Passive.ManaSiphon")
 
 	/*UE_DEFINE_GAMEPLAY_TAG_COMMENT(GameplayCue_Projectile_FireBolt_Impact, "GameplayCue.Projectile.FireBolt.Impact", "")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(GameplayCue_Beam_Electrocute_Line, "GameplayCue.Beam.Electrocute.Line", "")*/
@@ -151,7 +158,13 @@ namespace AuraTag
 
 namespace MessageTags
 {
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Message,"Message", "Parent Tag")
+	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Pickup,"GameplayCue.Pickup") // ParentTag
+	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Pickup_HealthCrystal,"GameplayCue.Pickup.HealthCrystal")
+	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Pickup_HealthPotion,"GameplayCue.Pickup.HealthPotion")
+	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Pickup_ManaCrystal,"GameplayCue.Pickup.ManaCrystal")
+	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Pickup_ManaPotion,"GameplayCue.Pickup.ManaPotion")
+
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Message,"Message", "Parent Tag") //TODO: DEPRECATED, Remove this
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Message_HealthCrystal,"Message.HealthCrystal", "")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Message_HealthPotion,"Message.HealthPotion", "")
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Message_ManaCrystal,"Message.ManaCrystal", "")
