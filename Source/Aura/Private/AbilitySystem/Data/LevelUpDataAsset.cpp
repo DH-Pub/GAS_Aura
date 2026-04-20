@@ -40,7 +40,8 @@ EDataValidationResult ULevelUpDataAsset::IsDataValid(FDataValidationContext& Con
 			Args.Add("Requirement", LevelUpRequirement);
 			const FText FormattedText = FText::Format(NSLOCTEXT("XPError", "XPFormat",
 				"Next Level ({Level}) Up Requirement needs to be bigger than {Requirement}!!!"), Args);
-			const FText ErrorMsg = FText::Format(LOCTEXT( "Err","Next Level ({0}) Up Requirement needs to be bigger than last!!!"), i);
+			const FText ErrorMsg = FText::Format(LOCTEXT("Err",
+				"Next Level ({0}) Up Requirement needs to be bigger than last!!!"), i);
 			Context.AddError(FormattedText);
 		}
 	}

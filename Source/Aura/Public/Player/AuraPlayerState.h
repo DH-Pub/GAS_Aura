@@ -35,6 +35,7 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category="Aura")
 	TObjectPtr<const class ULevelUpDataAsset> LevelUpDataAsset;
 
+	void BroadcastCurrentData() const;
 	FOnPlayerStatChanged OnLevelChangedDelegate;
 	FOnPlayerStatChanged OnXPChangedDelegate;
 
@@ -62,6 +63,8 @@ public:
 	void SetSpellPoints(const int32 NewPoints) {SpellPoints = NewPoints; OnRep_SpellPoints();}
 	void AddToSpellPoints(const int32 InPoints) {SetSpellPoints(SpellPoints + InPoints);}
 protected:
+	virtual void BeginPlay() override;
+
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UAuraAbilitySystemComponent> AbilitySystemComponent;
 	UPROPERTY()
@@ -78,12 +81,12 @@ private:
 	UFUNCTION()
 	void OnRep_XP(int32 OldXP) const {OnXPChangedDelegate.Broadcast(XP);}
 
-	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_AttributePoints, Category="Aura")
+	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_AttributePoints, Category="Aura")
 	int32 AttributePoints = 0;
 	UFUNCTION()
 	void OnRep_AttributePoints() const {OnAttributePointsChangedDelegate.Broadcast(AttributePoints);}
 
-	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_SpellPoints, Category="Aura")
+	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_SpellPoints, Category="Aura")
 	int32 SpellPoints = 0;
 	UFUNCTION()
 	void OnRep_SpellPoints() const {OnSpellPointsChangedDelegate.Broadcast(SpellPoints);}

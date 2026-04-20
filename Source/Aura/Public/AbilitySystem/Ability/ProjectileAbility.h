@@ -59,7 +59,7 @@ struct FGATargetData_ProjectileInfo : public FGameplayAbilityTargetData
 	UPROPERTY()
 	FRotator Rotation = FRotator();
 
-	float ActivationTime = 0.f;
+	float ActivationTime = 0.f; // Time it took for server to receive data and spawn projectile
 	virtual FTransform GetOrigin() const override // Use Origin for spawn point
 	{
 		FTransform Origin(Location);

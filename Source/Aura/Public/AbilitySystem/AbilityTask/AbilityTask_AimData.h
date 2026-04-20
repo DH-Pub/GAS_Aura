@@ -64,7 +64,7 @@ UCLASS()
 class AURA_API UAbilityTask_AimData : public UAbilityTask
 {
 	GENERATED_BODY()
-public:
+
 	UFUNCTION(BlueprintCallable, Category="Ability|Task", meta=(HidePin="OwningAbility", DefaultToSelf="OwningAbility",
 		BlueprintInternalUseOnly="true"))
 	static UAbilityTask_AimData* SendAimData(UGameplayAbility* OwningAbility);

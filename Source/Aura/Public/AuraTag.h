@@ -112,9 +112,9 @@ namespace AuraTag // Automatically add to Gameplay Tag List
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Damage_Lightning)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Damage_Arcane)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Damage_Physical)
-	static const TArray<FGameplayTag> DamageTypeArray = {
+	static const FGameplayTagContainer DamageTypeContainer = FGameplayTagContainer::CreateFromArray<FDefaultAllocator>({
 		Damage_Fire, Damage_Lightning, Damage_Arcane, Damage_Physical
-	};
+	});
 
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Damage_Knockback)
 
@@ -130,9 +130,6 @@ namespace AuraTag // Automatically add to Gameplay Tag List
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Debuff_Type_Electric)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Debuff_Type_Arcane)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Debuff_Type_Physical)
-	static const TArray<FGameplayTag> DebuffTypeArray = {
-		Debuff_Type_Burn, Debuff_Type_Electric, Debuff_Type_Arcane, Debuff_Type_Physical
-	};
 
 
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayEvent_Montage) // Generic GameplayEvents for Animation Montage
@@ -163,6 +160,8 @@ namespace AuraTag // Automatically add to Gameplay Tag List
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Shared_Summon)
 
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Melee_Pierce_Impact)
+
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Spell_ArcaneShards)
 
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Shared_LevelUp)
 

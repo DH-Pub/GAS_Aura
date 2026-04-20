@@ -18,33 +18,32 @@ bool UAuraGameplayAbility::CanActivateAbility(const FGameplayAbilitySpecHandle H
 	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayTagContainer* SourceTags,
 	const FGameplayTagContainer* TargetTags, FGameplayTagContainer* OptionalRelevantTags) const
 {
-	if (!IsInstantiated())
+	if (IsInstantiated())
 	{
-		return Super::CanActivateAbility(Handle, ActorInfo, SourceTags, TargetTags, OptionalRelevantTags);
-	}
-	const FGameplayAbilitySpec* Spec = GetCurrentAbilitySpec();
-	const FGameplayTagContainer& SpecTags = Spec->GetDynamicSpecSourceTags();
-	if (!SpecTags.IsEmpty())
-	{
-		switch (ActivationPolicy)
+		const FGameplayAbilitySpec* Spec = GetCurrentAbilitySpec(); // has to be Instantiated
+		const FGameplayTagContainer& SpecTags = Spec->GetDynamicSpecSourceTags();
+		if (SpecTags.Num() > 0)
 		{
-		case EAuraActivationPolicy::InputHolding:
-		case EAuraActivationPolicy::InputStart:
-			if (ActorInfo->AbilitySystemComponent->HasMatchingGameplayTag(
-				AuraTag::State_Block_Input)) return false;
-			// if (Spec->InputID == 0) return false; // Invalid input set on an Input Ability
-			break;
-		case EAuraActivationPolicy::OnSpawn:
-			if (Spec->InputID < EAuraAbilityInputID::PassiveForAbilitySlots)
-			{	//TODO: Add/Remove Ability instead, save upgrade data somewhere
-				return false;
+			switch (ActivationPolicy)
+			{
+			case EAuraActivationPolicy::InputHolding:
+			case EAuraActivationPolicy::InputStart:
+				if (ActorInfo->AbilitySystemComponent->HasMatchingGameplayTag(
+					AuraTag::State_Block_Input)) return false;
+				// if (Spec->InputID == 0) return false; // Invalid input set on an Input Ability
+				break;
+			case EAuraActivationPolicy::OnSpawn:
+				if (Spec->InputID < EAuraAbilityInputID::PassiveForAbilitySlots)
+				{	//TODO: Add/Remove Ability instead, save upgrade data somewhere
+					return false;
+				}
+				break;
 			}
-			break;
-		}
-		for (const FGameplayTag& Tag : SpecTags)
-		{
-			if (Tag.MatchesTagExact(AuraTag::Ability_Status_Eligible) ||
-				Tag.MatchesTagExact(AuraTag::Ability_Status_Locked)) return false;
+			for (const FGameplayTag& Tag : SpecTags)
+			{
+				if (Tag.MatchesTagExact(AuraTag::Ability_Status_Eligible) ||
+					Tag.MatchesTagExact(AuraTag::Ability_Status_Locked)) return false;
+			}
 		}
 	}
 	return Super::CanActivateAbility(Handle, ActorInfo, SourceTags, TargetTags, OptionalRelevantTags);
@@ -78,6 +77,35 @@ void UAuraGameplayAbility::OnRemoveAbility(const FGameplayAbilityActorInfo* Acto
 {
 	Super::OnRemoveAbility(ActorInfo, Spec); // Empty
 	BP_OnRemoveAbility();
+}
+
+void UAuraGameplayAbility::PreActivate(const FGameplayAbilitySpecHandle Handle,
+	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo,
+	FOnGameplayAbilityEnded::FDelegate* OnGameplayAbilityEndedDelegate, const FGameplayEventData* TriggerEventData)
+{
+	Super::PreActivate(Handle, ActorInfo, ActivationInfo, OnGameplayAbilityEndedDelegate, TriggerEventData);
+
+	if (HasAuthority(&CurrentActivationInfo))
+	{
+
+	}
+	else if (IsPredictingClient())
+	{
+		/**
+		 * This is a hack, when ability is interrupted right after client's activation
+		 * Which EndAbility on Client, but Blocked on Server so Server correction for GameplayTagCountContainer never came
+		 */
+		/*if (!ActivationOwnedTags.IsEmpty())
+		{
+			TWeakObjectPtr WeakThis = this;
+			GetWorld()->GetTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this,
+			[this, WeakThis]()
+			{
+				if (!WeakThis.IsValid()) return;
+				AuraCharacter->GetAuraAbilitySystemComponent()->ServerCheckOwnedTags(ActivationOwnedTags);
+			}));
+		}*/
+	}
 }
 
 const FAuraAbilityActorInfo* UAuraGameplayAbility::GetAuraActorInfo() const

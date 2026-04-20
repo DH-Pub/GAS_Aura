@@ -18,7 +18,7 @@ void USpellGlobeWidget::SetWidgetController(UAuraWidgetController* InWidgetContr
 	OverlayWC = Cast<UOverlayWidgetController>(InWidgetController); check(OverlayWC);
 	WheelMaterialInstance = Image_WheelProgress->GetDynamicMaterial();
 	Image_WheelProgress->SetVisibility(ESlateVisibility::Collapsed);
-	OverlayWC->GetASC()->AbilityDataDelegate.AddDynamic(this, &USpellGlobeWidget::SuccessUpdateAbilityData);
+	OverlayWC->OnReceiveAbilityDataFromASC.AddDynamic(this, &USpellGlobeWidget::SuccessUpdateAbilityData);
 	Super::SetWidgetController(InWidgetController);
 }
 
@@ -35,7 +35,7 @@ void USpellGlobeWidget::NativePreConstruct()
 
 void USpellGlobeWidget::NativeDestruct()
 {
-	if (OverlayWC) OverlayWC->GetASC()->AbilityDataDelegate.RemoveAll(this);
+	if (OverlayWC) OverlayWC->OnReceiveAbilityDataFromASC.RemoveAll(this);
 	GetWorld()->GetTimerManager().ClearTimer(CooldownTimerHandle);
 	Super::NativeDestruct();
 }
@@ -57,13 +57,11 @@ void USpellGlobeWidget::SuccessUpdateAbilityData(const FGameplayAbilitySpec& Abi
 	ResourceObj.SetResourceObject(Data.BackgroundMaterial);
 	Image_Background->SetBrush(ResourceObj); //Image_Background->SetBrushFromMaterial(Data.BackgroundMaterial);
 
-	if (const FGameplayTagContainer* Tags = AbilitySpec.GetPrimaryInstance()->GetCooldownTags())
-	{	// if (const FGameplayTagContainer* Tags = Data.AbilityClass.GetDefaultObject()->GetCooldownTags())
-		if (Tags->Num() > 0) // Check if Ability has Cooldown
-		{
-			CooldownTags = *Tags;
-			CheckAbilityCooldown();
-		}
+	const FGameplayTagContainer* Tags = AbilitySpec.Ability->GetCooldownTags();
+	if (Tags && Tags->Num() > 0)
+	{	// Check if Ability has Cooldown
+		CooldownTags = *Tags;
+		CheckAbilityCooldown();
 	}
 }
 

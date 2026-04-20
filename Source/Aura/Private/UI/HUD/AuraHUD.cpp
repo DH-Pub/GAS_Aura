@@ -4,29 +4,21 @@
 #include "UI/HUD/AuraHUD.h"
 
 #include "AbilitySystem/Data/AttributeDataAsset.h"
-#include "Character/AuraCharacterBase.h"
 #include "Components/Overlay.h"
 #include "UI/Widget/AuraUserWidget.h"
 #include "UI/WidgetController/AttributeMenuWidgetController.h"
 #include "UI/WidgetController/OverlayWidgetController.h"
 #include "UI/WidgetController/SpellMenuWidgetController.h"
 
-void AAuraHUD::InitAuraHUD(AAuraPlayerController* PC, AAuraPlayerState* PS, AAuraCharacterBase* Character)
+void AAuraHUD::InitAuraHUD(class UAuraAbilitySystemComponent* InASC)
 {
-	PlayerController = PC;
-	PlayerState = PS;
-	AbilitySystemComponent = Character->GetAuraAbilitySystemComponent();
-	AttributeSet = Character->GetAttributeSet();
-
-	// Create and add HUD widget to viewport
+	UAuraWidgetController::CreateOrGetWidgetController<UOverlayWidgetController>(OverlayController, InASC);
 	OverlayWidget = CreateWidget<UAuraUserWidget>(GetWorld(), OverlayWidgetClass);
 	OverlayWidget->AddToViewport();
-	/* Create/Get WidgetController, BindCallbacksDependencies() */
-	UAuraWidgetController::CreateOrGetWidgetController<UOverlayWidgetController>(OverlayController, Character);
 	OverlayWidget->SetWidgetController(OverlayController);
 
-	UAuraWidgetController::CreateOrGetWidgetController<UAttributeMenuWidgetController>(AttributeMenuController, Character);
-	UAuraWidgetController::CreateOrGetWidgetController<USpellMenuWidgetController>(SpellMenuController, Character);
+	UAuraWidgetController::CreateOrGetWidgetController<UAttributeMenuWidgetController>(AttributeMenuController, InASC);
+	UAuraWidgetController::CreateOrGetWidgetController<USpellMenuWidgetController>(SpellMenuController, InASC);
 }
 
 const TMap<FGameplayTag, FAuraAttributeData>& AAuraHUD::GetAttributeDataList() const
@@ -34,7 +26,7 @@ const TMap<FGameplayTag, FAuraAttributeData>& AAuraHUD::GetAttributeDataList() c
 
 
 #pragma region UIFunctions
-AAuraHUD* AAuraHUD::GetAuraHUD(const UObject* WorldContextObject)
+AAuraHUD* AAuraHUD::Get(const UObject* WorldContextObject)
 {	/*TArray<APlayerController*> PlayerList; GEngine->GetAllLocalPlayerControllers(PlayerList);*/
 	// UGameplayStatics::GetPlayerController(WorldContextObject, 0);
 	// WorldContextObject->GetWorld()->GetFirstPlayerController(); // ??? not consistent if server has no player
@@ -47,8 +39,7 @@ AAuraHUD* AAuraHUD::GetAuraHUD(const UObject* WorldContextObject)
 bool AAuraHUD::AddWidgetToRootCanvasPanel(UUserWidget* InNewWidget)
 {
 	if (InNewWidget == nullptr) return false;
-	if (const AAuraHUD* HUD = GetAuraHUD(InNewWidget);
-		HUD && HUD->OverlayController && HUD->OverlayController->Overlay_Screen)
+	if (const AAuraHUD* HUD = Get(InNewWidget); HUD && HUD->OverlayController && HUD->OverlayController->Overlay_Screen)
 	{	// Set inside WBP_Overlay->WidgetControllerSet
 		/*UOverlaySlot* Slot =*/ HUD->OverlayController->Overlay_Screen->AddChildToOverlay(InNewWidget);
 		return true;

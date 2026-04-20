@@ -96,7 +96,7 @@ void UBeamAbility::BeamTraceForTarget()
 	else // Found nothing to Beam, Just Hit any blocking object
 	{
 		TArray<FHitResult> Hits; UAuraAbilityLibrary::TraceByChannel(this, CharacterLoc, End,
-			ActorsToIgnore, DrawDebug, Hits, {ECC_Visibility});
+			ActorsToIgnore, Hits, {ECC_Visibility}, 0, true, false, DrawDebug);
 		for (const FHitResult& Hit : Hits)
 		{
 			if (!Hit.bBlockingHit) continue;

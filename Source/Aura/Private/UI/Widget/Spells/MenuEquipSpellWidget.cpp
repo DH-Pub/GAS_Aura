@@ -12,7 +12,7 @@
 void UMenuEquipSpellWidget::SetWidgetController(UAuraWidgetController* InWidgetController)
 {
 	SpellMenuWC = Cast<USpellMenuWidgetController>(InWidgetController);
-	SpellMenuWC->GetASC()->AbilityDataDelegate.AddDynamic(this, &UMenuEquipSpellWidget::ReceiveAbilityData);
+	SpellMenuWC->OnReceiveAbilityDataFromASC.AddDynamic(this, &UMenuEquipSpellWidget::ReceiveAbilityData);
 	Super::SetWidgetController(InWidgetController);
 }
 
@@ -25,7 +25,7 @@ void UMenuEquipSpellWidget::NativePreConstruct()
 
 void UMenuEquipSpellWidget::NativeDestruct()
 {
-	if (SpellMenuWC) SpellMenuWC->GetASC()->AbilityDataDelegate.RemoveAll(this);
+	if (SpellMenuWC) SpellMenuWC->OnReceiveAbilityDataFromASC.RemoveAll(this);
 	Super::NativeDestruct();
 }
 

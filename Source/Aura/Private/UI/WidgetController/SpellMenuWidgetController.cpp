@@ -11,21 +11,32 @@
 #include "UI/Widget/Spells/SpellGlobeButtonWidget.h"
 #include "UI/WidgetController/OverlayWidgetController.h"
 
-void USpellMenuWidgetController::BindCallbacksDependencies()
+void USpellMenuWidgetController::BindCallbacksDependencies(UAuraAbilitySystemComponent* InASC)
 {
-	GetPlayerState()->OnSpellPointsChangedDelegate.RemoveAll(this);
+	if (AuraASC)
+	{
+		AuraASC->AbilityDataDelegate.RemoveAll(this);
+		if (AAuraPlayerState* OldPS = GetPlayerState())
+		{
+			OldPS->OnSpellPointsChangedDelegate.RemoveAll(this);
+		}
+	}
+
+	Super::BindCallbacksDependencies(InASC);
+
+	if (!AuraASC) return;
+	AuraASC->BindAbilityDataDelegateToUIDelegate(this, OnReceiveAbilityDataFromASC);
 	GetPlayerState()->OnSpellPointsChangedDelegate.AddWeakLambda(this, [this](const int32 Points)
 	{
-		SpellPoints = Points;
-		SpellPointsToUIDelegate.Broadcast(SpellPoints);
+		GetASC()->BroadcastAllAbilityData();
+		SpellPointsToUIDelegate.Broadcast(SpellPoints = Points);
 		if (FocusSpellGlobe) UpdateButtonsAndDescriptions();
 	});
 }
 
 void USpellMenuWidgetController::BroadcastInitialValues()
 {
-	GetASC()->BroadcastAllAbilityData();
-	SpellPointsToUIDelegate.Broadcast(GetPlayerState()->GetSpellPoints());
+	if (GetPlayerState()) GetPlayerState()->BroadcastCurrentData();
 }
 
 void USpellMenuWidgetController::ClearSelected()
@@ -42,15 +53,15 @@ void USpellMenuWidgetController::UpdateButtonsAndDescriptions(const bool bClick)
 
 	FText Description;
 	FText NextLvDescription;
-	if (const FGameplayAbilitySpec* Spec = GetASC()->FindAbilitySpecFromClass(AbilityClass))
+	if (const FGameplayAbilitySpec* Spec = AuraASC->FindAbilitySpecFromClass(AbilityClass))
 	{
 		if (const UAuraGameplayAbility* AuraAbility = AbilityClass.GetDefaultObject())
 		{
-			FAbilityDetails Details(Spec->Level, GetASC());
+			FAbilityDetails Details(Spec->Level, AuraASC);
 			AuraAbility->GetAbilityDetails(Details);
 			AuraAbility->GetDescription(Details, Description);
 
-			FAbilityDetails ChangeDetails(Spec->Level + 1, GetASC());
+			FAbilityDetails ChangeDetails(Spec->Level + 1, AuraASC);
 			AuraAbility->GetAbilityDetails(ChangeDetails);
 			AuraAbility->GetLevelChangeDescription(Details, ChangeDetails, NextLvDescription);
 		}
@@ -59,7 +70,7 @@ void USpellMenuWidgetController::UpdateButtonsAndDescriptions(const bool bClick)
 	{
 		if (const FAuraAbilityData* Data = UAbilityDataAsset::GetDataFromGameState(this, AbilityClass))
 		{	// Description = UAuraGameplayAbility::GetLockedDescription(Data->LevelRequirement);
-			Description = AuraHUD->GetLockedDescription(Data->LevelRequirement);
+			Description = AAuraHUD::Get(this)->GetLockedDescription(Data->LevelRequirement);
 		}
 	}
 	SpellButtonFocusDelegate.Broadcast(bSpendEnabled, bEquipEnabled,
@@ -76,7 +87,6 @@ bool USpellMenuWidgetController::EquipAbility()
 	if (SelectedSpellGlobe && SelectedSpellGlobe->AbilityClass)
 	{
 		UpdateButtonsAndDescriptions(true);
-		// Data->AbilityClass->GetDefaultObject<UAuraGameplayAbility>()->ActivationPolicy;
 		return SelectedSpellGlobe->AbilityClass.GetDefaultObject()->ActivationPolicy == EAuraActivationPolicy::OnSpawn;
 	}
 	return false;

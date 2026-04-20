@@ -20,7 +20,7 @@ void UExecCalc_Debuff::Execute_Implementation(const FGameplayEffectCustomExecuti
 	float Damage = 0.f;
 	for (const auto& [Tag, Value] : Spec.SetByCallerTagMagnitudes)
 	{
-		if (AuraTag::DebuffTypeArray.Contains(Tag)) Damage += Value;
+		if (Tag.MatchesTag(AuraTag::Debuff_Type)) Damage += Value;
 	}
 	Damage *= Spec.GetStackCount();
 	if (Damage > UE_KINDA_SMALL_NUMBER) AURA_ADD_OUTPUT_MODIFIER(GetIncomingDamageAttribute(), Override, Damage)

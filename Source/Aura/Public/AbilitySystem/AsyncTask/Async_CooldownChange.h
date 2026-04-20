@@ -15,8 +15,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FCooldownChanged, float, TimeRemain
 /**
  *
  */
-// UCLASS(MinimalAPI, meta=(ExposedAsyncProxy=AsyncTask))
-UCLASS(BlueprintType, meta=(ExposedAsyncProxy=AsyncTask))
+UCLASS(BlueprintType, /*MinimalAPI,*/ meta=(ExposedAsyncProxy=AsyncTask))
 class AURA_API UAsync_CooldownChange : public UBlueprintAsyncActionBase
 {
 	GENERATED_BODY()

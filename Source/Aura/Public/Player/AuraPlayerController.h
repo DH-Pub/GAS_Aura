@@ -39,6 +39,10 @@ public:
 	UFUNCTION(BlueprintGetter)
 	FORCEINLINE FHitResult& GetCursorHitResult() { return CursorHitResult; }
 
+	UFUNCTION(BlueprintGetter)
+	bool GetHitResultsUnderCursorByProfile(const FCollisionProfileName& Profile,
+		TArray<FHitResult>& OutResults, float SweepRadius = 0.f, bool bTraceComplex = false) const;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	TObjectPtr<class USplineComponent> Spline;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(AllowPrivateAccess), Category = "Aura|Input")

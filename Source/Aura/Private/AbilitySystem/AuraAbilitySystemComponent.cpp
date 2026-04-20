@@ -13,6 +13,7 @@
 #include "Character/AuraPlayer.h"
 #include "Character/Component/AuraMovementComponent.h"
 #include "Player/AuraPlayerState.h"
+#include "UI/WidgetController/AuraWidgetController.h"
 
 void UAuraAbilitySystemComponent::InitAbilityActorInfo(AActor* InOwnerActor, AActor* InAvatarActor)
 {
@@ -117,6 +118,7 @@ void UAuraAbilitySystemComponent::AbilityInputPressed(const int32 InputID)
 					Instance->GetCurrentActivationInfo().GetActivationPredictionKey() : FPredictionKey();
 				/* Send to ASC->AbilityReplicatedEventDelegate & ASC->CallReplicatedEventDelegateIfSet */
 				InvokeReplicatedEvent(EAbilityGenericReplicatedEvent::InputPressed, AbilitySpec.Handle, OriginalPredictionKey);
+				LocalInputConfirm(); // GenericLocalConfirmCallbacks is cleared in this;
 
 				TSharedRef<FAbilityReplicatedDataCache> ReplicatedData = AbilityTargetDataMap.FindOrAdd(
 					FGameplayAbilitySpecHandleAndPredictionKey(AbilitySpec.Handle, OriginalPredictionKey));
@@ -189,7 +191,6 @@ void UAuraAbilitySystemComponent::ReduceCooldownByTag(const FGameplayTagContaine
 		RemoveActiveGameplayEffect(Effect.Handle); ApplyGameplayEffectSpecToSelf(NewSpec);*/
 	}
 }
-
 #pragma endregion
 
 
@@ -198,10 +199,26 @@ FActiveGameplayEffectHandle UAuraAbilitySystemComponent::ApplyGameplayEffectSpec
 {
 	const bool bIsClientPrediction = GetOwnerRole() != ROLE_Authority && PredictionKey.IsLocalClientKey();
 
-	FActiveGameplayEffectHandle MyHandle = Super::ApplyGameplayEffectSpecToSelf(GameplayEffect, PredictionKey);
+	const FActiveGameplayEffectHandle MyHandle = Super::ApplyGameplayEffectSpecToSelf(GameplayEffect, PredictionKey);
 
 	if (bIsClientPrediction && MyHandle.IsValid())
 	{
+		/** Hack for fix: When Client Commit Ability right before being Canceled/Ended
+		 * But on Server something that can block happens before Client Activation reach Server,
+		 * resulting in the Ability never get Activated and Effect never gets applied on server.
+		 * Client's predicted CD GE's Tags are not removed because server never applied the GE and send correction
+		 */
+		const FActiveGameplayEffect* ActiveEffect = GetActiveGameplayEffect(MyHandle);
+		FGameplayTagContainer Tags; ActiveEffect->Spec.GetAllGrantedTags(Tags);
+		if (!Tags.IsEmpty())
+		{
+			GetActiveEffectEventSet(MyHandle)->OnEffectRemoved.AddWeakLambda(this,
+			[this](const FGameplayEffectRemovalInfo& RemovalInfo)
+			{	// Will broadcast when Client's prediction is removed also
+				FGameplayTagContainer InfoTags; RemovalInfo.ActiveEffect->Spec.GetAllGrantedTags(InfoTags);
+				ServerCheckOwnedTags(InfoTags);
+			});
+		}
 	}
 	return MyHandle;
 }
@@ -229,6 +246,13 @@ void UAuraAbilitySystemComponent::OnPredictiveGameplayCueCatchup(FGameplayTag Ta
 	Super::OnPredictiveGameplayCueCatchup(Tag);
 }
 
+void UAuraAbilitySystemComponent::ClientActivateAbilityFailed_Implementation(
+	FGameplayAbilitySpecHandle AbilityToActivate, int16 PredictionKey)
+{
+	Super::ClientActivateAbilityFailed_Implementation(AbilityToActivate, PredictionKey);
+
+}
+
 void UAuraAbilitySystemComponent::OnTagUpdated(const FGameplayTag& Tag, bool TagExists)
 {	// Super::OnTagUpdated(Tag, TagExists); // Empty
 	if (TagExists)
@@ -251,10 +275,40 @@ void UAuraAbilitySystemComponent::OnRemoveAbility(FGameplayAbilitySpec& AbilityS
 #pragma endregion
 
 
+void UAuraAbilitySystemComponent::ServerCheckOwnedTags_Implementation(FGameplayTagContainer TagsToCheck)
+{
+	for (const FGameplayTag& Tag : GetOwnedGameplayTags())
+	{
+		if (TagsToCheck.HasTagExact(Tag))
+		{
+			TagsToCheck.RemoveTag(Tag);
+		}
+	}
+	ClientRemoveTags(TagsToCheck);
+}
+void UAuraAbilitySystemComponent::ClientRemoveTags_Implementation(FGameplayTagContainer TagsToRemove)
+{
+	for (const FGameplayTag& Tag : TagsToRemove)
+	{
+		SetTagMapCount(Tag, 0);
+	}
+}
+
+
 
 /*
  * ===============================================================================================================
  */
+void UAuraAbilitySystemComponent::BindAbilityDataDelegateToUIDelegate(UObject* InUserObject,
+	FOnReceiveAbilityDataSignature& InDelegate)
+{
+	AbilityDataDelegate.AddWeakLambda(InUserObject,
+	[&InDelegate](const FGameplayAbilitySpec& Spec, const FAuraAbilityData& Data)
+	{
+		InDelegate.Broadcast(Spec, Data);
+	});
+}
+
 void UAuraAbilitySystemComponent::UpdateAbilityData(const FGameplayAbilitySpec& AbilitySpec) const
 {
 	if (!AbilityDataDelegate.IsBound()) return; // not bounded to UI (this may not have UI)
@@ -282,7 +336,10 @@ void UAuraAbilitySystemComponent::BroadcastAllAbilityData()
 		if (!WeakThis.IsValid()) return;
 		BroadcastDelegateTimer.Invalidate();
 		ABILITYLIST_SCOPE_LOCK()
-		for (const FGameplayAbilitySpec& AbilitySpec : ActivatableAbilities.Items) UpdateAbilityData(AbilitySpec);
+		for (const FGameplayAbilitySpec& AbilitySpec : ActivatableAbilities.Items)
+		{
+			UpdateAbilityData(AbilitySpec);
+		}
 	}));
 }
 

@@ -67,12 +67,11 @@ protected:
 	UPROPERTY(BlueprintReadWrite, Transient, meta=(BindWidgetAnim))
 	TObjectPtr<UWidgetAnimation> SelectAnimation;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Aura")
-	TObjectPtr<USoundBase> ClickSound;
+	UPROPERTY(BlueprintReadOnly)
+	bool bDragEnable = false;
 private:
 	UPROPERTY(EditDefaultsOnly, Category="Aura")
 	TObjectPtr<UTexture2D> LockedTexture;
 	UPROPERTY(EditDefaultsOnly, Category="Aura")
 	TObjectPtr<UMaterialInterface> LockedMaterial;
-	bool bDragEnable = false;
 };

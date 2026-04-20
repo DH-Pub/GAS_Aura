@@ -4,9 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
+#include "Kismet/KismetSystemLibrary.h" // EDrawDebugTrace
 #include "AuraAbilityLibrary.generated.h"
 
-namespace EDrawDebugTrace {enum Type : int;}
 enum class ECharacterClass : uint8;
 class UAbilitySystemComponent;
 /**
@@ -22,15 +22,24 @@ public:
 
 	/** UKismetSystemLibrary::LineTrace SphereTrace ForObjects
 	 * @param Channels The channels used for trace or to trace for if is object type
-	 * @param bTraceType true: Trace Channel, else Trace for Objects. ALL 'Channels' has to be the correct type
+	 * @param bTraceType true: Trace Channel, false: Trace for Objects. ALL 'Channels' has to be the correct type
 	 * @param SweepRadius == 0.f: Line Trace, > 0.f: Sphere Sweep
 	 * @return OutHits.Num() > 0
 	 */
 	UFUNCTION(BlueprintCallable, meta=(DefaultToSelf="WorldContextObject"), Category="AuraLibrary")
 	static bool TraceByChannel(const UObject* WorldContextObject, const FVector& Start, const FVector& End,
-		const TArray<AActor*>& ActorsToIgnore, EDrawDebugTrace::Type DrawDebugType, TArray<FHitResult>& OutHits,
+		const TArray<AActor*>& ActorsToIgnore, TArray<FHitResult>& OutHits,
 		const TArray<TEnumAsByte<ECollisionChannel>>& Channels, const float SweepRadius = 0.f, const bool bTraceType = true,
-		const bool bTraceComplex = false);
+		const bool bTraceComplex = false, EDrawDebugTrace::Type DrawDebugType = EDrawDebugTrace::None);
+	/** UKismetSystemLibrary::LineTrace SphereTrace ByProfile
+	 * @param SweepRadius == 0.f: Line Trace, > 0.f: Sphere Sweep
+	 * @return OutHits.Num() > 0
+	 */
+	UFUNCTION(BlueprintCallable, meta=(DefaultToSelf="WorldContextObject"), Category="AuraLibrary")
+	static bool TraceByProfile(const UObject* WorldContextObject, TArray<FHitResult>& OutHits, const FVector& Start,
+		const FVector& End, const TArray<AActor*>& ActorsToIgnore, const FCollisionProfileName& Profile,
+		float SweepRadius = 0.f, bool bTraceComplex = false, EDrawDebugTrace::Type DrawDebugType = EDrawDebugTrace::None);
+
 
 	UFUNCTION(BlueprintCallable, meta=(DefaultToSelf="WorldContextObject"), Category="AuraLibrary")
 	static bool ConeOverlapLivingCharacters(const UObject* WorldContextObject, const FVector& Start, FVector Direction,

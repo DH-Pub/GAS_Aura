@@ -35,6 +35,14 @@ void AAuraPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 
 UAbilitySystemComponent* AAuraPlayerState::GetAbilitySystemComponent() const {return AbilitySystemComponent;}
 
+void AAuraPlayerState::BroadcastCurrentData() const
+{
+	OnLevelChangedDelegate.Broadcast(GetPlayerLevel());
+	OnXPChangedDelegate.Broadcast(GetPlayerXP());
+	OnAttributePointsChangedDelegate.Broadcast(GetAttributePoints());
+	OnSpellPointsChangedDelegate.Broadcast(GetSpellPoints());
+}
+
 void AAuraPlayerState::SetLevel(const int32 NewLevel)
 {
 	const int32 OldLevel = Level;
@@ -65,6 +73,16 @@ void AAuraPlayerState::SetXP(const int32 NewXP)
 	}
 
 	OnRep_XP(OldXP);
+}
+
+void AAuraPlayerState::BeginPlay()
+{
+	Super::BeginPlay();
+
+/*#if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
+	SetAttributePoints(10);
+	SetSpellPoints(10);
+#endif*/
 }
 
 void AAuraPlayerState::OnRep_Level(const int32 OldLevel) const

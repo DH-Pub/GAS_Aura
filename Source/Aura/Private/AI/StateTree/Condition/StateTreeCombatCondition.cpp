@@ -27,7 +27,8 @@ FText FStateTreeCombatCondition::GetDescription(const FGuid& ID, FStateTreeDataV
 	const FInstanceDataType* InstanceData = InstanceDataView.GetPtr<FInstanceDataType>();
 	check(InstanceData);
 	const FText InvertText = UE::StateTree::DescHelpers::GetInvertText(bInvert, Formatting);
-	FText Range = BindingLookup.GetBindingSourceDisplayName(FPropertyBindingPath(ID, GET_MEMBER_NAME_CHECKED(FInstanceDataType, LostTargetRange)), Formatting);
+	FText Range = BindingLookup.GetBindingSourceDisplayName(FPropertyBindingPath(ID,
+		GET_MEMBER_NAME_CHECKED(FInstanceDataType, LostTargetRange)), Formatting);
 
 	const FText Format = (Formatting == EStateTreeNodeFormatting::RichText)
 		? LOCTEXT("CombatRich", "{EmptyOrNot} is valid and in range {Range}")

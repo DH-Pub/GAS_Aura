@@ -18,6 +18,8 @@ class AURA_API UAbilityTask_RotateActor : public UAbilityTask
 
 	UPROPERTY(BlueprintAssignable)
 	FFinishRotateDelegate OnFinish;
+	UPROPERTY(BlueprintAssignable)
+	FFinishRotateDelegate OnFailed;
 	/**
 	 * Wait until actor rotate to aim direction before continue
 	 * @returns time this node spent waiting for the press. 0 if input was already down.
@@ -25,10 +27,11 @@ class AURA_API UAbilityTask_RotateActor : public UAbilityTask
 	UFUNCTION(BlueprintCallable, meta=(HidePin="OwningAbility", DefaultToSelf="OwningAbility", BlueprintInternalUseOnly="TRUE"))
 	static UAbilityTask_RotateActor* WaitRotateToTarget(class UAuraGameplayAbility* OwningAbility,
 		const float Multiplier = 2.f);
-
-	virtual void Activate() override;
+public:
 	virtual void TickTask(float DeltaTime) override;
 protected:
+	virtual void Activate() override;
+
 	UPROPERTY()
 	TObjectPtr<class AAuraCharacterBase> AuraCharacter;
 

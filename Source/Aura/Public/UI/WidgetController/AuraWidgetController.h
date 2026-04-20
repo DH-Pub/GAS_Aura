@@ -6,8 +6,8 @@
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AuraWidgetController.generated.h"
 
-/* TODO: Next proj: For some Widgets, just put logic inside them directly
- * use BlueprintImplementableEvent/BlueprintNativeEvent instead of DynamicDelegate */
+/* TODO: Next proj: For some Widgets, just bind MulticastDelegate from ASC/AS inside them directly
+ * Call BlueprintImplementableEvent/BlueprintNativeEvent instead of DynamicDelegate */
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnVitalAttributeChanged, float, NewValue);
 
 /**
@@ -18,65 +18,59 @@ class AURA_API UAuraWidgetController : public UObject
 {
 	GENERATED_BODY()
 public:
-	// bind callbacks, called when first created in CreateOrGetWidgetController
-	virtual void BindCallbacksDependencies(){}
 	/**
-	 * Call this after Event WidgetControllerSet / Event Construct
-	 * if Subclass has this function
+	 * - Bind callbacks, called when first created in CreateOrGetWidgetController
+	 * - IMPORTANT: Unbind previous callback before calling Super:: to set new AuraASC
 	 */
-	UFUNCTION(BlueprintCallable)
-	virtual void BroadcastInitialValues(){} // If SetWidgetController is not called, call this
+	virtual void BindCallbacksDependencies(UAuraAbilitySystemComponent* InASC) {AuraASC = InASC;}
 
 	/**
-	 * Create WidgetController if none and BindCallbacksDependencies()
+	 * This should be called after Event WidgetControllerSet / Event Construct
+	 * Usually, broadcast everything that was bound in BindCallbacksDependencies()
+	 */
+	UFUNCTION(BlueprintCallable)
+	virtual void BroadcastInitialValues(){}
+
+	/**
+	 * Create WidgetController if none for OutWC, and call BindCallbacksDependencies()
 	 * @tparam ControllerT
-	 * @param Character
-	 * @param WC TObjectPtr ref or else nullptr
+	 * @param OutWC TObjectPtr ref or else nullptr
+	 * @param InASC Ability System Component to bind to
 	 * @return
 	 */
 	template <typename ControllerT = UAuraWidgetController>
-	static ControllerT* CreateOrGetWidgetController(TObjectPtr<ControllerT>& WC, class AAuraCharacterBase* Character)
+	static ControllerT* CreateOrGetWidgetController(TObjectPtr<ControllerT>& OutWC, UAuraAbilitySystemComponent* InASC)
 	{
-		if (WC == nullptr || Character != WC->Character)
+		if (OutWC == nullptr)
 		{
-			if (WC == nullptr) WC = NewObject<ControllerT>(Character, ControllerT::StaticClass());
-			WC->SetCharacter(Character);
-			WC->BindCallbacksDependencies();
+			OutWC = NewObject<ControllerT>(InASC, ControllerT::StaticClass());
 		}
-		return WC;
+		OutWC->BindCallbacksDependencies(InASC);
+		return OutWC;
 	}
 
-	UFUNCTION(BlueprintPure, meta=(CompactNodeTitle="PlayerState"))
-	class AAuraPlayerState* GetPlayerState() const; // Do not call this in AI's WidgetController
 	UFUNCTION(BlueprintPure, meta=(CompactNodeTitle="ASC"))
-	UAuraAbilitySystemComponent* GetASC() const;
+	UAuraAbilitySystemComponent* GetASC() const {return AuraASC;}
+
 	UFUNCTION(BlueprintPure, meta=(CompactNodeTitle="AttributeSet"))
-	class UAuraAttributeSet* GetAttributeSet() const;
+	const class UAuraAttributeSet* GetAttributeSet() const;
+
+	UFUNCTION(BlueprintPure, meta=(CompactNodeTitle="PlayerState"))
+	class AAuraPlayerState* GetPlayerState() const; // Do not call this in AI's WidgetController (nullptr)
+	UFUNCTION(BlueprintPure, meta=(CompactNodeTitle="AttributeSet"))
+	class AAuraCharacterBase* GetAuraCharacter() const;
 
 	UPROPERTY()
-	TObjectPtr<class AAuraHUD> AuraHUD;
+	TObjectPtr<UAuraAbilitySystemComponent> AuraASC;
 protected:
 	// Bind AbilitySystemComponent's FOnGameplayAttributeValueChange to
 	template<typename DelegateT = TBaseDynamicMulticastDelegate>
 	void BindGameplayAttributeToBroadcast(const FGameplayAttribute& Attribute, const DelegateT& ChangedDelegate)
 	{
-		FOnGameplayAttributeValueChange& OnChanged = GetASC()->GetGameplayAttributeValueChangeDelegate(Attribute);
-		if (!OnChanged.IsBoundToObject(this))
+		GetASC()->GetGameplayAttributeValueChangeDelegate(Attribute).AddWeakLambda(this,
+		[&ChangedDelegate](const FOnAttributeChangeData& Data)
 		{
-			OnChanged.AddWeakLambda(this, [&ChangedDelegate](const FOnAttributeChangeData& Data)
-			{
-				ChangedDelegate.Broadcast(Data.NewValue);
-			});
-		}
+			ChangedDelegate.Broadcast(Data.NewValue);
+		});
 	}
-private:
-	/**
-	 * TODO: Instead of Character, Add GetAuraASC() or GetAuraAttributeSet() to ICombatInterface
-	 * because owner of ASC and AS can be non-Character (PlayerState)
-	 */
-	/*UPROPERTY()
-	TScriptInterface<class ICombatInterface> SourceInterface;*/
-	UPROPERTY()
-	TObjectPtr<AAuraCharacterBase> Character;
-	void SetCharacter(AAuraCharacterBase* InCharacter);
 };

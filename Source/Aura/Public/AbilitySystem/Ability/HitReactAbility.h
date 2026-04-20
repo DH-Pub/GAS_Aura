@@ -31,11 +31,7 @@ struct FGATargetData_HitReact : public FGameplayAbilityTargetData
 	{
 		Ar << KnockbackDistance;
 		Ar << KnockbackTime;
-		bOutSuccess |= KnockbackDirection.NetSerialize(Ar, Map, bOutSuccess);
-		if (HitWallEffectSpecHandle.IsValid())
-		{
-			bOutSuccess |= HitWallEffectSpecHandle.NetSerialize(Ar, Map, bOutSuccess);
-		}
+		KnockbackDirection.NetSerialize(Ar, Map, bOutSuccess);
 		return bOutSuccess;
 	}
 };

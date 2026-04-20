@@ -79,9 +79,17 @@ void AAuraPlayer::BeginPlay()
 {
 	Super::BeginPlay();
 
-	UAuraWidgetController::CreateOrGetWidgetController<UCharacterWidgetController>(CharacterWC, this);
-	UAuraUserWidget* LevelUpWidget = Cast<UAuraUserWidget>(LevelUpWidgetComponent->GetUserWidgetObject());
-	LevelUpWidget->SetWidgetController(CharacterWC); // Might make this Local player only
+	SetCharacterWidget();
+}
+
+void AAuraPlayer::SetCharacterWidget()
+{
+	if (!AbilitySystemComponent) return;
+	UAuraWidgetController::CreateOrGetWidgetController<UCharacterWidgetController>(CharacterWC, AbilitySystemComponent);
+	if (UAuraUserWidget* LevelUpWidget = Cast<UAuraUserWidget>(LevelUpWidgetComponent->GetUserWidgetObject()))
+	{	// Might make this Local player only
+		LevelUpWidget->SetWidgetController(CharacterWC);
+	}
 }
 
 void AAuraPlayer::InitAuraCharacter()
@@ -91,14 +99,17 @@ void AAuraPlayer::InitAuraCharacter()
 	AbilitySystemComponent->InitAbilityActorInfo(AuraPS, this);
 	AttributeSet = AuraPS->GetAuraAttributeSet();
 
+	SetCharacterWidget();
+
 	if (AAuraPlayerController* AuraPC = Cast<AAuraPlayerController>(GetController())) // Server and local client
 	{	// Only Local Client can get HUD
-		if (AAuraHUD* AuraHUD = AuraPC->GetHUD<AAuraHUD>()) AuraHUD->InitAuraHUD(AuraPC, AuraPS, this);
+		if (AAuraHUD* AuraHUD = AuraPC->GetHUD<AAuraHUD>()) AuraHUD->InitAuraHUD(AbilitySystemComponent);
 	}
 
 	if (const UCharacterClassDataAsset* ClassData = UCharacterClassDataAsset::GetFromGameMode(this))
 	{	// HasAuthority() -> This scope because Only Server can access GameMode
 		constexpr float Level = 1.f;
+		AuraPS->SetLevel(Level);
 		ClassData->InitializeDefaultAttributes(CharacterClass, Level, AbilitySystemComponent);
 		ClassData->GiveStartupAbilities(this);
 	}

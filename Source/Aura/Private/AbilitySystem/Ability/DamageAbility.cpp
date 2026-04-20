@@ -77,7 +77,7 @@ void UDamageAbility::MeleeTraceAndApplyEffects(const float Radius, const FVector
 
 	TArray<FHitResult> HitResults;
 	UAuraAbilityLibrary::TraceByChannel(this, Start, InLoc, {AuraCharacter},
-		DrawDebugType, HitResults, {ECC_AuraTrace_Effect}, Radius);
+		HitResults, {ECC_AuraTrace_Effect}, Radius, true, false, DrawDebugType);
 
 	UAbilitySystemComponent* ASC = CurrentActorInfo->AbilitySystemComponent.Get();
 	const float Level = GetAbilityLevel();
@@ -130,7 +130,7 @@ void UDamageAbility::GetAbilityDetails(FAbilityDetails& Details) const
 	{
 		for (const auto& [Tag, ScalableFloat] : Effect.SetByCallerTagMagnitudes)
 		{
-			if (!AuraTag::DamageTypeArray.Contains(Tag)) continue;
+			if (!AuraTag::DamageTypeContainer.HasTag(Tag)) continue;
 			Details.Damage = static_cast<int32>(ScalableFloat.GetValueAtLevel(Details.Level) * 10.f) / 10.f;
 		}
 	}

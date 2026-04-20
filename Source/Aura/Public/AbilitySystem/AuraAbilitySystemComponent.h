@@ -6,47 +6,20 @@
 #include "AbilitySystemComponent.h"
 #include "AuraAbilitySystemComponent.generated.h"
 
-USTRUCT()
-struct FAuraCheckTags
-{
-	GENERATED_BODY()
-
-	FAuraCheckTags(){}
-	FAuraCheckTags(const FGameplayTag& InTag, const bool InExist) : Tag(InTag), bExist(InExist) {}
-	UPROPERTY()
-	FGameplayTag Tag;
-	UPROPERTY()
-	bool bExist = false;
-	bool NetSerialize(FArchive& Ar, class UPackageMap* Map, bool& bOutSuccess)
-	{
-		Ar << bExist;
-		return bOutSuccess |= Tag.NetSerialize_Packed(Ar, Map, bOutSuccess);
-	}
-};
-template<>
-struct TStructOpsTypeTraits<FAuraCheckTags> : public TStructOpsTypeTraitsBase2<FAuraCheckTags>
-{	// REQUIRED
-	enum {WithNetSerializer = true};
-};
-
-USTRUCT()
-struct FUnlockedAbilityData
-{
-	GENERATED_BODY()
-	UPROPERTY(VisibleAnywhere)
-	TSubclassOf<class UAuraGameplayAbility> AbilityClass;
-	UPROPERTY(VisibleAnywhere)
-	int32 Level = 0;
-};
-
 /**
  * Used to broadcast Effects (Health potions, ...)
  * @param AssetTags: Tags of effect
  */
 DECLARE_MULTICAST_DELEGATE_OneParam(FEffectAssetTags, const FGameplayTagContainer& /* AssetTags */);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FAbilityDataSignature, const FGameplayAbilitySpec&, AbilitySpec,
+
+DECLARE_MULTICAST_DELEGATE_TwoParams(FAbilityDataSignature, const FGameplayAbilitySpec& /*AbilitySpec*/,
+	const struct FAuraAbilityData& /*Data*/);
+/**
+ * For UI to Receive from FAbilityDataSignature AbilityDataDelegate
+ * For Widget to receive info regardless of which ASC, WidgetController will handle binding to ASC
+ */
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnReceiveAbilityDataSignature, const FGameplayAbilitySpec&, AbilitySpec,
 	const FAuraAbilityData&, Data);
-DECLARE_MULTICAST_DELEGATE(FOnApplyingStatFinished)
 /**
  *
  */
@@ -71,8 +44,10 @@ public:
 
 	virtual FActiveGameplayEffectHandle ApplyGameplayEffectSpecToSelf(const FGameplayEffectSpec& GameplayEffect,
 		FPredictionKey PredictionKey = FPredictionKey()) override;
-	virtual void OnGameplayEffectDurationChange(struct FActiveGameplayEffect& ActiveEffect) override;
+	virtual void OnGameplayEffectDurationChange(FActiveGameplayEffect& ActiveEffect) override;
 	virtual void OnPredictiveGameplayCueCatchup(FGameplayTag Tag) override;
+
+	virtual void ClientActivateAbilityFailed_Implementation(FGameplayAbilitySpecHandle AbilityToActivate, int16 PredictionKey) override;
 protected:
 	virtual void OnTagUpdated(const FGameplayTag& Tag, bool TagExists) override;
 	virtual void OnGiveAbility(FGameplayAbilitySpec& AbilitySpec) override;
@@ -81,8 +56,14 @@ protected:
 
 
 public:
-	UPROPERTY(BlueprintAssignable, Category = "GAS|AbilityData")
+	UFUNCTION(Server, Reliable)
+	void ServerCheckOwnedTags(FGameplayTagContainer TagsToCheck);
+	UFUNCTION(Client, Reliable)
+	void ClientRemoveTags(FGameplayTagContainer TagsToRemove);
+
 	FAbilityDataSignature AbilityDataDelegate;// Send AbilityData to UI (Icon, Tag, ...)
+	void BindAbilityDataDelegateToUIDelegate(UObject* InUserObject, FOnReceiveAbilityDataSignature& InDelegate);
+
 	void UpdateAbilityData(const FGameplayAbilitySpec& AbilitySpec) const;
 	UFUNCTION(Client, Reliable)
 	void ClientUpdateAbilityData(const FGameplayAbilitySpecHandle SpecHandle);

@@ -21,8 +21,11 @@ class AURA_API USpellMenuWidgetController : public UAuraWidgetController
 {
 	GENERATED_BODY()
 public:
-	virtual void BindCallbacksDependencies() override;
+	virtual void BindCallbacksDependencies(UAuraAbilitySystemComponent* InASC) override;
 	virtual void BroadcastInitialValues() override;
+
+	UPROPERTY(BlueprintAssignable, Category="Aura|Delegate")
+	FOnReceiveAbilityDataSignature OnReceiveAbilityDataFromASC;
 
 	UPROPERTY(BlueprintAssignable)
 	FOnSpellPointsChanged SpellPointsToUIDelegate;

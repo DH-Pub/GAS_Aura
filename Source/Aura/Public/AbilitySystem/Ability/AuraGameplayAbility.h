@@ -12,7 +12,7 @@ struct FAbilityDetails
 {
 	GENERATED_BODY()
 	FAbilityDetails(){}
-	explicit FAbilityDetails(const int32 Level, UAbilitySystemComponent* InASC) :
+	explicit FAbilityDetails(const int32 Level, const TWeakObjectPtr<UAbilitySystemComponent> InASC) :
 		Level(Level), AbilitySystemComponent(InASC){}
 	UPROPERTY(BlueprintReadOnly)
 	int32 Level = 0;
@@ -64,12 +64,15 @@ public:
 
 	// Defines how this ability is meant to activate.
 	UPROPERTY(EditDefaultsOnly, Category="Aura|Input")
-	EAuraActivationPolicy ActivationPolicy = EAuraActivationPolicy::InputHolding;
+	EAuraActivationPolicy ActivationPolicy;
 
 	UPROPERTY(EditDefaultsOnly, Category="Aura|Input")
 	TEnumAsByte<EAuraAbilityInputID::Type> StartupInputID = EAuraAbilityInputID::None; //TODO: Testing, remove this
 
 protected:
+	virtual void PreActivate(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
+		const FGameplayAbilityActivationInfo ActivationInfo, FOnGameplayAbilityEnded::FDelegate* OnGameplayAbilityEndedDelegate,
+		const FGameplayEventData* TriggerEventData = nullptr) override;
 	const struct FAuraAbilityActorInfo* GetAuraActorInfo() const; // Not being used
 	UFUNCTION(BlueprintCallable)
 	class UAuraAbilitySystemComponent* GetAuraASC() const;

@@ -11,22 +11,39 @@
 #include "Player/AuraPlayerState.h"
 #include "UI/HUD/AuraHUD.h"
 
-void UAttributeMenuWidgetController::BindCallbacksDependencies()
-{	// Super::BindCallbacksDependencies();
+void UAttributeMenuWidgetController::BindCallbacksDependencies(UAuraAbilitySystemComponent* InASC)
+{
+	if (AuraASC)
+	{
+		if (AAuraPlayerState* OldPS = GetPlayerState())
+		{
+			OldPS->OnAttributePointsChangedDelegate.RemoveAll(this);
+		}
+		for (const auto& [Tag, AttributeData] : AAuraHUD::Get(this)->GetAttributeDataList())
+		{
+			AuraASC->GetGameplayAttributeValueChangeDelegate(AttributeData.GameplayAttribute).RemoveAll(this);
+		}
+	}
+
+	Super::BindCallbacksDependencies(InASC);
+
 	AttributeTargetData.Data.Empty();
-	GetPlayerState()->OnAttributePointsChangedDelegate.RemoveAll(this);
+	if (!AuraASC) return;
 	GetPlayerState()->OnAttributePointsChangedDelegate.AddWeakLambda(this, [&](const int32 Points)
 	{
-		BroadcastInitialValues();
+		bIsApplying = false;
+		for (const auto& [Tag, AttributeData] : AAuraHUD::Get(this)->GetAttributeDataList())
+		{
+			const float AttributeValue = AttributeData.GameplayAttribute.GetNumericValue(GetAttributeSet());
+			AttributeInfoDelegate.Broadcast(Tag, AttributeValue, AttributeData);
+		}
+		AttributePointsToUIDelegate.Broadcast(AttributePoints = Points, AttributeTargetData.TotalPointsAllocating());
 	});
 
-	UAuraAbilitySystemComponent* ASC = GetASC();
-	for (const auto& [Tag, AttributeData] : AuraHUD->GetAttributeDataList())
+	for (const auto& [Tag, AttributeData] : AAuraHUD::Get(this)->GetAttributeDataList())
 	{
-		FOnGameplayAttributeValueChange& OnAttributeChanged =
-			ASC->GetGameplayAttributeValueChangeDelegate(AttributeData.GameplayAttribute);
-		OnAttributeChanged.RemoveAll(this);
-		OnAttributeChanged.AddWeakLambda(this, [&](const FOnAttributeChangeData& Data)
+		AuraASC->GetGameplayAttributeValueChangeDelegate(AttributeData.GameplayAttribute).AddWeakLambda(
+		this, [&](const FOnAttributeChangeData& Data)
 		{
 			if (Data.NewValue != Data.OldValue) AttributeInfoDelegate.Broadcast(Tag, Data.NewValue, AttributeData);
 		});
@@ -35,14 +52,7 @@ void UAttributeMenuWidgetController::BindCallbacksDependencies()
 
 void UAttributeMenuWidgetController::BroadcastInitialValues()
 {
-	bIsApplying = false;
-	for (const auto& [Tag, AttributeData] : AuraHUD->GetAttributeDataList())
-	{
-		const float AttributeValue = AttributeData.GameplayAttribute.GetNumericValue(GetAttributeSet());
-		AttributeInfoDelegate.Broadcast(Tag, AttributeValue, AttributeData);
-	}
-	AttributePointsToUIDelegate.Broadcast(AttributePoints = GetPlayerState()->GetAttributePoints(),
-		AttributeTargetData.TotalPointsAllocating());
+	if (GetPlayerState()) GetPlayerState()->BroadcastCurrentData();
 }
 
 int32 UAttributeMenuWidgetController::FindPointAllocationByTag(const FGameplayTag& Tag)

@@ -20,11 +20,6 @@ class AURA_API UAT_PlayMontageWaitEvent : public UAbilityTask
 {
 	GENERATED_BODY()
 public:
-	/**
-	* The Blueprint node for this task, PlayMontageAndWaitForEvent, has some black magic from the plugin that automagically calls Activate()
-	* inside K2Node_LatentAbilityCall as stated in the AbilityTask.h. Ability logic written in C++ probably needs to call Activate() itself manually.
-	*/
-	virtual void Activate() override;
 	virtual void ExternalCancel() override;
 	virtual FString GetDebugString() const override;
 	virtual void OnDestroy(bool AbilityEnded) override;
@@ -62,6 +57,12 @@ public:
 		UPARAM(meta=(GameplayTagFilter="GameplayEvent.Montage")) FGameplayTagContainer EventTags,
 		const float Rate = 1.f, const FName StartSection = NAME_None,
 		const bool bStopWhenAbilityEnds = true, const float AnimRootMotionTranslationScale = 1.f);
+protected:
+	/**
+	* The Blueprint node for this task, PlayMontageAndWaitForEvent, has some black magic from the plugin that automagically calls Activate()
+	* inside K2Node_LatentAbilityCall as stated in the AbilityTask.h. Ability logic written in C++ probably needs to call Activate() itself manually.
+	*/
+	virtual void Activate() override;
 
 private:
 	UPROPERTY()

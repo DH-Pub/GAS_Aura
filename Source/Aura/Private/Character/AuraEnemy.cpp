@@ -72,7 +72,7 @@ void AAuraEnemy::InitAuraCharacter()
 {
 	AbilitySystemComponent->InitAbilityActorInfo(this, this);
 
-	UAuraWidgetController::CreateOrGetWidgetController<UEnemyWidgetController>(HealthBarController, this);
+	UAuraWidgetController::CreateOrGetWidgetController<UEnemyWidgetController>(HealthBarController, AbilitySystemComponent);
 	Cast<UAuraUserWidget>(HealthBar->GetUserWidgetObject())->SetWidgetController(HealthBarController);
 
 	if (const UCharacterClassDataAsset* ClassData = UCharacterClassDataAsset::GetFromGameMode(this))

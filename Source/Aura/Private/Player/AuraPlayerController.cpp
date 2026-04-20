@@ -18,8 +18,10 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/SplineComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/HUD.h"
 #include "GameFramework/PawnMovementComponent.h"
 #include "Input/AuraInputComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMaterialLibrary.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/KismetSystemLibrary.h"
@@ -66,6 +68,29 @@ void AAuraPlayerController::SetPawn(APawn* InPawn)
 	AuraPawn = Cast<AAuraCharacterBase>(InPawn);
 	AuraASC = AuraPawn ? AuraPawn->GetAuraAbilitySystemComponent() : nullptr;
 	SetCameraComponent();
+}
+
+bool AAuraPlayerController::GetHitResultsUnderCursorByProfile(const FCollisionProfileName& Profile,
+	TArray<FHitResult>& OutResults, float SweepRadius, bool bTraceComplex) const
+{
+	if (const ULocalPlayer* LocalPlayer = Cast<ULocalPlayer>(Player))
+	{
+		FVector2D MousePos;
+		if (LocalPlayer->ViewportClient && LocalPlayer->ViewportClient->GetMousePosition(MousePos))
+		{
+			// Early out if we clicked on a HUD hitbox
+			if (GetHUD() && GetHUD()->GetHitBoxAtCoordinates(MousePos, true)) return false;
+
+			FVector WorldOrigin, WorldDirection;
+			if (UGameplayStatics::DeprojectScreenToWorld(this, MousePos, WorldOrigin, WorldDirection) == true)
+			{
+				const FVector End = WorldOrigin + WorldDirection * HitResultTraceDistance;
+				return UAuraAbilityLibrary::TraceByProfile(this, OutResults, WorldOrigin, End,
+					{}, Profile, SweepRadius, bTraceComplex);
+			}
+		}
+	}
+	return false;
 }
 
 void AAuraPlayerController::BeginPlay()
@@ -254,7 +279,7 @@ void AAuraPlayerController::CursorTick()
 	if (CursorHitEnemy) return; // Has valid Hit to end here
 	TArray<FHitResult> Hits;
 	UAuraAbilityLibrary::TraceByChannel(this, CursorHitResult.TraceStart, CursorHitResult.TraceEnd,
-		{GetPawn()}, EDrawDebugTrace::None, Hits, {ECC_Pawn}, 50.f, false);
+		{GetPawn()}, Hits, {ECC_Pawn}, 50.f, false);
 	float NearestDistance = UE_BIG_NUMBER;
 	for (const FHitResult& Hit : Hits)
 	{

@@ -20,16 +20,7 @@ class AURA_API AAuraHUD : public AHUD
 	GENERATED_BODY()
 public:
 	/** Bind callbacks if not yet and return controller */
-	void InitAuraHUD(class AAuraPlayerController* PC, class AAuraPlayerState* PS, class AAuraCharacterBase* Character);
-	UPROPERTY(BlueprintReadOnly)
-	TObjectPtr<AAuraPlayerController> PlayerController;
-	UPROPERTY(BlueprintReadOnly)
-	TObjectPtr<AAuraPlayerState> PlayerState;
-	UPROPERTY(BlueprintReadOnly)
-	TObjectPtr<class UAuraAbilitySystemComponent> AbilitySystemComponent;
-	UPROPERTY(BlueprintReadOnly)
-	TObjectPtr<class UAuraAttributeSet> AttributeSet;
-
+	void InitAuraHUD(class UAuraAbilitySystemComponent* InASC);
 	UPROPERTY()
 	TObjectPtr<UAuraUserWidget> OverlayWidget;
 
@@ -56,17 +47,17 @@ public:
 
 #pragma region UIFunctions
 	// HUD exist on local only so this return nullptr others
-	static AAuraHUD* GetAuraHUD(const UObject* WorldContextObject);
+	static AAuraHUD* Get(const UObject* WorldContextObject);
 	UFUNCTION(BlueprintPure, meta=(DefaultToSelf="WorldContextObject", HidePin="WorldContextObject", CompactNodeTitle="AttributeWC"))
 	static UAttributeMenuWidgetController* GetAttributeMenuController(const UObject* WorldContextObject)
 	{
-		if (AAuraHUD* HUD = GetAuraHUD(WorldContextObject)) return HUD->AttributeMenuController;
+		if (AAuraHUD* HUD = Get(WorldContextObject)) return HUD->AttributeMenuController;
 		return nullptr;
 	}
 	UFUNCTION(BlueprintPure, meta=(DefaultToSelf="WorldContextObject", HidePin="WorldContextObject", CompactNodeTitle="SpellWC"))
 	static USpellMenuWidgetController* GetSpellMenuController(const UObject* WorldContextObject)
 	{
-		if (AAuraHUD* HUD = GetAuraHUD(WorldContextObject)) return HUD->SpellMenuController;
+		if (AAuraHUD* HUD = Get(WorldContextObject)) return HUD->SpellMenuController;
 		return nullptr;
 	}
 

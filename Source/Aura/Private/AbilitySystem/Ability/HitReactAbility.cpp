@@ -54,8 +54,8 @@ void UHitReactAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
 		 * - Then UKismetSystemLibrary::CapsuleTraceSingleByProfile*/
 		TArray<FHitResult> OutHits;
 		const bool bHit = UAuraAbilityLibrary::TraceByChannel(this, StartLoc, MoveToLoc,
-			{AuraCharacter}, KnockbackDebug, OutHits, {ECC_WorldStatic},
-			CapsuleComp->GetScaledCapsuleRadius());
+			{AuraCharacter}, OutHits, {ECC_WorldStatic},
+			CapsuleComp->GetScaledCapsuleRadius(), true, false, KnockbackDebug);
 
 		for (const FHitResult& Hit : OutHits)
 		{

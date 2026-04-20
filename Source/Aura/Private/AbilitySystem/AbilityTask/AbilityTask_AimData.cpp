@@ -14,11 +14,13 @@ UAbilityTask_AimData* UAbilityTask_AimData::SendAimData(UGameplayAbility* Owning
 
 void UAbilityTask_AimData::Activate()
 {
+	UAbilitySystemComponent* ASC = AbilitySystemComponent.Get();
+	if (!ASC) return;
 	if (IsLocallyControlled())
 	{
 		// Struct that is not meant to be used, automatically finish when out of scope. REQUIRED to set Prediction
 		// Player input SHOULD be instantly predicted (e.g. 'hold down and charge')
-		FScopedPredictionWindow(AbilitySystemComponent.Get(), IsPredictingClient());
+		FScopedPredictionWindow(ASC, IsPredictingClient());
 		const AAuraCharacterBase* Character = Cast<AAuraCharacterBase>(GetAvatarActor());
 		FGameplayAbilityTargetData_AimData* Data = new FGameplayAbilityTargetData_AimData();
 		Data->ActivatedTime = GetWorld()->GetTimeSeconds();
@@ -38,9 +40,9 @@ void UAbilityTask_AimData::Activate()
 
 		if (IsPredictingClient())
 		{
-			AbilitySystemComponent->CallServerSetReplicatedTargetData(GetAbilitySpecHandle(),
+			ASC->CallServerSetReplicatedTargetData(GetAbilitySpecHandle(),
 				GetActivationPredictionKey(), DataHandle, FGameplayTag(),
-				AbilitySystemComponent->ScopedPredictionKey);
+				ASC->ScopedPredictionKey);
 		}
 
 		if (ShouldBroadcastAbilityTaskDelegates())
@@ -52,9 +54,9 @@ void UAbilityTask_AimData::Activate()
 	{
 		const FGameplayAbilitySpecHandle SpecHandle = GetAbilitySpecHandle();
 		const FPredictionKey ActivationPredictionKey = GetActivationPredictionKey();
-		DelegateHandle = AbilitySystemComponent->AbilityTargetDataSetDelegate(SpecHandle, ActivationPredictionKey).AddUObject(
+		DelegateHandle = ASC->AbilityTargetDataSetDelegate(SpecHandle, ActivationPredictionKey).AddUObject(
 			this, &UAbilityTask_AimData::OnTargetDataReplicatedCallback);
-		if (!AbilitySystemComponent->CallReplicatedTargetDataDelegatesIfSet(SpecHandle, ActivationPredictionKey))
+		if (!ASC->CallReplicatedTargetDataDelegatesIfSet(SpecHandle, ActivationPredictionKey))
 		{
 			SetWaitingOnRemotePlayerData(); // if data hasn't reached the server yet
 		}

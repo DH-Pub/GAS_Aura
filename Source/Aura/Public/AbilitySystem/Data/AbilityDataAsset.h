@@ -22,8 +22,12 @@ struct FAuraAbilityData
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Details")
 	TObjectPtr<UMaterialInterface> BackgroundMaterial = nullptr;
 
+
+	//TODO: Create Separate DataAsset for abilities unlocked by each characters and their unlock/given conditions
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	int32 LevelRequirement = 1;
+	int32 LevelRequirement = 1; // Give Ability at this Level
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	bool bAutoUnlock = false; // whether to auto unlock and give ability
 };
 
 /**

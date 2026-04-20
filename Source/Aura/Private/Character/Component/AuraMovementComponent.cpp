@@ -34,15 +34,21 @@ void UAuraMovementComponent::SetUpdatedComponent(USceneComponent* NewUpdatedComp
 
 void UAuraMovementComponent::InitializeWithAbilitySystem(UAuraAbilitySystemComponent* ASC)
 {
-	AuraASC = ASC;
-	if (!AuraOwner) return;
-	if (const UAuraAttributeSet* AuraAS = AuraOwner->GetAttributeSet())
+	if (AuraASC)
+	{
+		if (const UAuraAttributeSet* AuraAS = AuraASC->GetSet<UAuraAttributeSet>())
+		{
+			AuraASC->GetGameplayAttributeValueChangeDelegate(AuraAS->GetMovementSpeedAttribute()).RemoveAll(this);
+		}
+	}
+
+	AuraASC = ASC; // Set new ASC
+
+	if (const UAuraAttributeSet* AuraAS = AuraASC->GetSet<UAuraAttributeSet>())
 	{
 		MaxWalkSpeed = FMath::Max(BaseWalkSpeed + AuraAS->GetMovementSpeed(), 0.f);
-		FOnGameplayAttributeValueChange& OnSpeedChanged = AuraASC->GetGameplayAttributeValueChangeDelegate(
-			AuraAS->GetMovementSpeedAttribute());
-		OnSpeedChanged.RemoveAll(this); // OnSpeedChanged.Clear();
-		OnSpeedChanged.AddWeakLambda(this, [this](const FOnAttributeChangeData& Data)
+		AuraASC->GetGameplayAttributeValueChangeDelegate(AuraAS->GetMovementSpeedAttribute()).AddWeakLambda(
+		this, [this](const FOnAttributeChangeData& Data)
 		{
 			MaxWalkSpeed = FMath::Max(BaseWalkSpeed + Data.NewValue, 0.f);
 		});

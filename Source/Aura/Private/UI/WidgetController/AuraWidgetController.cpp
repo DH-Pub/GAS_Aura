@@ -3,18 +3,22 @@
 
 #include "UI/WidgetController/AuraWidgetController.h"
 
+#include "AbilitySystem/AuraAttributeSet.h"
 #include "Character/AuraCharacterBase.h"
-#include "Player/AuraPlayerController.h"
 #include "Player/AuraPlayerState.h"
-#include "UI/HUD/AuraHUD.h"
 
 // AController* UAuraWidgetController::GetPlayerController() const {return Character->GetController();}
-AAuraPlayerState* UAuraWidgetController::GetPlayerState() const {return Character->GetPlayerState<AAuraPlayerState>();}
-UAuraAbilitySystemComponent* UAuraWidgetController::GetASC() const {return Character->GetAuraAbilitySystemComponent();}
-UAuraAttributeSet* UAuraWidgetController::GetAttributeSet() const {return Character->GetAttributeSet();}
-
-void UAuraWidgetController::SetCharacter(AAuraCharacterBase* InCharacter)
+const UAuraAttributeSet* UAuraWidgetController::GetAttributeSet() const
 {
-	Character = InCharacter;
-	if (const AAuraPlayerController* PC = Character->GetController<AAuraPlayerController>()) {AuraHUD = PC->GetHUD<AAuraHUD>();}
+	return AuraASC ? AuraASC->GetSet<UAuraAttributeSet>() : nullptr;
+}
+
+AAuraPlayerState* UAuraWidgetController::GetPlayerState() const
+{
+	return AuraASC ? Cast<AAuraPlayerState>(AuraASC->GetOwnerActor()) : nullptr;
+}
+
+AAuraCharacterBase* UAuraWidgetController::GetAuraCharacter() const
+{
+	return AuraASC ? Cast<AAuraCharacterBase>(AuraASC->GetAvatarActor()) : nullptr;
 }

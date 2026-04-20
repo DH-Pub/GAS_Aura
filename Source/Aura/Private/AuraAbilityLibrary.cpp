@@ -7,7 +7,6 @@
 #include "Aura/Aura.h"
 #include "Engine/OverlapResult.h"
 #include "Interface/CombatInterface.h"
-#include "Kismet/GameplayStatics.h"
 #include "PhysicsEngine/PhysicsSettings.h"
 
 void UAuraAbilityLibrary::AddAdditionalTraceIgnoreActors(TArray<AActor*>& IgnoreActors, AActor* ActorToCompare)
@@ -32,11 +31,10 @@ void UAuraAbilityLibrary::AddAdditionalTraceIgnoreActors(TArray<AActor*>& Ignore
 }
 
 bool UAuraAbilityLibrary::TraceByChannel(const UObject* WorldContextObject, const FVector& Start, const FVector& End,
-	const TArray<AActor*>& ActorsToIgnore, EDrawDebugTrace::Type DrawDebugType, TArray<FHitResult>& OutHits,
-	const TArray<TEnumAsByte<ECollisionChannel>>& Channels, const float SweepRadius, const bool bTraceType, const bool bTraceComplex)
+	const TArray<AActor*>& ActorsToIgnore, TArray<FHitResult>& OutHits, const TArray<TEnumAsByte<ECollisionChannel>>& Channels,
+	const float SweepRadius, const bool bTraceType, const bool bTraceComplex, EDrawDebugTrace::Type DrawDebugType)
 {
-	static const FName SphereTraceName(TEXT("Trace"));
-	FCollisionQueryParams Params(SphereTraceName, SCENE_QUERY_STAT_ONLY(KismetTraceUtils), bTraceComplex);
+	FCollisionQueryParams Params("ChannelTrace", bTraceComplex);
 	Params.bReturnPhysicalMaterial = true; // To get PhysMaterial from hit
 	Params.bReturnFaceIndex = !UPhysicsSettings::Get()->bSuppressFaceRemapTable; // Face Index (not disable globally)
 	Params.AddIgnoredActors(ActorsToIgnore);
@@ -45,17 +43,17 @@ bool UAuraAbilityLibrary::TraceByChannel(const UObject* WorldContextObject, cons
 	TArray<FHitResult> HitResults;
 	if (bTraceType)
 	{
+		TArray<FHitResult> ChannelResults; // Results by Channel, MoveTemp() will Reset() it
 		for (const ECollisionChannel Channel : Channels)
 		{	// Normally, we will only use ONE trace channel
-			TArray<FHitResult> TraceResults;
 			if (SweepRadius > 0.f)
 			{
-				World->SweepMultiByChannel(TraceResults, Start, End, FQuat::Identity, Channel,
+				World->SweepMultiByChannel(ChannelResults, Start, End, FQuat::Identity, Channel,
 					FCollisionShape::MakeSphere(SweepRadius), Params);
 			}
-			else World->LineTraceMultiByChannel(TraceResults, Start, End, Channel, Params);
+			else World->LineTraceMultiByChannel(ChannelResults, Start, End, Channel, Params);
 
-			HitResults.Append(MoveTemp(TraceResults));
+			HitResults.Append(MoveTemp(ChannelResults));
 		}
 	}
 	else
@@ -80,22 +78,50 @@ bool UAuraAbilityLibrary::TraceByChannel(const UObject* WorldContextObject, cons
 		if (!OutHits.ContainsByPredicate(Pred)) OutHits.Add(MoveTemp(Hit));
 	}
 
-
 #if ENABLE_DRAW_DEBUG
-	if (SweepRadius > 0.f)
-	{
-		DrawDebugSphereTraceMulti(World, Start, End, SweepRadius, DrawDebugType, OutHits.Num() > 0, OutHits,
-			FLinearColor::Red, FLinearColor::Green, .5f);
-	}
-	else
-	{
-		DrawDebugLineTraceMulti(World, Start, End, DrawDebugType, OutHits.Num() > 0, OutHits,
-			FLinearColor::Red, FLinearColor::Green, .5f);
-	}
+	DrawDebugSphereTraceMulti(World, Start, End, SweepRadius, DrawDebugType, OutHits.Num() > 0, OutHits,
+		FLinearColor::Red, FLinearColor::Green, .5f);
 #endif
 
 	return OutHits.Num() > 0;
 }
+
+bool UAuraAbilityLibrary::TraceByProfile(const UObject* WorldContextObject, TArray<FHitResult>& OutHits,
+	const FVector& Start, const FVector& End, const TArray<AActor*>& ActorsToIgnore,
+	const FCollisionProfileName& Profile, float SweepRadius, bool bTraceComplex, EDrawDebugTrace::Type DrawDebugType)
+{
+	FCollisionQueryParams Params("ProfileTrace", bTraceComplex);
+	Params.bReturnPhysicalMaterial = true; // To get PhysMaterial from hit
+	Params.bReturnFaceIndex = !UPhysicsSettings::Get()->bSuppressFaceRemapTable; // Face Index (not disable globally)
+	Params.AddIgnoredActors(ActorsToIgnore);
+
+	const UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
+	TArray<FHitResult> HitResults;
+	if (SweepRadius > 0.f)
+	{
+		World->SweepMultiByProfile(HitResults, Start, End, FQuat::Identity, Profile.Name,
+			FCollisionShape::MakeSphere(SweepRadius), Params);
+	}
+	else World->LineTraceMultiByProfile(HitResults, Start, End, Profile.Name, Params);
+
+	for (FHitResult& Hit : HitResults)
+	{	// Filter to prevent multiple hits on the same actor
+		// a single bullet dealing damage multiple times to a single actor if using an overlap trace
+		auto Pred = [&Hit](FHitResult& Other)
+		{
+			return Other.HitObjectHandle == Hit.HitObjectHandle;
+		};
+		if (!OutHits.ContainsByPredicate(Pred)) OutHits.Add(MoveTemp(Hit));
+	}
+
+#if ENABLE_DRAW_DEBUG
+	DrawDebugSphereTraceMulti(World, Start, End, SweepRadius, DrawDebugType, OutHits.Num() > 0, OutHits,
+		FLinearColor::Red, FLinearColor::Green, .5f);
+#endif
+
+	return OutHits.Num() > 0;
+}
+
 
 bool UAuraAbilityLibrary::ConeOverlapLivingCharacters(const UObject* WorldContextObject, const FVector& Start,
 	FVector Direction, float SlantHeight, float ConeHalfAngleDeg, const TArray<AActor*>& ActorsToIgnore,

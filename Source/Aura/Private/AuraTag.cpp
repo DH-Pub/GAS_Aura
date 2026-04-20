@@ -144,6 +144,8 @@ namespace AuraTag
 
 	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Melee_Pierce_Impact, "GameplayCue.Melee.Pierce.Impact")
 
+	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Spell_ArcaneShards, "GameplayCue.Spell.ArcaneShards")
+
 	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Shared_LevelUp, "GameplayCue.Shared.LevelUp")
 
 	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Passive_HaloOfProtection, "GameplayCue.Passive.HaloOfProtection")

@@ -5,14 +5,29 @@
 
 #include "AbilitySystem/AuraAttributeSet.h"
 
-void UEnemyWidgetController::BindCallbacksDependencies()
+void UEnemyWidgetController::BindCallbacksDependencies(UAuraAbilitySystemComponent* InASC)
 {
-	BindGameplayAttributeToBroadcast(GetAttributeSet()->GetHealthAttribute(), OnHealthChanged);
-	BindGameplayAttributeToBroadcast(GetAttributeSet()->GetMaxHealthAttribute(), OnMaxHealthChanged);
+	if (const UAuraAttributeSet* OldAS = GetAttributeSet())
+	{
+		AuraASC->GetGameplayAttributeValueChangeDelegate(OldAS->GetHealthAttribute()).RemoveAll(this);
+		AuraASC->GetGameplayAttributeValueChangeDelegate(OldAS->GetMaxHealthAttribute()).RemoveAll(this);
+	}
+
+	Super::BindCallbacksDependencies(InASC);
+
+	if (!AuraASC) return;
+	if (const UAuraAttributeSet* NewAS = GetAttributeSet())
+	{
+		BindGameplayAttributeToBroadcast(NewAS->GetHealthAttribute(), OnHealthChanged);
+		BindGameplayAttributeToBroadcast(NewAS->GetMaxHealthAttribute(), OnMaxHealthChanged);
+	}
 }
 
 void UEnemyWidgetController::BroadcastInitialValues()
 {
-	OnHealthChanged.Broadcast(GetAttributeSet()->GetHealth());
-	OnMaxHealthChanged.Broadcast(GetAttributeSet()->GetMaxHealth());
+	if (const UAuraAttributeSet* NewAS = GetAttributeSet())
+	{
+		OnHealthChanged.Broadcast(NewAS->GetHealth());
+		OnMaxHealthChanged.Broadcast(NewAS->GetMaxHealth());
+	}
 }

@@ -11,13 +11,12 @@
 #include "Components/Image.h"
 #include "Components/OverlaySlot.h"
 #include "Components/SizeBox.h"
-#include "Kismet/GameplayStatics.h"
 #include "UI/WidgetController/SpellMenuWidgetController.h"
 
 void USpellGlobeButtonWidget::SetWidgetController(UAuraWidgetController* InWidgetController)
 {
 	SpellMenuWC = Cast<USpellMenuWidgetController>(InWidgetController);
-	SpellMenuWC->GetASC()->AbilityDataDelegate.AddDynamic(this, &USpellGlobeButtonWidget::ReceiveAbilityData);
+	SpellMenuWC->OnReceiveAbilityDataFromASC.AddDynamic(this, &USpellGlobeButtonWidget::ReceiveAbilityData);
 	Super::SetWidgetController(InWidgetController);
 }
 
@@ -70,7 +69,7 @@ void USpellGlobeButtonWidget::NativePreConstruct()
 }
 void USpellGlobeButtonWidget::NativeDestruct()
 {
-	if (SpellMenuWC) SpellMenuWC->GetASC()->AbilityDataDelegate.RemoveAll(this);
+	if (SpellMenuWC) SpellMenuWC->OnReceiveAbilityDataFromASC.RemoveAll(this);
 	Super::NativeDestruct();
 }
 
@@ -90,17 +89,17 @@ void USpellGlobeButtonWidget::NativeOnMouseLeave(const FPointerEvent& InMouseEve
 
 FReply USpellGlobeButtonWidget::NativeOnFocusReceived(const FGeometry& InGeometry, const FFocusEvent& InFocusEvent)
 {
-	if (!SpellMenuWC) return Super::NativeOnFocusReceived(InGeometry,InFocusEvent);
-	UGameplayStatics::PlaySound2D(this, ClickSound);
-	if (SpellMenuWC->SelectedSpellGlobe != this)
+	if (SpellMenuWC)
 	{
-		Image_Selection->SetVisibility(ESlateVisibility::Visible);
-		PlayAnimation(SelectAnimation);
+		if (SpellMenuWC->SelectedSpellGlobe != this)
+		{
+			Image_Selection->SetVisibility(ESlateVisibility::Visible);
+			PlayAnimation(SelectAnimation);
+		}
+		SpellMenuWC->FocusSpellGlobe = this;
+		SpellMenuWC->UpdateButtonsAndDescriptions(false);
 	}
-	SpellMenuWC->FocusSpellGlobe = this;
-	SpellMenuWC->UpdateButtonsAndDescriptions(false);
-	FEventReply Reply(true);
-	return UWidgetBlueprintLibrary::SetUserFocus(Reply, this).NativeReply;
+	return Super::NativeOnFocusReceived(InGeometry,InFocusEvent);
 }
 void USpellGlobeButtonWidget::NativeOnFocusLost(const FFocusEvent& InFocusEvent)
 {
@@ -112,14 +111,11 @@ void USpellGlobeButtonWidget::NativeOnFocusLost(const FFocusEvent& InFocusEvent)
 FReply USpellGlobeButtonWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
 	Border->SetBrush(BorderClicked);
-	if (SpellMenuWC->SelectedSpellGlobe) SpellMenuWC->SelectedSpellGlobe->Image_Selection->SetVisibility(ESlateVisibility::Collapsed);
-	SpellMenuWC->SelectedSpellGlobe = this;
-	UGameplayStatics::PlaySound2D(this, ClickSound);
-	if (bDragEnable)
+	if (SpellMenuWC->SelectedSpellGlobe && SpellMenuWC->SelectedSpellGlobe != this)
 	{
-		return UWidgetBlueprintLibrary::DetectDragIfPressed(InMouseEvent, this,
-			EKeys::LeftMouseButton).NativeReply;
+		SpellMenuWC->SelectedSpellGlobe->Image_Selection->SetVisibility(ESlateVisibility::Collapsed);
 	}
+	SpellMenuWC->SelectedSpellGlobe = this;
 	return Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);
 }
 FReply USpellGlobeButtonWidget::NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)

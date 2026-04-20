@@ -105,8 +105,8 @@ void AAuraProjectile::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, 
 	{
 		TArray<FHitResult> HitResults;
 		UAuraAbilityLibrary::TraceByChannel(this, Loc - VelocityNormal * 10.f,
-			Loc + VelocityNormal * 10.f, ActorsToIgnore, EDrawDebugTrace::None, HitResults,
-			{ECC_AuraTrace_Effect}, Sphere->GetScaledSphereRadius() + 1.f);
+			Loc + VelocityNormal * 10.f, ActorsToIgnore, HitResults, {ECC_AuraTrace_Effect},
+			Sphere->GetScaledSphereRadius() + 1.f);
 		for (FHitResult& Hit : HitResults)
 		{
 			if (Hit.GetActor() != OtherActor) continue;

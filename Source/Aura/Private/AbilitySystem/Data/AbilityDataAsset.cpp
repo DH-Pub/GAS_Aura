@@ -35,7 +35,14 @@ void UAbilityDataAsset::UnlockAbilityByLevel(const UObject* WorldContextObject, 
 	{	/* not enough lv or already has ability */
 		if (CharacterLevel < Data.LevelRequirement || ASC->FindAbilitySpecFromClass(Data.AbilityClass)) continue;
 		FGameplayAbilitySpec AbilitySpec(Data.AbilityClass, 1);
-		AbilitySpec.GetDynamicSpecSourceTags().AddTagFast(AuraTag::Ability_Status_Eligible);
+		if (Data.bAutoUnlock)
+		{
+
+		}
+		else
+		{
+			AbilitySpec.GetDynamicSpecSourceTags().AddTagFast(AuraTag::Ability_Status_Eligible);
+		}
 		ASC->GiveAbility(AbilitySpec);
 	}
 }
