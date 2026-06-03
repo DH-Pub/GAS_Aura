@@ -28,10 +28,9 @@ const FAuraAbilityData* UAbilityDataAsset::GetDataFromGameState(const UObject* W
 	return nullptr;
 }
 
-void UAbilityDataAsset::UnlockAbilityByLevel(const UObject* WorldContextObject, UAuraAbilitySystemComponent* ASC,
-	const int32 CharacterLevel)
+void UAbilityDataAsset::UnlockAbilityByLevel(UAbilitySystemComponent* ASC, const int32 CharacterLevel)
 {
-	for (const FAuraAbilityData& Data : Get(WorldContextObject)->AbilityDataList)
+	for (const FAuraAbilityData& Data : Get(ASC)->AbilityDataList)
 	{	/* not enough lv or already has ability */
 		if (CharacterLevel < Data.LevelRequirement || ASC->FindAbilitySpecFromClass(Data.AbilityClass)) continue;
 		FGameplayAbilitySpec AbilitySpec(Data.AbilityClass, 1);
@@ -45,6 +44,15 @@ void UAbilityDataAsset::UnlockAbilityByLevel(const UObject* WorldContextObject, 
 		}
 		ASC->GiveAbility(AbilitySpec);
 	}
+}
+
+const FAuraAbilityData* UAbilityDataAsset::GetAbilityDataFromID(UAbilitySystemComponent* ASC, const int32 InputID)
+{
+	if (const FGameplayAbilitySpec* Spec = ASC ? ASC->FindAbilitySpecFromInputID(InputID) : nullptr)
+	{
+		return GetDataFromGameState(ASC, Spec->Ability.GetClass());
+	}
+	return nullptr;
 }
 
 

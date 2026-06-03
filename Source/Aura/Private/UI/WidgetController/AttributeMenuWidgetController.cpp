@@ -11,24 +11,22 @@
 #include "Player/AuraPlayerState.h"
 #include "UI/HUD/AuraHUD.h"
 
-void UAttributeMenuWidgetController::BindCallbacksDependencies(UAuraAbilitySystemComponent* InASC)
+void UAttributeMenuWidgetController::UnbindOldAbilitySystemComponent()
 {
-	if (AuraASC)
-	{
-		if (AAuraPlayerState* OldPS = GetPlayerState())
-		{
-			OldPS->OnAttributePointsChangedDelegate.RemoveAll(this);
-		}
-		for (const auto& [Tag, AttributeData] : AAuraHUD::Get(this)->GetAttributeDataList())
-		{
-			AuraASC->GetGameplayAttributeValueChangeDelegate(AttributeData.GameplayAttribute).RemoveAll(this);
-		}
-	}
-
-	Super::BindCallbacksDependencies(InASC);
-
 	AttributeTargetData.Data.Empty();
-	if (!AuraASC) return;
+	if (AAuraPlayerState* OldPS = GetPlayerState())
+	{
+		OldPS->OnAttributePointsChangedDelegate.RemoveAll(this);
+	}
+	for (const auto& [Tag, AttributeData] : AAuraHUD::Get(this)->GetAttributeDataList())
+	{
+		AuraASC->GetGameplayAttributeValueChangeDelegate(AttributeData.GameplayAttribute).RemoveAll(this);
+	}
+}
+
+void UAttributeMenuWidgetController::BindCallbacksDependencies()
+{
+	AttributeTargetData.Data.Empty();
 	GetPlayerState()->OnAttributePointsChangedDelegate.AddWeakLambda(this, [&](const int32 Points)
 	{
 		bIsApplying = false;

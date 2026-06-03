@@ -21,7 +21,8 @@ class AURA_API USpellMenuWidgetController : public UAuraWidgetController
 {
 	GENERATED_BODY()
 public:
-	virtual void BindCallbacksDependencies(UAuraAbilitySystemComponent* InASC) override;
+	virtual void UnbindOldAbilitySystemComponent() override;
+	virtual void BindCallbacksDependencies() override;
 	virtual void BroadcastInitialValues() override;
 
 	UPROPERTY(BlueprintAssignable, Category="Aura|Delegate")
@@ -32,6 +33,10 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void ClearSelected();
+	/*UPROPERTY(BlueprintReadOnly)
+	TSubclassOf<UAuraGameplayAbility> SelectedClass;
+	UPROPERTY(BlueprintReadOnly)
+	TSubclassOf<UAuraGameplayAbility> FocusClass;*/
 	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<USpellGlobeButtonWidget> SelectedSpellGlobe = nullptr;
 	UPROPERTY(BlueprintReadOnly)

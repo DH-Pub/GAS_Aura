@@ -40,8 +40,7 @@ public:
 	FORCEINLINE FHitResult& GetCursorHitResult() { return CursorHitResult; }
 
 	UFUNCTION(BlueprintGetter)
-	bool GetHitResultsUnderCursorByProfile(const FCollisionProfileName& Profile,
-		TArray<FHitResult>& OutResults, float SweepRadius = 0.f, bool bTraceComplex = false) const;
+	bool GetHitResultsUnderCursorByProfile(const FCollisionProfileName& Profile, FHitResult& OutHit, float SweepRadius = 0.f) const;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	TObjectPtr<class USplineComponent> Spline;

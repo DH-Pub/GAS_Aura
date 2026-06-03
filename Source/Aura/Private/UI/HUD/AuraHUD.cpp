@@ -39,8 +39,9 @@ AAuraHUD* AAuraHUD::Get(const UObject* WorldContextObject)
 bool AAuraHUD::AddWidgetToRootCanvasPanel(UUserWidget* InNewWidget)
 {
 	if (InNewWidget == nullptr) return false;
-	if (const AAuraHUD* HUD = Get(InNewWidget); HUD && HUD->OverlayController && HUD->OverlayController->Overlay_Screen)
-	{	// Set inside WBP_Overlay->WidgetControllerSet
+	const AAuraHUD* HUD = Get(InNewWidget);
+	if (HUD && HUD->OverlayController && HUD->OverlayController->Overlay_Screen)
+	{	// Set inside WBP_Overlay->BP_SetWidgetController
 		/*UOverlaySlot* Slot =*/ HUD->OverlayController->Overlay_Screen->AddChildToOverlay(InNewWidget);
 		return true;
 	}

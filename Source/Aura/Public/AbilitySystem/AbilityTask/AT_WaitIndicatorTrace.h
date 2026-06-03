@@ -7,7 +7,7 @@
 #include "AbilitySystem/Ability/TargetData/TargetActor_Indicator.h"
 #include "AT_WaitIndicatorTrace.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FWaitIndicatorDelegate, const FGATargetData_CommonTarget&, Data);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FWaitIndicatorDelegate, const FGameplayAbilityTargetDataHandle&, Data);
 
 /**
  * Based on AbilityTask_WaitTargetData

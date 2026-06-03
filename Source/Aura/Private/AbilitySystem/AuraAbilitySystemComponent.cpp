@@ -8,69 +8,39 @@
 #include "GameplayCueManager.h"
 #include "GameplayCueNotify_Actor.h"
 #include "AbilitySystem/Ability/CostCooldownAbility.h"
-#include "AbilitySystem/Data/AbilityDataAsset.h"
 #include "Character/AuraAnimInstance.h"
 #include "Character/AuraPlayer.h"
 #include "Character/Component/AuraMovementComponent.h"
 #include "Player/AuraPlayerState.h"
-#include "UI/WidgetController/AuraWidgetController.h"
 
 void UAuraAbilitySystemComponent::InitAbilityActorInfo(AActor* InOwnerActor, AActor* InAvatarActor)
 {
 	Super::InitAbilityActorInfo(InOwnerActor, InAvatarActor);
 
-	if (!OnGameplayEffectAppliedDelegateToSelf.IsBoundToObject(this))
-	{	// This is only called on server -> needs to convert to UFUNCTION(Client, Reliable)
-		OnGameplayEffectAppliedDelegateToSelf.AddWeakLambda(this, [this](UAbilitySystemComponent*,
-			const FGameplayEffectSpec& Spec, FActiveGameplayEffectHandle)
-		{	// Server only
-			//TODO: Add Something here
-		});
-	}
-
 	if (!OnActiveGameplayEffectAddedDelegateToSelf.IsBoundToObject(this))
-	{	// AddLambda will NOT add object to delegate (IsBoundToObject() == false)
+	{	// If this is not bound, that means others below aren't. All will be destroyed along with ASC
+		// AddLambda will NOT add object to delegate (IsBoundToObject() == false)
 		OnActiveGameplayEffectAddedDelegateToSelf.AddWeakLambda(this, [this](UAbilitySystemComponent*,
 			const FGameplayEffectSpec& EffectSpec, FActiveGameplayEffectHandle)
-		{	// Will be destroyed along with ASC
-			if (AbilityDataDelegate.IsBound()) // ASC is bounded to UI
-			{
-				FGameplayTagContainer GrantedTags; EffectSpec.GetAllGrantedTags(GrantedTags);
-				if (GrantedTags.IsValid())
-				{	// For Broadcasting to UI
-					ABILITYLIST_SCOPE_LOCK() // Check Ability Cooldown
-					for (const FGameplayAbilitySpec& AbilitySpec : ActivatableAbilities.Items)
-					{
-						const FGameplayTagContainer* CooldownTags = AbilitySpec.Ability->GetCooldownTags();
-						if (!CooldownTags || !CooldownTags->HasAnyExact(GrantedTags)) continue;
-						UpdateAbilityData(AbilitySpec);
-					}
-				}
-			}
+		{	/** Active Effect here can be Client Prediction before being removed and replaced with Server correction */
+			BroadcastAllAbilityData();
 		});
-	}
 
-	if (!ActiveGameplayEffects.OnActiveGameplayEffectRemovedDelegate.IsBoundToObject(this))
-	{
-		//TODO: Maybe bind something
-	}
+		/*// This is only called on server -> needs to convert to UFUNCTION(Client, Reliable)
+		OnGameplayEffectAppliedDelegateToSelf.AddWeakLambda(this, [this](UAbilitySystemComponent*,
+			const FGameplayEffectSpec& Spec, FActiveGameplayEffectHandle)
+		{	// Server only -> we use GameplayCue instead
+		});*/
 
-	if (!AbilitySpecDirtiedCallbacks.IsBoundToObject(this) && IsOwnerActorAuthoritative())
-	{
-		TWeakObjectPtr WeakThis = this;
-		AbilitySpecDirtiedCallbacks.AddWeakLambda(this, [this, WeakThis](const FGameplayAbilitySpec&)
-		{	// Use the one with delay because Client may receive data after
-			if (!WeakThis.IsValid()) return;
-			if (ClientRefreshTimer.IsValid()) return;
-			ClientRefreshTimer = GetWorld()->GetTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(
-			this, [this, WeakThis]()
-			{
-				if (!WeakThis.IsValid()) return;
-				ClientRefreshTimer.Invalidate();
-				ClientRefreshAbilityData(bClearClientInput);
-				bClearClientInput = false;
-			}));
-		});
+		// ActiveGameplayEffects.OnActiveGameplayEffectRemovedDelegate.AddWeakLambda(this,)
+
+		if (IsOwnerActorAuthoritative())
+		{
+			AbilitySpecDirtiedCallbacks.AddWeakLambda(this, [this](const FGameplayAbilitySpec&)
+			{	// Use the one with delay because Client may receive data after
+				BroadcastAllAbilityData();
+			});
+		}
 	}
 
 	FGameplayAbilityActorInfo* ActorInfo = AbilityActorInfo.Get();
@@ -118,12 +88,9 @@ void UAuraAbilitySystemComponent::AbilityInputPressed(const int32 InputID)
 					Instance->GetCurrentActivationInfo().GetActivationPredictionKey() : FPredictionKey();
 				/* Send to ASC->AbilityReplicatedEventDelegate & ASC->CallReplicatedEventDelegateIfSet */
 				InvokeReplicatedEvent(EAbilityGenericReplicatedEvent::InputPressed, AbilitySpec.Handle, OriginalPredictionKey);
-				LocalInputConfirm(); // GenericLocalConfirmCallbacks is cleared in this;
 
-				TSharedRef<FAbilityReplicatedDataCache> ReplicatedData = AbilityTargetDataMap.FindOrAdd(
-					FGameplayAbilitySpecHandleAndPredictionKey(AbilitySpec.Handle, OriginalPredictionKey));
-				ReplicatedData->GenericEvents[1000].bTriggered = true;
-				ReplicatedData->PredictionKey = OriginalPredictionKey;
+				//TODO: Bind to left/right mouse for confirm/cancel
+				LocalInputConfirm(); // GenericLocalConfirmCallbacks is cleared in this;
 			}
 			else TryActivateAbility(AbilitySpec.Handle);
 		}
@@ -154,12 +121,11 @@ void UAuraAbilitySystemComponent::AbilityInputReleased(const int32 InputID)
 
 void UAuraAbilitySystemComponent::ClearInput()
 {
+	LocalInputCancel();
 	InputHeldHandles.Reset();
 	ABILITYLIST_SCOPE_LOCK()
 	for (FGameplayAbilitySpec& AbilitySpec : ActivatableAbilities.Items)
 	{	// Forcefully "Release" All Inputs if Ability is not canceled
-		if (!AbilitySpec.InputPressed) continue;
-		AbilitySpec.InputPressed = false;
 		if (!AbilitySpec.IsActive()) continue;
 		const UGameplayAbility* Instance = AbilitySpec.GetPrimaryInstance();
 		const FPredictionKey OriginalPredictionKey = Instance ?
@@ -177,12 +143,18 @@ void UAuraAbilitySystemComponent::ReduceCooldownByTag(const FGameplayTagContaine
 {	// (Effect.GetTimeRemaining(GetWorld()->GetTimeSeconds()) - Amount) * (1 - Percent)
 	if (!IsOwnerActorAuthoritative()) return; // if (!GetAvatarActor()->HasAuthority()) return;
 	const FGameplayEffectQuery Query = FGameplayEffectQuery::MakeQuery_MatchAnyOwningTags(TagContainer);
+	const float WorldTime = GetWorld()->GetTimeSeconds();
 	for (FActiveGameplayEffect& Effect : &ActiveGameplayEffects)
-	{	// ModifyActiveEffectStartTime()
+	{
 		if (!Query.Matches(Effect)) continue;
-		Effect.StartWorldTime -= Amount;
+		if (Percent > UE_KINDA_SMALL_NUMBER)
+		{
+			Amount = Effect.GetTimeRemaining(WorldTime) * Percent;
+		}
+		Effect.StartWorldTime -= Amount; // ModifyActiveEffectStartTime()
 		Effect.StartServerWorldTime -= Amount;
 		ActiveGameplayEffects.CheckDuration(Effect.Handle);
+		Effect.EventSet.OnTimeChanged.Broadcast(Effect.Handle, Effect.StartWorldTime, Effect.GetDuration());
 		OnGameplayEffectDurationChange(Effect);
 		ActiveGameplayEffects.MarkItemDirty(Effect);
 		/* FGameplayEffectSpec NewSpec(Effect.Spec.Def, Effect.Spec.GetEffectContext(), Effect.Spec.GetLevel());
@@ -230,22 +202,12 @@ FActiveGameplayEffectHandle UAuraAbilitySystemComponent::ApplyGameplayEffectSpec
 #pragma region Activate/Give/Remove Ability
 void UAuraAbilitySystemComponent::OnGameplayEffectDurationChange(FActiveGameplayEffect& ActiveEffect)
 {	// Super::OnGameplayEffectDurationChange(ActiveEffect);
-	ActiveEffect.EventSet.OnTimeChanged.Broadcast(ActiveEffect.Handle, ActiveEffect.StartWorldTime,
-		ActiveEffect.GetDuration());
-	const FGameplayTagContainer& CooldownTags = ActiveEffect.Spec.DynamicGrantedTags;
-	ABILITYLIST_SCOPE_LOCK()
-	for (const FGameplayAbilitySpec& AbilitySpec : ActivatableAbilities.Items)
-	{
-		const FGameplayTagContainer* Tags = AbilitySpec.Ability->GetCooldownTags();
-		// if (Tags && Tags->HasAnyExact(CooldownTags)) ClientUpdateAbilityData(AbilitySpec.Handle);
-		if (Tags && Tags->HasAnyExact(CooldownTags)) UpdateAbilityData(AbilitySpec);
-	}
+	BroadcastAllAbilityData();
 }
 void UAuraAbilitySystemComponent::OnPredictiveGameplayCueCatchup(FGameplayTag Tag)
 {
 	Super::OnPredictiveGameplayCueCatchup(Tag);
 }
-
 void UAuraAbilitySystemComponent::ClientActivateAbilityFailed_Implementation(
 	FGameplayAbilitySpecHandle AbilityToActivate, int16 PredictionKey)
 {
@@ -253,6 +215,12 @@ void UAuraAbilitySystemComponent::ClientActivateAbilityFailed_Implementation(
 
 }
 
+
+void UAuraAbilitySystemComponent::OnRep_ActivateAbilities()
+{
+	Super::OnRep_ActivateAbilities();
+	BroadcastAllAbilityData();
+}
 void UAuraAbilitySystemComponent::OnTagUpdated(const FGameplayTag& Tag, bool TagExists)
 {	// Super::OnTagUpdated(Tag, TagExists); // Empty
 	if (TagExists)
@@ -299,48 +267,22 @@ void UAuraAbilitySystemComponent::ClientRemoveTags_Implementation(FGameplayTagCo
 /*
  * ===============================================================================================================
  */
-void UAuraAbilitySystemComponent::BindAbilityDataDelegateToUIDelegate(UObject* InUserObject,
-	FOnReceiveAbilityDataSignature& InDelegate)
-{
-	AbilityDataDelegate.AddWeakLambda(InUserObject,
-	[&InDelegate](const FGameplayAbilitySpec& Spec, const FAuraAbilityData& Data)
-	{
-		InDelegate.Broadcast(Spec, Data);
-	});
-}
-
-void UAuraAbilitySystemComponent::UpdateAbilityData(const FGameplayAbilitySpec& AbilitySpec) const
-{
-	if (!AbilityDataDelegate.IsBound()) return; // not bounded to UI (this may not have UI)
-	if (const FAuraAbilityData* Data = UAbilityDataAsset::GetDataFromGameState(this,
-		AbilitySpec.Ability.GetClass()))
-	{
-		AbilityDataDelegate.Broadcast(AbilitySpec, *Data);
-	}
-}
-void UAuraAbilitySystemComponent::ClientUpdateAbilityData_Implementation(const FGameplayAbilitySpecHandle SpecHandle)
-{
-	if (const FGameplayAbilitySpec* Spec = FindAbilitySpecFromHandle(SpecHandle))
-	{
-		UpdateAbilityData(*Spec);
-	}
-}
 void UAuraAbilitySystemComponent::BroadcastAllAbilityData()
 {	// ASC can load before UI
-	if (BroadcastDelegateTimer.IsValid()) return;
-	const UWorld* World = GetWorld(); if (World == nullptr) return;
-	const TWeakObjectPtr WeakThis = this;
-	BroadcastDelegateTimer = World->GetTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this,
-	[WeakThis, this]()
-	{	// Wait for next tick so that Delegate receivers can finish loading
-		if (!WeakThis.IsValid()) return;
-		BroadcastDelegateTimer.Invalidate();
-		ABILITYLIST_SCOPE_LOCK()
-		for (const FGameplayAbilitySpec& AbilitySpec : ActivatableAbilities.Items)
-		{
-			UpdateAbilityData(AbilitySpec);
-		}
-	}));
+	if (!AbilityDataDelegate.IsBound() /* Not bound to any UI (local) */ || BroadcastDelegateTimer.IsValid()) return;
+	if (const UWorld* World = GetWorld())
+	{
+		const TWeakObjectPtr WeakThis = this;
+		BroadcastDelegateTimer = World->GetTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this,
+		[WeakThis, this]()
+		{	// Wait for next tick so that Delegate receivers can finish loading
+			if (WeakThis.IsValid())
+			{
+				WeakThis->BroadcastDelegateTimer.Invalidate();
+				WeakThis->AbilityDataDelegate.Broadcast();
+			}
+		}));
+	}
 }
 
 void UAuraAbilitySystemComponent::ServerHandleGameplayEvent_Implementation(const FGameplayTag& Tag,
@@ -363,7 +305,6 @@ void UAuraAbilitySystemComponent::ServerSpendSpellPoints_Implementation(const UG
 	{	// ability already equipable
 		Spec->Level++;
 	} // else consume 1 point to remove Ability_Status_Eligible
-	bClearClientInput = true;
 	MarkAbilitySpecDirty(*Spec); // without MarkAbilitySpecDirty() to replicate, client Spec's won't change
 }
 
@@ -371,31 +312,33 @@ void UAuraAbilitySystemComponent::ServerChangeAbilitySlot_Implementation(const U
 	const int32 AbilityID)
 {
 	FGameplayAbilitySpec* Spec = FindAbilitySpecFromClass(AbilityCDO->GetClass());
-	if (!Spec) return;
-	if (AbilityID == Spec->InputID) return; /* server check if moving to the same Slot */
-	const bool bIsPassive = Cast<UAuraGameplayAbility>(Spec->Ability)->ActivationPolicy == EAuraActivationPolicy::OnSpawn;
-	if (AbilityID > EAuraAbilityInputID::None)
-	{
-		const int32 SlotToSwap = Spec->InputID; // Store Spec's input if there is any, else EmptyTag
-		if (Spec->GetDynamicSpecSourceTags().HasTag(AuraTag::Ability_Status)
-			|| AbilityID < EAuraAbilityInputID::PassiveForAbilitySlots == bIsPassive /* Server side check if Ability is the same type as slot */)
+	if (Spec && Spec->InputID != AbilityID)
+	{	/* server check if moving to the same Slot */
+		const bool bIsPassive = Cast<UAuraGameplayAbility>(Spec->Ability)->ActivationPolicy == EAuraActivationPolicy::OnSpawn;
+		if (AbilityID > EAuraAbilityInputID::None)
 		{
-			ClientRefreshAbilityData(true); // tell client to refresh data to clear UI change
-			return;
+			const int32 SlotToSwap = Spec->InputID; // Store Spec's input if there is any, else EmptyTag
+			const bool bSlotIsPassive = AbilityID > EAuraAbilityInputID::PassiveForAbilitySlots;
+			if (Spec->GetDynamicSpecSourceTags().HasTag(AuraTag::Ability_Status)
+				|| bSlotIsPassive != bIsPassive /* Server side check if Ability is the same type as slot */)
+			{
+				MarkAbilitySpecDirty(*Spec);
+				// ClientRefreshAbilityData(); // tell client to refresh data to clear UI change
+				return;
+			}
+			ABILITYLIST_SCOPE_LOCK()
+			for (FGameplayAbilitySpec& OtherSpec : ActivatableAbilities.Items)
+			{	// Swap out previous Ability in this slot if there is any
+				if (OtherSpec.InputID != AbilityID) continue;
+				OtherSpec.InputID = SlotToSwap;
+				MarkAbilitySpecDirty(OtherSpec);
+				if (bIsPassive) HandlePassive(OtherSpec);
+			}
 		}
-		ABILITYLIST_SCOPE_LOCK()
-		for (FGameplayAbilitySpec& OtherSpec : ActivatableAbilities.Items)
-		{	// Swap out previous Ability in this slot if there is any
-			if (OtherSpec.InputID != AbilityID) continue;
-			OtherSpec.InputID = SlotToSwap;
-			MarkAbilitySpecDirty(OtherSpec);
-			if (bIsPassive) HandlePassive(OtherSpec);
-		}
+		Spec->InputID = AbilityID; // can be 0 (UNEQUIP)
+		MarkAbilitySpecDirty(*Spec);
+		if (bIsPassive) HandlePassive(*Spec);
 	}
-	Spec->InputID = AbilityID; // can be 0 (UNEQUIP)
-	bClearClientInput = true;
-	MarkAbilitySpecDirty(*Spec);
-	if (bIsPassive) HandlePassive(*Spec);
 }
 void UAuraAbilitySystemComponent::HandlePassive(FGameplayAbilitySpec& Spec)
 {
@@ -409,9 +352,8 @@ void UAuraAbilitySystemComponent::HandlePassive(FGameplayAbilitySpec& Spec)
 	}
 }
 
-void UAuraAbilitySystemComponent::ClientRefreshAbilityData_Implementation(const bool bClearInput)
+void UAuraAbilitySystemComponent::ClientRefreshAbilityData_Implementation()
 {
-	if (bClearInput) ClearInput();
 	BroadcastAllAbilityData();
 }
 #pragma endregion

@@ -44,7 +44,7 @@ protected:
 
 
 	UFUNCTION(BlueprintCallable)
-	void SuccessUpdateAbilityData(const struct FGameplayAbilitySpec& AbilitySpec, const struct FAuraAbilityData& Data);
+	void UpdateAbilityUI();
 	void CheckAbilityCooldown();
 	FGameplayTagContainer CooldownTags;
 
@@ -55,8 +55,6 @@ protected:
 	float CooldownDuration = 0.f;
 	UPROPERTY(BlueprintReadWrite)
 	float TimeRemaining = 0.f;
-	/*UFUNCTION(BlueprintCallable)
-	void UpdateCooldown();*/
 	UFUNCTION(BlueprintCallable)
 	void EndCooldown();
 

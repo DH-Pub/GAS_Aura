@@ -17,7 +17,7 @@ UCLASS()
 class AURA_API UAT_WaitGenericEvent : public UAbilityTask
 {
 	GENERATED_BODY()
-
+public:
 	UPROPERTY(BlueprintAssignable)
 	FEventDelegate OnReceived;
 	/**

@@ -18,6 +18,8 @@ struct FAbilityEffect
 	float Period = 0.f;
 	UPROPERTY(EditDefaultsOnly, meta=(ForceInlineRow))
 	TMap<FGameplayTag, FScalableFloat> SetByCallerTagMagnitudes;
+	UPROPERTY(EditDefaultsOnly)
+	bool bRadial = false; // this Effect's Value is Affected by Radial Effects
 };
 
 /**
@@ -31,7 +33,12 @@ class AURA_API UDamageAbility : public UCostCooldownAbility //TODO: Rename to Ef
 public:
 	UPROPERTY(EditDefaultsOnly, Category="Aura")
 	TArray<FAbilityEffect> AbilityEffects;
-	TArray<FGameplayEffectSpecHandle> MakeOutgoingAbilityEffectsSpecs();
+	/**
+	 * @param Multiplier For Radial Damage
+	 * @param MinimumValuePercent %: 0 <= x < 1
+	 * @return
+	 */
+	TArray<FGameplayEffectSpecHandle> MakeOutgoingAbilityEffectsSpecs(float Multiplier = 1.f, float MinimumValuePercent = .5f);
 	virtual void ApplyAbilityEffectsToTarget(const AActor* InTarget, TArray<FGameplayEffectSpecHandle>& SpecHandles,
 		const FVector& InDirection); //TODO: Make struct for additional info (Direction, ...)
 
@@ -49,6 +56,13 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void MeleeTraceAndApplyEffects(const float Radius, const FVector& InLoc, const FGameplayTag& ImpactCue,
 		EDrawDebugTrace::Type DrawDebugType);
+
+	/** Apply Effect with radial Falloff from Origin
+	 * @param RadialParams MinimumDamage and InnerRadius will be used as Percentage, BaseDamage is not used
+	 */
+	UFUNCTION(BlueprintCallable)
+	void ApplyRadialEffectsWithFalloff(const FVector& Origin, UPARAM(ref) struct FRadialDamageParams& RadialParams,
+		bool bForEnemies = true);
 
 public:
 	// Call in GC_Damage, Return Value will decide whether to show Damage Number

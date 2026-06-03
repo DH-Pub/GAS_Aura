@@ -14,7 +14,8 @@ class UEnemyWidgetController : public UAuraWidgetController
 {
 	GENERATED_BODY()
 public:
-	virtual void BindCallbacksDependencies(UAuraAbilitySystemComponent* InASC) override;
+	virtual void UnbindOldAbilitySystemComponent() override;
+	virtual void BindCallbacksDependencies() override;
 	virtual void BroadcastInitialValues() override;
 
 	UPROPERTY(BlueprintAssignable, Category = "GAS|Attributes")

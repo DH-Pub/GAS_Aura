@@ -5,17 +5,17 @@
 
 #include "AbilitySystem/AuraAttributeSet.h"
 
-void UEnemyWidgetController::BindCallbacksDependencies(UAuraAbilitySystemComponent* InASC)
+void UEnemyWidgetController::UnbindOldAbilitySystemComponent()
 {
 	if (const UAuraAttributeSet* OldAS = GetAttributeSet())
 	{
 		AuraASC->GetGameplayAttributeValueChangeDelegate(OldAS->GetHealthAttribute()).RemoveAll(this);
 		AuraASC->GetGameplayAttributeValueChangeDelegate(OldAS->GetMaxHealthAttribute()).RemoveAll(this);
 	}
+}
 
-	Super::BindCallbacksDependencies(InASC);
-
-	if (!AuraASC) return;
+void UEnemyWidgetController::BindCallbacksDependencies()
+{
 	if (const UAuraAttributeSet* NewAS = GetAttributeSet())
 	{
 		BindGameplayAttributeToBroadcast(NewAS->GetHealthAttribute(), OnHealthChanged);

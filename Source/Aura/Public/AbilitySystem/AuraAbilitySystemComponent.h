@@ -12,14 +12,7 @@
  */
 DECLARE_MULTICAST_DELEGATE_OneParam(FEffectAssetTags, const FGameplayTagContainer& /* AssetTags */);
 
-DECLARE_MULTICAST_DELEGATE_TwoParams(FAbilityDataSignature, const FGameplayAbilitySpec& /*AbilitySpec*/,
-	const struct FAuraAbilityData& /*Data*/);
-/**
- * For UI to Receive from FAbilityDataSignature AbilityDataDelegate
- * For Widget to receive info regardless of which ASC, WidgetController will handle binding to ASC
- */
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnReceiveAbilityDataSignature, const FGameplayAbilitySpec&, AbilitySpec,
-	const FAuraAbilityData&, Data);
+DECLARE_MULTICAST_DELEGATE(FAbilityDataSignature);
 /**
  *
  */
@@ -37,18 +30,27 @@ public:
 	void AbilityInputPressed(const int32 InputID);
 	void ProcessAbilityInput(const float DeltaTime, bool bGamePaused); // run every tick in APlayerController::PostProcessInput
 	void AbilityInputReleased(const int32 InputID);
+	UFUNCTION(BlueprintCallable)
 	void ClearInput();
 
+	/**
+	 * Reduce Start World Time of GameplayEffect
+	 * @param TagContainer
+	 * @param Amount
+	 * @param Percent Reduce Remaining time by Percentage
+	 */
 	UFUNCTION(BlueprintCallable)
 	void ReduceCooldownByTag(const FGameplayTagContainer& TagContainer, float Amount = 0.f, float Percent = 0.f);
 
 	virtual FActiveGameplayEffectHandle ApplyGameplayEffectSpecToSelf(const FGameplayEffectSpec& GameplayEffect,
 		FPredictionKey PredictionKey = FPredictionKey()) override;
 	virtual void OnGameplayEffectDurationChange(FActiveGameplayEffect& ActiveEffect) override;
+
 	virtual void OnPredictiveGameplayCueCatchup(FGameplayTag Tag) override;
 
 	virtual void ClientActivateAbilityFailed_Implementation(FGameplayAbilitySpecHandle AbilityToActivate, int16 PredictionKey) override;
 protected:
+	virtual void OnRep_ActivateAbilities() override;
 	virtual void OnTagUpdated(const FGameplayTag& Tag, bool TagExists) override;
 	virtual void OnGiveAbility(FGameplayAbilitySpec& AbilitySpec) override;
 	virtual void OnRemoveAbility(FGameplayAbilitySpec& AbilitySpec) override;
@@ -62,11 +64,6 @@ public:
 	void ClientRemoveTags(FGameplayTagContainer TagsToRemove);
 
 	FAbilityDataSignature AbilityDataDelegate;// Send AbilityData to UI (Icon, Tag, ...)
-	void BindAbilityDataDelegateToUIDelegate(UObject* InUserObject, FOnReceiveAbilityDataSignature& InDelegate);
-
-	void UpdateAbilityData(const FGameplayAbilitySpec& AbilitySpec) const;
-	UFUNCTION(Client, Reliable)
-	void ClientUpdateAbilityData(const FGameplayAbilitySpecHandle SpecHandle);
 
 	void BroadcastAllAbilityData();
 	FTimerHandle BroadcastDelegateTimer; // Prevent Repeated Call
@@ -81,7 +78,5 @@ public:
 	void HandlePassive(FGameplayAbilitySpec& Spec);
 
 	UFUNCTION(Client, Reliable)
-	void ClientRefreshAbilityData(const bool bClearInput); // Tell client to refresh after server finish update
-	FTimerHandle ClientRefreshTimer;
-	bool bClearClientInput = false;
+	void ClientRefreshAbilityData();
 };

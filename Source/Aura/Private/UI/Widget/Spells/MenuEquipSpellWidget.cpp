@@ -12,7 +12,7 @@
 void UMenuEquipSpellWidget::SetWidgetController(UAuraWidgetController* InWidgetController)
 {
 	SpellMenuWC = Cast<USpellMenuWidgetController>(InWidgetController);
-	SpellMenuWC->OnReceiveAbilityDataFromASC.AddDynamic(this, &UMenuEquipSpellWidget::ReceiveAbilityData);
+	SpellMenuWC->OnReceiveAbilityDataFromASC.AddDynamic(this, &UMenuEquipSpellWidget::UpdateAbilityUI);
 	Super::SetWidgetController(InWidgetController);
 }
 
@@ -29,29 +29,17 @@ void UMenuEquipSpellWidget::NativeDestruct()
 	Super::NativeDestruct();
 }
 
-void UMenuEquipSpellWidget::ClearGlobe()
+void UMenuEquipSpellWidget::UpdateAbilityUI()
 {
-	Super::ClearGlobe();
-
-	CurrentIcon = CurrentBackground = DefaultBackground;
-	Image_Background->SetBrush(CurrentBackground);
-	Image_SpellIcon->SetBrush(CurrentIcon);
-}
-
-void UMenuEquipSpellWidget::ReceiveAbilityData(const FGameplayAbilitySpec& AbilitySpec, const FAuraAbilityData& Data)
-{
-	if (AbilitySpec.InputID == AbilityID)
+	if (const FAuraAbilityData* Data = UAbilityDataAsset::GetAbilityDataFromID(SpellMenuWC->GetASC(), AbilityID))
 	{
-		AbilityClass = Data.AbilityClass;
+		AbilityClass = Data->AbilityClass;
 
-		FSlateBrush Brush;
-		Brush.SetResourceObject(Data.Icon);
-		CurrentIcon = Brush; // UWidgetBlueprintLibrary::MakeBrushFromTexture
-		Image_SpellIcon->SetBrush(Brush);
+		Image_SpellIcon->SetBrushTintColor(FLinearColor::White); // ClearGlobe turns Tint Alpha to 0
+		Image_SpellIcon->SetBrushResourceObject(Data->Icon);
 
-		Brush.SetResourceObject(Data.BackgroundMaterial);
-		CurrentBackground = Brush; // UWidgetBlueprintLibrary::MakeBrushFromMaterial
-		Image_Background->SetBrush(Brush);
+		Image_Background->SetBrushTintColor(FLinearColor::White);
+		Image_Background->SetBrushResourceObject(Data->BackgroundMaterial);
 	}
-	else if (AbilityClass == Data.AbilityClass) ClearGlobe();
+	else ClearGlobe();
 }

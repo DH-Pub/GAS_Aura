@@ -29,6 +29,7 @@ public:
 	TObjectPtr<class UCharacterWidgetController> CharacterWC;
 protected:
 	virtual void BeginPlay() override;
+
 	void SetCharacterWidget();
 	virtual void InitAuraCharacter() override;
 

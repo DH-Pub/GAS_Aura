@@ -24,7 +24,6 @@
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMaterialLibrary.h"
 #include "Kismet/KismetMathLibrary.h"
-#include "Kismet/KismetSystemLibrary.h"
 
 AAuraPlayerController::AAuraPlayerController()
 {
@@ -70,13 +69,12 @@ void AAuraPlayerController::SetPawn(APawn* InPawn)
 	SetCameraComponent();
 }
 
-bool AAuraPlayerController::GetHitResultsUnderCursorByProfile(const FCollisionProfileName& Profile,
-	TArray<FHitResult>& OutResults, float SweepRadius, bool bTraceComplex) const
+bool AAuraPlayerController::GetHitResultsUnderCursorByProfile(const FCollisionProfileName& Profile, FHitResult& OutHit,
+	float SweepRadius) const
 {
 	if (const ULocalPlayer* LocalPlayer = Cast<ULocalPlayer>(Player))
-	{
-		FVector2D MousePos;
-		if (LocalPlayer->ViewportClient && LocalPlayer->ViewportClient->GetMousePosition(MousePos))
+	{	// Only for Local Player
+		if (FVector2D MousePos; LocalPlayer->ViewportClient && LocalPlayer->ViewportClient->GetMousePosition(MousePos))
 		{
 			// Early out if we clicked on a HUD hitbox
 			if (GetHUD() && GetHUD()->GetHitBoxAtCoordinates(MousePos, true)) return false;
@@ -85,8 +83,8 @@ bool AAuraPlayerController::GetHitResultsUnderCursorByProfile(const FCollisionPr
 			if (UGameplayStatics::DeprojectScreenToWorld(this, MousePos, WorldOrigin, WorldDirection) == true)
 			{
 				const FVector End = WorldOrigin + WorldDirection * HitResultTraceDistance;
-				return UAuraAbilityLibrary::TraceByProfile(this, OutResults, WorldOrigin, End,
-					{}, Profile, SweepRadius, bTraceComplex);
+				return UAuraAbilityLibrary::TraceSingleByProfile(this, OutHit, WorldOrigin, End,
+					Profile, {}, SweepRadius);
 			}
 		}
 	}
@@ -251,15 +249,17 @@ void AAuraPlayerController::UpdateAim()
 	/*DrawDebugLineTraceSingle(GetWorld(), CursorHitResult.TraceStart, CursorHitResult.TraceEnd,
 		EDrawDebugTrace::ForDuration, bHit, CursorHitResult, FColor::Red, FColor::Green, 5.f);*/
 
-	const FVector CharacterLocation = GetPawn()->GetActorLocation();
+	const FVector CharacterLocation = AuraPawn->GetActorLocation();
+	FVector MouseLoc, MouseDirection; DeprojectMousePositionToWorld(MouseLoc, MouseDirection);
 	/*
 	 * We use a point at the same plane as character location:
 	 * - To improve click-accuracy from player's POV because projectiles are spawned near that plane
 	 * - Still get an accurate mouse-to-character direction even if character is on different altitude than HitResult ground (or none)
 	 */
-	FVector Intersection; float TIntersection;
-	UKismetMathLibrary::LinePlaneIntersection_OriginNormal(CursorHitResult.TraceStart, CursorHitResult.TraceEnd,
-		CharacterLocation, FVector::UpVector, TIntersection, Intersection);
+	float TIntersection; FVector Intersection;
+	UKismetMathLibrary::LinePlaneIntersection_OriginNormal(MouseLoc,
+		MouseLoc + MouseDirection * HitResultTraceDistance, CharacterLocation,
+		FVector::UpVector, TIntersection, Intersection);
 	AuraPawn->AimDirection = (Intersection - CharacterLocation).GetSafeNormal();
 	ServerSetCharacterAimDirection(AuraPawn->AimDirection);
 }
@@ -278,8 +278,8 @@ void AAuraPlayerController::CursorTick()
 
 	if (CursorHitEnemy) return; // Has valid Hit to end here
 	TArray<FHitResult> Hits;
-	UAuraAbilityLibrary::TraceByChannel(this, CursorHitResult.TraceStart, CursorHitResult.TraceEnd,
-		{GetPawn()}, Hits, {ECC_Pawn}, 50.f, false);
+	UAuraAbilityLibrary::TraceMultiByObjectType(this, Hits, CursorHitResult.TraceStart, CursorHitResult.TraceEnd,
+		{ECC_Pawn}, {GetPawn()}, 50.f);
 	float NearestDistance = UE_BIG_NUMBER;
 	for (const FHitResult& Hit : Hits)
 	{

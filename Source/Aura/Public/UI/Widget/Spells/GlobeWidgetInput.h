@@ -20,8 +20,14 @@ protected:
 	TEnumAsByte<EAuraAbilityInputID::Type> AbilityID;
 
 	UPROPERTY(BlueprintReadWrite)
-	TSubclassOf<class UGameplayAbility> AbilityClass;
+	TSubclassOf<class UGameplayAbility> AbilityClass; // Save current Ability in this
 
 	UFUNCTION(BlueprintCallable)
-	virtual void ClearGlobe();
+	virtual void ClearGlobe()
+	{
+		AbilityClass = nullptr;
+		BP_ClearGlobe();
+	}
+	UFUNCTION(BlueprintImplementableEvent)
+	void BP_ClearGlobe();
 };

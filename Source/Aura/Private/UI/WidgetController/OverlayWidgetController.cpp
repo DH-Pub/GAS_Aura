@@ -8,38 +8,39 @@
 #include "AbilitySystem/Data/LevelUpDataAsset.h"
 #include "Player/AuraPlayerState.h"
 
+void UOverlayWidgetController::UnbindOldAbilitySystemComponent()
+{
+	AuraASC->AbilityDataDelegate.RemoveAll(this);
+	if (const UAuraAttributeSet* OldASC = GetAttributeSet())
+	{
+		auto RemoveDelegate = [this](const FGameplayAttribute& Attribute)
+		{
+			AuraASC->GetGameplayAttributeValueChangeDelegate(Attribute).RemoveAll(this);
+		};
+		RemoveDelegate(OldASC->GetHealthAttribute());
+		RemoveDelegate(OldASC->GetMaxHealthAttribute());
+		RemoveDelegate(OldASC->GetManaAttribute());
+		RemoveDelegate(OldASC->GetMaxManaAttribute());
+	}
+	if (GetPlayerState()) GetPlayerState()->OnXPChangedDelegate.RemoveAll(this);
+}
+
 /*template<typename T = FTableRowBase> UE_DEPRECATED(all, "just loop through Data Table")
 static T* GetDataTableRowByTag(UDataTable* DataTable, const FGameplayTag& Tag)
 {return DataTable->FindRow<T>(Tag.GetTagName(), TEXT(""));} // Find by RowName (by FName)*/
-void UOverlayWidgetController::BindCallbacksDependencies(UAuraAbilitySystemComponent* InASC)
+void UOverlayWidgetController::BindCallbacksDependencies()
 {
-	if (AuraASC)
+	AuraASC->AbilityDataDelegate.AddWeakLambda(this, [this]()
 	{
-		AuraASC->AbilityDataDelegate.RemoveAll(this);
-
-		if (const UAuraAttributeSet* OldASC = GetAttributeSet())
-		{
-			auto RemoveDelegate = [this](const FGameplayAttribute& Attribute)
-			{
-				AuraASC->GetGameplayAttributeValueChangeDelegate(Attribute).RemoveAll(this);
-			};
-			RemoveDelegate(OldASC->GetHealthAttribute());
-			RemoveDelegate(OldASC->GetMaxHealthAttribute());
-			RemoveDelegate(OldASC->GetManaAttribute());
-			RemoveDelegate(OldASC->GetMaxManaAttribute());
-		}
-		if (GetPlayerState()) GetPlayerState()->OnXPChangedDelegate.RemoveAll(this);
+		OnReceiveAbilityDataFromASC.Broadcast();
+	});
+	if (const UAuraAttributeSet* NewAS = GetAttributeSet())
+	{
+		BindGameplayAttributeToBroadcast(NewAS->GetHealthAttribute(), OnHealthChanged);
+		BindGameplayAttributeToBroadcast(NewAS->GetMaxHealthAttribute(), OnMaxHealthChanged);
+		BindGameplayAttributeToBroadcast(NewAS->GetManaAttribute(), OnManaChanged);
+		BindGameplayAttributeToBroadcast(NewAS->GetMaxManaAttribute(), OnMaxManaChanged);
 	}
-
-	Super::BindCallbacksDependencies(InASC);
-
-	if (!AuraASC) return;
-	AuraASC->BindAbilityDataDelegateToUIDelegate(this, OnReceiveAbilityDataFromASC);
-	const UAuraAttributeSet* NewAS = GetAttributeSet();
-	BindGameplayAttributeToBroadcast(NewAS->GetHealthAttribute(), OnHealthChanged);
-	BindGameplayAttributeToBroadcast(NewAS->GetMaxHealthAttribute(), OnMaxHealthChanged);
-	BindGameplayAttributeToBroadcast(NewAS->GetManaAttribute(), OnManaChanged);
-	BindGameplayAttributeToBroadcast(NewAS->GetMaxManaAttribute(), OnMaxManaChanged);
 
 	if (GetPlayerState()) GetPlayerState()->OnXPChangedDelegate.AddUObject(this, &UOverlayWidgetController::BroadcastXPToUI);
 	// Receive broadcast from AuraAbilitySystemComponent
@@ -57,11 +58,13 @@ void UOverlayWidgetController::BindCallbacksDependencies(UAuraAbilitySystemCompo
 
 void UOverlayWidgetController::BroadcastInitialValues()
 {
-	const UAuraAttributeSet* AS = GetAttributeSet();
-	OnHealthChanged.Broadcast(AS->GetHealth());
-	OnMaxHealthChanged.Broadcast(AS->GetMaxHealth());
-	OnManaChanged.Broadcast(AS->GetMana());
-	OnMaxManaChanged.Broadcast(AS->GetMaxMana());
+	if (const UAuraAttributeSet* AS = GetAttributeSet())
+	{
+		OnHealthChanged.Broadcast(AS->GetHealth());
+		OnMaxHealthChanged.Broadcast(AS->GetMaxHealth());
+		OnManaChanged.Broadcast(AS->GetMana());
+		OnMaxManaChanged.Broadcast(AS->GetMaxMana());
+	}
 
 	// if AddCharacterStartupAbilities is called on the server before Client InitAuraCharacter()->InitAuraHUD
 	AuraASC->BroadcastAllAbilityData(); // Make sure Ability Icons on UI receive their data

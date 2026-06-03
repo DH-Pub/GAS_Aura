@@ -17,7 +17,7 @@ struct FAuraAbilityData
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Details")
 	FText AbilityName;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Details")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Details", meta=(DisplayThumbnail="true"))
 	TObjectPtr<UTexture2D> Icon = nullptr;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Details")
 	TObjectPtr<UMaterialInterface> BackgroundMaterial = nullptr;
@@ -45,8 +45,9 @@ public:
 	static const UAbilityDataAsset* Get(const UObject* WorldContextObject);
 	static const FAuraAbilityData* GetDataFromGameState(const UObject* WorldContextObject, const UClass* AbilityClass);
 
-	static void UnlockAbilityByLevel(const UObject* WorldContextObject, class UAuraAbilitySystemComponent* ASC,
-		const int32 CharacterLevel);
+	static void UnlockAbilityByLevel(class UAbilitySystemComponent* ASC, const int32 CharacterLevel);
+
+	static const FAuraAbilityData* GetAbilityDataFromID(UAbilitySystemComponent* ASC, const int32 InputID);
 
 #if WITH_EDITOR
 	virtual EDataValidationResult IsDataValid(FDataValidationContext& Context) const override;

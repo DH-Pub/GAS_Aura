@@ -5,6 +5,7 @@
 
 #include "AuraAbilityLibrary.h"
 #include "Abilities/GameplayAbilityTargetTypes.h"
+#include "AbilitySystem/AbilityTask/AT_WaitData.h"
 #include "Character/AuraCharacterBase.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/DecalComponent.h"
@@ -30,16 +31,11 @@ void ATargetActor_Indicator::ServerSetLocation_Implementation(FVector_NetQuantiz
 {
 	// Server double - check
 	if (!Direction.IsNormalized()) Direction.Normalize();
-	TArray<FHitResult> Results;
-	UAuraAbilityLibrary::TraceByProfile(this, Results, InLoc - Direction * 10.f,
-		InLoc + Direction * 1'000'00.f, {}, Details.TraceProfile, 0.f, false, Debug);
-
-
-	for (const FHitResult& Hit : Results)
+	FHitResult Hit;
+	if (UAuraAbilityLibrary::TraceSingleByProfile(this, Hit, InLoc - Direction * 10.f,
+		InLoc + Direction * 1'000'00.f, Details.TraceProfile, {}, 0.f, Debug))
 	{
-		if (!Hit.bBlockingHit) continue;
 		InLoc = Hit.ImpactPoint;
-		break;
 	}
 
 	MulticastSetLocation(InLoc, Direction);
@@ -67,12 +63,11 @@ void ATargetActor_Indicator::CheckAndSetLocation(FVector InLoc, FVector Directio
 		const FVector Start = OriginLoc + MaxVec;
 		const FVector End = Start + FVector::DownVector * (Details.MaxRange + .5f) * 2.f;
 
-		TArray<FHitResult> Results;
-		UAuraAbilityLibrary::TraceByProfile(this, Results, Start, End, {},
-			Details.TraceProfile, 0.f, false, Debug);
-		if (Results.Num() > 0)
+		FHitResult Hit;
+		if (UAuraAbilityLibrary::TraceSingleByProfile(this, Hit, Start, End, Details.TraceProfile,
+			{}, 0.f, Debug))
 		{
-			InLoc = Results[0].ImpactPoint;
+			InLoc = Hit.ImpactPoint;
 		}
 		else bValidLocation = false;
 	}
@@ -90,7 +85,7 @@ void ATargetActor_Indicator::CheckAndSetLocation(FVector InLoc, FVector Directio
 
 FGameplayAbilityTargetDataHandle ATargetActor_Indicator::GetIndicatorDataHandle_Implementation()
 {
-	FGATargetData_CommonTarget* Data = new FGATargetData_CommonTarget();
+	FGATargetData_CommonData* Data = new FGATargetData_CommonData();
 	Data->Location = GetActorLocation();
 	return FGameplayAbilityTargetDataHandle(Data);
 }

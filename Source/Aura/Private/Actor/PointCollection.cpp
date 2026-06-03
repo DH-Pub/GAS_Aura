@@ -35,7 +35,7 @@ void APointCollection::GetPointsOn(TArray<FHitResult>& OutHits, int32 NumPoints,
 	ensureMsgf(ImmutablePoints.Num() >= NumPoints, TEXT("Attempted to access ImmutablePoints out of bounds."));
 
 	if (OutHits.Num() > 0) OutHits.Reset();
-	TArray<FHitResult> Results;
+	FHitResult Hit;
 	for (USceneComponent* Pt : ImmutablePoints)
 	{
 		if (OutHits.Num() >= NumPoints) break;
@@ -49,16 +49,9 @@ void APointCollection::GetPointsOn(TArray<FHitResult>& OutHits, int32 NumPoints,
 		FVector PtLoc = Pt->GetComponentLocation();
 		const FVector Start = PtLoc + FVector::UpVector * Range;
 		const FVector End = PtLoc + FVector::DownVector * Range;
-		Results.Reset();
-		UAuraAbilityLibrary::TraceByProfile(this, Results, Start, End, {}, Profiles);
-
-		for (FHitResult& Hit : Results)
+		if (UAuraAbilityLibrary::TraceSingleByProfile(this, Hit, Start, End, Profiles, {}))
 		{
-			if (Hit.bBlockingHit)
-			{
-				OutHits.Add(MoveTemp(Hit));
-				break;
-			}
+			OutHits.Add(MoveTemp(Hit));
 		}
 	}
 }

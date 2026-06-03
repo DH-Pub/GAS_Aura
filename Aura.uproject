@@ -16,7 +16,6 @@
 				"EnhancedInput",
 				"AIModule",
 				"StateTreeModule",
-				"PropertyBindingUtils",
 				"Niagara"
 			]
 		}

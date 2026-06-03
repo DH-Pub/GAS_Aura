@@ -26,7 +26,7 @@ public:
 
 	//~ Combat Interface
 	virtual int32 GetCharacterLevel_Implementation() const override {return Level;}
-	virtual void MulticastHandleDeath_Implementation(const FVector& HitImpulse) override;
+	virtual void MulticastHandleDeath_Implementation() override;
 	//~ End Combat Interface
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Aura")

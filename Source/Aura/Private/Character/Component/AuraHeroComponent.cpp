@@ -13,19 +13,19 @@ UAuraHeroComponent::UAuraHeroComponent()
 	PrimaryComponentTick.bCanEverTick = false;
 }
 
+void UAuraHeroComponent::BeginPlay()
+{
+	Super::BeginPlay();
+
+	GetAuraCharacter();
+}
+
 void UAuraHeroComponent::SetAuraHeroInputComponent(UAuraInputComponent* AuraInputComponent)
 {
 	AuraInputComponent->BindAbilityActions(InputDataAsset->InputConfig, InputDataAsset->InputMappingContext,
 		this, &UAuraHeroComponent::AbilityPressed, &UAuraHeroComponent::AbilityReleased);
 
 	AuraInputComponent->BindAction(InputDataAsset->MoveAction, ETriggerEvent::Triggered, this, &UAuraHeroComponent::Move);
-}
-
-void UAuraHeroComponent::BeginPlay()
-{
-	Super::BeginPlay();
-
-	GetAuraCharacter();
 }
 
 AAuraCharacterBase* UAuraHeroComponent::GetAuraCharacter()

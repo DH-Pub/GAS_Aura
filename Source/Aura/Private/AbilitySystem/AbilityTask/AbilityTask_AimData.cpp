@@ -66,6 +66,14 @@ void UAbilityTask_AimData::Activate()
 void UAbilityTask_AimData::OnTargetDataReplicatedCallback(const FGameplayAbilityTargetDataHandle& DataHandle,
 	FGameplayTag ActivationTag)
 {
+	if (UAbilitySystemComponent* ASC = AbilitySystemComponent.Get())
+	{
+		const FGameplayAbilitySpecHandle Spec = GetAbilitySpecHandle();
+		const FPredictionKey ActivationKey = GetActivationPredictionKey();
+		ASC->AbilityTargetDataSetDelegate(Spec, ActivationKey).Remove(DelegateHandle);
+		ASC->ConsumeClientReplicatedTargetData(Spec, ActivationKey);
+	}
+
 	AAuraCharacterBase* Character = Cast<AAuraCharacterBase>(GetAvatarActor());
 	const FGameplayAbilityTargetData* Data = DataHandle.Data[0].Get();
 	const FTransform Origin = Data->GetOrigin();
@@ -80,7 +88,5 @@ void UAbilityTask_AimData::OnTargetDataReplicatedCallback(const FGameplayAbility
 
 	AActor* Target = Data->GetActors().Num() > 0 ? Data->GetActors()[0].Get() : nullptr;
 
-	AbilitySystemComponent->AbilityTargetDataSetDelegate(GetAbilitySpecHandle(), GetActivationPredictionKey()).Remove(DelegateHandle);
-	AbilitySystemComponent->ConsumeClientReplicatedTargetData(GetAbilitySpecHandle(), GetActivationPredictionKey());
 	if (ShouldBroadcastAbilityTaskDelegates()) ValidData.Broadcast(Character->AimDirection, Data->GetEndPoint(), Target);
 }

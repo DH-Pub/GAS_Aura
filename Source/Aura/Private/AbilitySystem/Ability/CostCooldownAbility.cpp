@@ -162,24 +162,25 @@ void UCostCooldownAbility::GetCost(FAbilityDetails& Details) const
 }
 void UCostCooldownAbility::GetCooldown(FAbilityDetails& Details) const
 {
-	if (UGameplayEffect* CooldownEffect = GetCooldownGameplayEffect())
-	{
-		UAbilitySystemComponent* ASC = Details.AbilitySystemComponent.Get();
-		FGameplayEffectSpec	Spec(CooldownEffect, ASC->MakeEffectContext(), Details.Level);
-		Spec.GetContext().SetAbility(this);
-		Spec.SetByCallerTagMagnitudes.Add(TAG_Cooldown_Duration, CooldownDuration.GetValueAtLevel(Details.Level));
-		Spec.CaptureAttributeDataFromTarget(ASC);
-		ASC->GetOwnedGameplayTags(Spec.CapturedTargetTags.GetActorTags());
-		if (const TSubclassOf<UGameplayModMagnitudeCalculation> ModCalcClass =
-			CooldownEffect->DurationMagnitude.GetCustomMagnitudeCalculationClass())
-		{	/*if (const UMMC_CooldownDuration* CalcCDO = ModCalcClass->GetDefaultObject<UMMC_CooldownDuration>())
-			{Details.CalculatedCooldown = CalcCDO->CalculateBaseMagnitude(Spec);}*/
-			Details.Cooldown = ModCalcClass.GetDefaultObject()->CalculateBaseMagnitude(Spec);
-		}
+	const UGameplayEffect* CooldownEffect = GetCooldownGameplayEffect();
+	if (!CooldownEffect) return;
+	UAbilitySystemComponent* ASC = Details.AbilitySystemComponent.Get();
+	FGameplayEffectSpec	Spec(CooldownEffect, ASC->MakeEffectContext(), Details.Level);
+	Spec.GetContext().SetAbility(this);
+	Spec.SetByCallerTagMagnitudes.Add(TAG_Cooldown_Duration,
+		Details.BaseCooldown = CooldownDuration.GetValueAtLevel(Details.Level));
+	Spec.CaptureAttributeDataFromTarget(ASC);
+	ASC->GetOwnedGameplayTags(Spec.CapturedTargetTags.GetActorTags());
+	if (const TSubclassOf<UGameplayModMagnitudeCalculation> ModCalcClass =
+		CooldownEffect->DurationMagnitude.GetCustomMagnitudeCalculationClass())
+	{	/*if (const UMMC_CooldownDuration* CalcCDO = ModCalcClass->GetDefaultObject<UMMC_CooldownDuration>())
+		{Details.Cooldown = CalcCDO->CalculateBaseMagnitude(Spec);}*/
+		Details.Cooldown = ModCalcClass.GetDefaultObject()->CalculateBaseMagnitude(Spec);
 	}
 }
 void UCostCooldownAbility::GetAbilityDetails(FAbilityDetails& Details) const
 {
+	Super::GetAbilityDetails(Details);
 	GetCost(Details);
 	GetCooldown(Details);
 }

@@ -48,7 +48,7 @@ void UDeathAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, con
 			Enemy->AuraAIController->GetBrainComponent()->StopLogic("Death! Disable StateTree");
 		}
 
-		AuraCharacter->MulticastHandleDeath(FVector());
+		AuraCharacter->MulticastHandleDeath();
 	}
 }
 

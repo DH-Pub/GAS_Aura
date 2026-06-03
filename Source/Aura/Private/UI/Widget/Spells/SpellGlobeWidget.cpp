@@ -18,7 +18,7 @@ void USpellGlobeWidget::SetWidgetController(UAuraWidgetController* InWidgetContr
 	OverlayWC = Cast<UOverlayWidgetController>(InWidgetController); check(OverlayWC);
 	WheelMaterialInstance = Image_WheelProgress->GetDynamicMaterial();
 	Image_WheelProgress->SetVisibility(ESlateVisibility::Collapsed);
-	OverlayWC->OnReceiveAbilityDataFromASC.AddDynamic(this, &USpellGlobeWidget::SuccessUpdateAbilityData);
+	OverlayWC->OnReceiveAbilityDataFromASC.AddDynamic(this, &USpellGlobeWidget::UpdateAbilityUI);
 	Super::SetWidgetController(InWidgetController);
 }
 
@@ -30,7 +30,6 @@ void USpellGlobeWidget::NativePreConstruct()
 
 	Progress_Cooldown->SetBarFillType(EProgressBarFillType::TopToBottom);
 	ClearGlobe();
-
 }
 
 void USpellGlobeWidget::NativeDestruct()
@@ -40,28 +39,31 @@ void USpellGlobeWidget::NativeDestruct()
 	Super::NativeDestruct();
 }
 
-void USpellGlobeWidget::SuccessUpdateAbilityData(const FGameplayAbilitySpec& AbilitySpec, const FAuraAbilityData& Data)
+void USpellGlobeWidget::UpdateAbilityUI()
 {
-	if (AbilityID != AbilitySpec.InputID)
-	{	// Not this Slot
-		if (AbilityClass == Data.AbilityClass)
-		{	// Ability saved to this Slot is moved out
-			ClearGlobe();
-		}
+	const FGameplayAbilitySpec* Spec = OverlayWC->GetASC() ? OverlayWC->GetASC()->FindAbilitySpecFromInputID(AbilityID) : nullptr;
+	const FAuraAbilityData* Data = Spec ? UAbilityDataAsset::GetDataFromGameState(this, Spec->Ability.GetClass()) : nullptr;
+	if (!Spec || !Data)
+	{
+		ClearGlobe();
 		return;
 	}
-	AbilityClass = Data.AbilityClass; // Update Class to compare with next FAuraAbilityData
 
-	FSlateBrush ResourceObj; ResourceObj.SetResourceObject(Data.Icon);
-	Image_SpellIcon->SetBrush(ResourceObj);
-	ResourceObj.SetResourceObject(Data.BackgroundMaterial);
-	Image_Background->SetBrush(ResourceObj); //Image_Background->SetBrushFromMaterial(Data.BackgroundMaterial);
+	AbilityClass = Data->AbilityClass;
 
-	const FGameplayTagContainer* Tags = AbilitySpec.Ability->GetCooldownTags();
+	Image_SpellIcon->SetBrushResourceObject(Data->Icon);
+	Image_Background->SetBrushResourceObject(Data->BackgroundMaterial);
+
+	const FGameplayTagContainer* Tags = Data->AbilityClass.GetDefaultObject()->GetCooldownTags();
 	if (Tags && Tags->Num() > 0)
 	{	// Check if Ability has Cooldown
 		CooldownTags = *Tags;
 		CheckAbilityCooldown();
+	}
+
+	if (Spec->IsActive())
+	{	// Gray out Ability when Active
+		Image_Background->SetBrushTintColor(FLinearColor(.2f, .2f, .2f));
 	}
 }
 
@@ -77,8 +79,7 @@ void USpellGlobeWidget::CheckAbilityCooldown()
 		if (!Query.Matches(Effect)) continue;
 		// _NotReplicated() will return null for Received data from others (Server), != nullptr for Local
 		const bool bIsServerCorrection = Effect.Spec.GetContext().GetAbilityInstance_NotReplicated() == nullptr;
-		if (bIsAuth /*Is Server*/ ||
-			bIsServerCorrection /* Client Receiving Server Correction*/)
+		if (bIsAuth /*Is Server*/ || bIsServerCorrection /*Client Receiving Server Correction*/)
 		{
 			const float Duration = Effect.GetDuration();
 			const float Remain = Duration - (CurrentTime - Effect.StartWorldTime);
@@ -94,7 +95,6 @@ void USpellGlobeWidget::CheckAbilityCooldown()
 		}
 	}
 
-	// UpdateCooldown()
 	if (FMath::IsNearlyZero(TimeRemaining * CooldownDuration))
 	{
 		EndCooldown();
@@ -102,7 +102,7 @@ void USpellGlobeWidget::CheckAbilityCooldown()
 	}
 
 	// Wait for Server correction
-	Image_Background->SetBrushTintColor(FSlateColor(FLinearColor(.2f, .2f, .2f))); // Gray out Ability
+	Image_Background->SetBrushTintColor(FLinearColor(.2f, .2f, .2f)); // Gray out Ability
 	Image_WheelProgress->SetVisibility(ESlateVisibility::Visible);
 
 	if (CooldownDuration < 0.f)
@@ -120,7 +120,6 @@ void USpellGlobeWidget::CheckAbilityCooldown()
 		true, 1, 2, 1, 1));
 	if (const UWorld* World = GetWorld())
 	{	/*FTimerDelegate Delegate; Delegate.BindUFunction(this, "UpdateByTimerHandle", DelegateParameter);*/
-		World->GetTimerManager().ClearTimer(CooldownTimerHandle);
 		World->GetTimerManager().SetTimer(CooldownTimerHandle, this, &USpellGlobeWidget::UpdateByTimerHandle,
 			Frequency, true);
 	}
@@ -128,7 +127,11 @@ void USpellGlobeWidget::CheckAbilityCooldown()
 
 void USpellGlobeWidget::EndCooldown()
 {
-	if (AbilityClass) Image_Background->SetBrushTintColor(FSlateColor(FLinearColor::White));
+	if (AbilityClass)
+	{	// if Slot is occupied by an ability, keep Alpha 0
+		Image_SpellIcon->SetBrushTintColor(FLinearColor::White);
+		Image_Background->SetBrushTintColor(FLinearColor::White);
+	}
 	Progress_Cooldown->SetPercent(0.f);
 	Image_WheelProgress->SetVisibility(ESlateVisibility::Collapsed);
 	Text_Cooldown->SetVisibility(ESlateVisibility::Collapsed);
@@ -137,13 +140,11 @@ void USpellGlobeWidget::EndCooldown()
 
 void USpellGlobeWidget::ClearGlobe()
 {
-	Super::ClearGlobe();
+	Super::ClearGlobe(); // AbilityClass = nullptr here so brush tint will not be changed in EndCooldown()
 
 	CooldownTags.Reset();
-	FSlateBrush ClearBrush = FSlateBrush();
-	ClearBrush.TintColor = FSlateColor(FLinearColor(1.f, 1.f, 1.f, 0.f));
-	Image_SpellIcon->SetBrush(ClearBrush);
-	Image_Background->SetBrush(ClearBrush);
+	Image_SpellIcon->SetBrushTintColor(FLinearColor(1.f, 1.f, 1.f, 0.f));
+	Image_Background->SetBrushTintColor(FLinearColor(1.f, 1.f, 1.f, 0.f));
 	EndCooldown();
 }
 

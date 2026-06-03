@@ -19,19 +19,12 @@ protected:
 	virtual void NativePreConstruct() override;
 	virtual void NativeDestruct() override;
 
-	virtual void ClearGlobe() override;
-
-	UFUNCTION()
-	void ReceiveAbilityData(const struct FGameplayAbilitySpec& AbilitySpec, const struct FAuraAbilityData& Data);
+	UFUNCTION(BlueprintCallable)
+	void UpdateAbilityUI(); // Can be used to reset Globe to AbilityID
 
 	UPROPERTY(BlueprintReadWrite, meta=(BindWidget))
 	TObjectPtr<UImage> Image_SpellIcon;
 
 	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<class USpellMenuWidgetController> SpellMenuWC;
-
-	UPROPERTY(BlueprintReadWrite)
-	FSlateBrush CurrentIcon = FSlateBrush(); // Save Ability Icon to this
-	UPROPERTY(BlueprintReadWrite)
-	FSlateBrush CurrentBackground = FSlateBrush(); // Save Ability Background to this
 };

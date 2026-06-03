@@ -17,7 +17,7 @@ UHitReactAbility::UHitReactAbility()
 	ActivationOwnedTags.AddTag(AuraTag::State_HitReact);
 	ActivationOwnedTags.AddTag(AuraTag::State_Block_Movement_Speed);
 	ActivationOwnedTags.AddTag(AuraTag::State_Block_Movement_Rotation);
-	ActivationBlockedTags.AddTag(AuraTag::State_Death);
+	// ActivationBlockedTags.AddTag(AuraTag::State_Death);
 
 	bRetriggerInstancedAbility = true;
 	NetExecutionPolicy = EGameplayAbilityNetExecutionPolicy::ServerInitiated;
@@ -38,7 +38,8 @@ void UHitReactAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
 	const FGATargetData_HitReact* HitReactData = static_cast<const FGATargetData_HitReact*>(Data);
 
 	HitReactTags = MoveTemp(const_cast<FGameplayTagContainer&>(TriggerEventData->TargetTags));
-	if (HitReactTags.HasTag(AuraTag::State_HitReact_PlayMontage))
+	if (HitReactTags.HasTag(AuraTag::State_HitReact_PlayMontage) &&
+		!GetAbilitySystemComponentFromActorInfo()->HasMatchingGameplayTag(AuraTag::State_Death))
 	{
 		OnHitReact();
 	}
@@ -48,28 +49,35 @@ void UHitReactAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
 		float Duration = HitReactData->KnockbackTime;
 		const FVector StartLoc = AuraCharacter->GetActorLocation();
 		const UCapsuleComponent* CapsuleComp = AuraCharacter->GetCapsuleComponent();
-		FVector MoveToLoc = StartLoc + HitReactData->KnockbackDirection * HitReactData->KnockbackDistance;
-		/** TODO: Split Mesh into Nav floor and Wall for knockback, make profiles for wall (mostly same as Nav floor)
-		 * or use different PhysMat
-		 * - Then UKismetSystemLibrary::CapsuleTraceSingleByProfile*/
-		TArray<FHitResult> OutHits;
-		const bool bHit = UAuraAbilityLibrary::TraceByChannel(this, StartLoc, MoveToLoc,
-			{AuraCharacter}, OutHits, {ECC_WorldStatic},
-			CapsuleComp->GetScaledCapsuleRadius(), true, false, KnockbackDebug);
 
-		for (const FHitResult& Hit : OutHits)
+		FVector MoveToLoc = StartLoc;
+		FHitResult Hit;
+		if (HitReactData->bKnockUp)
 		{
+			UAuraAbilityLibrary::TraceSingleByObjectType(this, Hit, StartLoc, StartLoc + FVector::DownVector * 1000.f,
+				{ECC_WorldStatic}, {AuraCharacter}); // Trace for Ground hit
 			if (Hit.bBlockingHit)
+			{
+				MoveToLoc = Hit.ImpactPoint + FVector::UpVector * HitReactData->KnockbackDistance;
+			}
+		}
+		else
+		{
+			MoveToLoc = StartLoc + HitReactData->KnockbackDirection * HitReactData->KnockbackDistance;
+			/** TODO: Split Mesh into Nav floor and Wall for knockback, make profiles for wall (mostly same as Nav floor)
+			 * or use different PhysMat
+			 * - Then UKismetSystemLibrary::CapsuleTraceSingleByProfile*/
+			if (UAuraAbilityLibrary::TraceSingleByObjectType(this, Hit, StartLoc, MoveToLoc, {ECC_WorldStatic},
+				{AuraCharacter}, CapsuleComp->GetScaledCapsuleRadius(), KnockbackDebug))
 			{
 				MoveToLoc = Hit.Location;
 				Duration *= Hit.Distance / HitReactData->KnockbackDistance;
 			}
-			break; // only get the first hit
 		}
 
 		if (HasAuthority(&CurrentActivationInfo))
 		{
-			Knockback(MoveToLoc, Duration, bHit); // AuraCharacter->LaunchCharacter();
+			Knockback(MoveToLoc, Duration, Hit.bBlockingHit); // AuraCharacter->LaunchCharacter();
 		}
 	}
 }

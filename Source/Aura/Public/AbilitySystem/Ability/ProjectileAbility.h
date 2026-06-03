@@ -17,73 +17,50 @@ class AURA_API UProjectileAbility : public UDamageAbility
 {
 	GENERATED_BODY()
 public:
-	void SpawnProjectile(FVector& SpawnLoc, FRotator InRot, const AActor* HomingTarget, float HeightAdd = 50.f);
+	void SpawnProjectile(FVector& SpawnLoc, FRotator& InRot, const AActor* HomingTarget, float HeightAdd = 50.f);
+
+	UPROPERTY(BlueprintReadOnly)
+	TArray<TObjectPtr<class AAuraProjectile>> ProjectilesSpawned;
+	UFUNCTION()
+	void OnProjectileDestroyed(AActor* DestroyedActor);
+	UFUNCTION(BlueprintImplementableEvent)
+	void BP_OnProjectileDestroyed(AAuraProjectile* DestroyedProjectile);
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Aura|Projectile")
+	FScalableFloat ProjectileNums = 1.f;
+
+	UPROPERTY(EditDefaultsOnly, Category="Aura|Projectile")
+	float ProjectileSpread = 90.f;
+
+	UPROPERTY(EditDefaultsOnly, Category="Aura|Projectile")
+	float MaxTravelDistance = -1.f; // < 0: Infinite
+	/**
+	 * Allow piercing. <= 0: Infinite
+	 * - In FPS, This can be a float called MaxPiercing: Armor/Wall with hardness float value and damage reduced after piercing
+	 */
+	UPROPERTY(EditDefaultsOnly, Category="Aura|Projectile")
+	int32 MaxHitCount = 1;
+
+	UPROPERTY(EditDefaultsOnly, Category="Aura|Projectile", meta=(InlineEditConditionToggle))
+	bool bHoming = false;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Aura|Projectile", meta=(EditCondition="bHoming"))
+	float HomingAcceleration = 1000.f;
+
+	UPROPERTY(EditDefaultsOnly, Category="Aura|Projectile")
+	float ProjectilePitch = 0.f;
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Aura|Projectile")
 	TSubclassOf<class AAuraProjectile> ProjectileClass;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Aura|Projectile")
-	FScalableFloat ProjectileNums = 1.f;
 	/*// const func creates Target[self], use static
 	UFUNCTION(BlueprintPure, meta=(CompactNodeTitle="Projectiles", HidePin="Ability", DefaultToSelf="Ability"))
 	static int32 GetProjectileNumsAtLevel(const UProjectileAbility* Ability, const int32 Level)
 	{return Ability->ProjectileNums.GetValueAtLevel(Level);}*/
-
-private:
-	UPROPERTY(EditDefaultsOnly, Category="Aura|Projectile")
-	float ProjectileSpread = 90.f;
-	UPROPERTY(EditDefaultsOnly, Category="Aura|Projectile")
-	float ProjectilePitch = 0.f;
-
-	UPROPERTY(EditDefaultsOnly, Category="Aura|Projectile", meta=(InlineEditConditionToggle))
-	bool bHoming = false;
-	UPROPERTY(EditDefaultsOnly, Category="Aura|Projectile", meta=(EditCondition="bHoming"))
-	float HomingAcceleration = 1000.f;
-
 public:
 	virtual void GetAbilityDetails(FAbilityDetails& Details) const override;
 };
 
 
-/*
- * ===================================== ProjectileInfo ======================================================
- */
-USTRUCT()
-struct FGATargetData_ProjectileInfo : public FGameplayAbilityTargetData
-{
-	GENERATED_BODY()
-	FGATargetData_ProjectileInfo() {}
-
-	UPROPERTY()
-	FVector Location = FVector();
-	UPROPERTY()
-	FRotator Rotation = FRotator();
-
-	float ActivationTime = 0.f; // Time it took for server to receive data and spawn projectile
-	virtual FTransform GetOrigin() const override // Use Origin for spawn point
-	{
-		FTransform Origin(Location);
-		Origin.SetRotation(Rotation.Quaternion());
-		Origin.SetScale3D(FVector(ActivationTime, 0.f, 0.f));
-		return Origin;
-	}
-
-	// Required for all child structs of FGameplayAbilityTargetData
-	virtual UScriptStruct* GetScriptStruct() const override { return StaticStruct();}
-	// Required for all child structs of FGameplayAbilityTargetData
-	bool NetSerialize(FArchive& Ar, class UPackageMap* Map, bool& bOutSuccess)
-	{
-		Ar << ActivationTime;
-		Location.NetSerialize(Ar, Map, bOutSuccess);
-		Rotation.NetSerialize(Ar, Map, bOutSuccess);
-		return true;
-	}
-};
-template<>
-struct TStructOpsTypeTraits<FGATargetData_ProjectileInfo> : TStructOpsTypeTraitsBase2<FGATargetData_ProjectileInfo>
-{	// REQUIRED for FGameplayAbilityTargetDataHandle net serialization to work
-	enum {WithNetSerializer = true};
-};
 /*
  * ==================================== Ability Task ===========================================================
  */
@@ -99,7 +76,7 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FFinishSpawn OnSpawnFinish;
 
-	UFUNCTION(BlueprintCallable, Category = "Ability|Task", meta=(HidePin="OwningAbility", DefaultToSelf="OwningAbility",
+	UFUNCTION(BlueprintCallable, Category="Ability|Task", meta=(HidePin="OwningAbility", DefaultToSelf="OwningAbility",
 		BlueprintInternalUseOnly="true"))
 	static UAbilityTask_SpawnProjectile* SpawnProjectile(UProjectileAbility* OwningAbility,
 		const ECombatSocket SpawnSocket, const FVector& Direction, AActor* Target, float HeightIfHitGround = 60.f);
@@ -110,7 +87,6 @@ protected:
 	TObjectPtr<UProjectileAbility> ProjectileAbility;
 	UPROPERTY()
 	TObjectPtr<AAuraCharacterBase> AuraCharacter;
-	FVector SocketLocation;
 	UPROPERTY()
 	TObjectPtr<AActor> Target;
 	float HeightIfHitGround; // AddedSpawnHeight in case projectile hit ground on spawn
@@ -119,5 +95,6 @@ private:
 
 	FDelegateHandle DelegateHandle;
 
+	FVector Location;
 	FVector Direction;
 };

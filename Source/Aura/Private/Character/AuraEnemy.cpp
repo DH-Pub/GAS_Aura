@@ -55,9 +55,9 @@ void AAuraEnemy::UnHighlightActor()
 	Weapon->SetRenderCustomDepth(false);
 }
 
-void AAuraEnemy::MulticastHandleDeath_Implementation(const FVector& HitImpulse)
+void AAuraEnemy::MulticastHandleDeath_Implementation()
 {
-	Super::MulticastHandleDeath_Implementation(HitImpulse);
+	Super::MulticastHandleDeath_Implementation();
 	// HealthBar->DetachFromComponent(FDetachmentTransformRules(EDetachmentRule::KeepWorld, true));
 	HealthBar->SetVisibility(false);
 }

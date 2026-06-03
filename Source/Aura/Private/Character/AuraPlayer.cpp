@@ -106,11 +106,14 @@ void AAuraPlayer::InitAuraCharacter()
 		if (AAuraHUD* AuraHUD = AuraPC->GetHUD<AAuraHUD>()) AuraHUD->InitAuraHUD(AbilitySystemComponent);
 	}
 
-	if (const UCharacterClassDataAsset* ClassData = UCharacterClassDataAsset::GetFromGameMode(this))
-	{	// HasAuthority() -> This scope because Only Server can access GameMode
-		constexpr float Level = 1.f;
-		AuraPS->SetLevel(Level);
-		ClassData->InitializeDefaultAttributes(CharacterClass, Level, AbilitySystemComponent);
-		ClassData->GiveStartupAbilities(this);
+	if (HasAuthority())
+	{
+		if (const UCharacterClassDataAsset* ClassData = UCharacterClassDataAsset::GetFromGameMode(this))
+		{	// HasAuthority() -> This scope because Only Server can access GameMode
+			constexpr float Level = 1.f;
+			AuraPS->SetLevel(Level);
+			ClassData->InitializeDefaultAttributes(CharacterClass, Level, AbilitySystemComponent);
+			ClassData->GiveStartupAbilities(this);
+		}
 	}
 }

@@ -19,11 +19,7 @@ struct FGATargetData_BeamData : public FGameplayAbilityTargetData
 
 	UPROPERTY()
 	TArray<TWeakObjectPtr<AActor>> TargetActorArray;
-
-	virtual TArray<TWeakObjectPtr<AActor> >	GetActors() const override
-	{
-		return TargetActorArray;
-	}
+	virtual TArray<TWeakObjectPtr<AActor> >	GetActors() const override {return TargetActorArray;}
 
 	// Required for all child structs of FGameplayAbilityTargetData
 	virtual UScriptStruct* GetScriptStruct() const override { return StaticStruct();}

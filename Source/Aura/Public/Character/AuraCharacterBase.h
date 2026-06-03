@@ -25,6 +25,9 @@ class AURA_API AAuraCharacterBase : public ACharacter, public IAbilitySystemInte
 	GENERATED_BODY()
 public:
 	explicit AAuraCharacterBase(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
+	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void PreReplication(IRepChangedPropertyTracker& ChangedPropertyTracker) override;
+
 	virtual void Tick(float DeltaSeconds) override;
 
 	UFUNCTION(BlueprintCallable)
@@ -115,18 +118,18 @@ public:
 #pragma region Death
 	// Handle Ragdoll, physics. Called in DeathAbility
 	UFUNCTION(NetMulticast, Reliable)
-	virtual void MulticastHandleDeath(const FVector& HitImpulse);
+	virtual void MulticastHandleDeath();
+	UFUNCTION(NetMulticast, Unreliable, BlueprintCallable)
+	void MulticastRagdoll(FVector_NetQuantize Impulse);
 
 	FOnGameplayEffectTagCountChanged& GetOnDeathDelegate() const;
 #pragma endregion
 
 protected:
 	virtual void BeginPlay() override;
-	virtual void PreReplication(IRepChangedPropertyTracker& ChangedPropertyTracker) override;
-	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TObjectPtr<USkeletalMeshComponent> Weapon;
+	TObjectPtr<USkeletalMeshComponent> Weapon; //TODO: Make child class and use FindComponentByClass
 
 	UPROPERTY()
 	TObjectPtr<UAuraAbilitySystemComponent> AbilitySystemComponent;// AvatarActor: Character, Owner: PlayerState (Player) / Character (AI)

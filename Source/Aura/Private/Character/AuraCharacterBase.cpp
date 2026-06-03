@@ -16,7 +16,10 @@ AAuraCharacterBase::AAuraCharacterBase(const FObjectInitializer& ObjectInitializ
 {
 	PrimaryActorTick.bCanEverTick = false; // disable TickActor()
 
+	GetCapsuleComponent()->SetReceivesDecals(false); // Prevent Decals
+
 	GetMesh()->SetRelativeRotation(FRotator(0., -90., 0.));
+	GetMesh()->SetReceivesDecals(false);
 	// Dedicated servers don't render the meshes
 	// Skeletal meshes do not update their sockets or bones while not being rendered by default on the server part
 	GetMesh()->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
@@ -28,6 +31,22 @@ AAuraCharacterBase::AAuraCharacterBase(const FObjectInitializer& ObjectInitializ
 	Weapon->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	Weapon->SetCollisionObjectType(ECC_PhysicsBody);
 	Weapon->SetCollisionResponseToAllChannels(ECR_Ignore);
+	Weapon->SetReceivesDecals(false);
+}
+
+void AAuraCharacterBase::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME_CONDITION_NOTIFY(AAuraCharacterBase, AimDirection, COND_SkipOwner, REPNOTIFY_OnChanged)
+	DOREPLIFETIME_CONDITION_NOTIFY(AAuraCharacterBase, Summons, COND_None, REPNOTIFY_OnChanged)
+	// DOREPLIFETIME_WITH_PARAMS_FAST(AAuraCharacterBase, Summons, Params)
+	// DOREPLIFETIME_CONDITION_NOTIFY(AAuraCharacterBase, CombatTarget, COND_SkipOwner, REPNOTIFY_Always)
+}
+void AAuraCharacterBase::PreReplication(IRepChangedPropertyTracker& ChangedPropertyTracker)
+{
+	Super::PreReplication(ChangedPropertyTracker);
+	// DOREPLIFETIME_ACTIVE_OVERRIDE_FAST(AAuraCharacterBase, AimDirection, IsPlayerControlled())
+	// DOREPLIFETIME_ACTIVE_OVERRIDE(AAuraCharacterBase, AimDirection, IsPlayerControlled()) // Only replicates for player
 }
 
 void AAuraCharacterBase::Tick(const float DeltaSeconds)
@@ -55,25 +74,27 @@ void AAuraCharacterBase::GetRandomAttackMontage(FTaggedMontage& TaggedMontage)
 
 FVector AAuraCharacterBase::GetCombatSocketLocation(const ECombatSocket SocketEnum) const
 {
+	const FName& SocketName = GetCombatSocketName(SocketEnum);
 	switch (SocketEnum)
 	{
-	case ECombatSocket::Weapon: return Weapon->GetSocketLocation("Attack_Socket");
-	case ECombatSocket::LeftHand: return GetMesh()->GetSocketLocation("Hand_L_Socket");
-	case ECombatSocket::RightHand: return GetMesh()->GetSocketLocation("Hand_R_Socket");
-	case ECombatSocket::Tail: return GetMesh()->GetSocketLocation("Tail_Socket");
+	case ECombatSocket::Weapon: return Weapon->GetSocketLocation(SocketName);
+	case ECombatSocket::LeftHand:
+	case ECombatSocket::RightHand:
+	case ECombatSocket::Tail:
+		return GetMesh()->GetSocketLocation(SocketName);
 	default: return GetActorLocation();
 	}
 }
 FName AAuraCharacterBase::GetCombatSocketName(const ECombatSocket SocketEnum)
 {
-	switch (SocketEnum)
-	{
-	case ECombatSocket::Weapon: return "Attack_Socket";
-	case ECombatSocket::LeftHand: return "Hand_L_Socket";
-	case ECombatSocket::RightHand: return "Hand_R_Socket";
-	case ECombatSocket::Tail: return "Tail_Socket";
-	default: return "";
-	}
+	static const TMap<ECombatSocket, FName> SocketMap = {
+		{ECombatSocket::Weapon, "Attack_Socket"},
+		{ECombatSocket::LeftHand, "Hand_L_Socket"},
+		{ECombatSocket::RightHand, "Hand_R_Socket"},
+		{ECombatSocket::Tail, "Tail_Socket"},
+	};
+	const FName* Name = SocketMap.Find(SocketEnum);
+	return Name ? *Name : "";
 }
 
 USceneComponent* AAuraCharacterBase::GetCombatComponent() const
@@ -95,21 +116,15 @@ void AAuraCharacterBase::SetCombatTarget(AActor* InTarget)
 {
 	if (CombatTarget == InTarget) return;
 	CombatTarget = InTarget;
-	GetWorld()->GetTimerManager().ClearTimer(TargetCheckTimer);
 	if (CombatTarget)
-	{
+	{	//GetWorld()->GetTimerManager().ClearTimer(TargetCheckTimer);
 		GetWorld()->GetTimerManager().SetTimer(TargetCheckTimer, this, &AAuraCharacterBase::CheckCombatTarget,
 			TargetCheckTick, true, .1f);
 	}
 }
 void AAuraCharacterBase::CheckCombatTarget()
 {
-	if (!CombatTarget)
-	{
-		GetWorld()->GetTimerManager().ClearTimer(TargetCheckTimer);
-		return;
-	}
-	if (CombatTarget->Implements<UCombatInterface>() && ICombatInterface::Execute_IsDead(CombatTarget))
+	if (!CombatTarget || CombatTarget->Implements<UCombatInterface>() && ICombatInterface::Execute_IsDead(CombatTarget))
 	{
 		GetWorld()->GetTimerManager().ClearTimer(TargetCheckTimer);
 		SetCombatTarget(nullptr);
@@ -122,7 +137,7 @@ void AAuraCharacterBase::SetTracking(const bool bEnable)
 }
 
 
-void AAuraCharacterBase::MulticastHandleDeath_Implementation(const FVector& HitImpulse)
+void AAuraCharacterBase::MulticastHandleDeath_Implementation()
 {
 	if (Weapon->GetSkeletalMeshAsset())
 	{	// Drop Weapon
@@ -139,13 +154,14 @@ void AAuraCharacterBase::MulticastHandleDeath_Implementation(const FVector& HitI
 	GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECR_Ignore);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
 
-	if (!HitImpulse.IsNearlyZero())
-	{
-		if (Weapon->GetSkeletalMeshAsset()) Weapon->AddImpulseToAllBodiesBelow(HitImpulse, NAME_None, true);
-		GetMesh()->AddImpulseToAllBodiesBelow(HitImpulse, NAME_None, true);
-	}
 	Dissolve();
 	UGameplayStatics::PlaySoundAtLocation(this, DeathSound, GetActorLocation(), GetActorRotation());
+}
+
+void AAuraCharacterBase::MulticastRagdoll_Implementation(const FVector_NetQuantize Impulse)
+{
+	if (Weapon->GetSkeletalMeshAsset()) Weapon->AddImpulseToAllBodiesBelow(Impulse, NAME_None, true);
+	GetMesh()->AddImpulseToAllBodiesBelow(Impulse, NAME_None, true);
 }
 
 FOnGameplayEffectTagCountChanged& AAuraCharacterBase::GetOnDeathDelegate() const
@@ -158,21 +174,6 @@ void AAuraCharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
 	GetCharacterMovement()->RotationRate = BaseRotationRate;
-}
-
-void AAuraCharacterBase::PreReplication(IRepChangedPropertyTracker& ChangedPropertyTracker)
-{
-	Super::PreReplication(ChangedPropertyTracker);
-	// DOREPLIFETIME_ACTIVE_OVERRIDE_FAST(AAuraCharacterBase, AimDirection, IsPlayerControlled())
-	// DOREPLIFETIME_ACTIVE_OVERRIDE(AAuraCharacterBase, AimDirection, IsPlayerControlled()) // Only replicates for player
-}
-void AAuraCharacterBase::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME_CONDITION_NOTIFY(AAuraCharacterBase, AimDirection, COND_SkipOwner, REPNOTIFY_OnChanged)
-	DOREPLIFETIME_CONDITION_NOTIFY(AAuraCharacterBase, Summons, COND_None, REPNOTIFY_OnChanged)
-	// DOREPLIFETIME_WITH_PARAMS_FAST(AAuraCharacterBase, Summons, Params)
-	// DOREPLIFETIME_CONDITION_NOTIFY(AAuraCharacterBase, CombatTarget, COND_SkipOwner, REPNOTIFY_Always)
 }
 
 // Called on Server in PossessedBy

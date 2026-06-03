@@ -10,13 +10,14 @@
 #include "Kismet/GameplayStatics.h"
 #include "AbilitySystem/Ability/AttributesEventAbility.h"
 #include "Character/AuraCharacterBase.h"
+#include "Engine/DamageEvents.h"
 
-TArray<FGameplayEffectSpecHandle> UDamageAbility::MakeOutgoingAbilityEffectsSpecs()
+TArray<FGameplayEffectSpecHandle> UDamageAbility::MakeOutgoingAbilityEffectsSpecs(float Multiplier, float MinimumValuePercent)
 {
 	const int32 Level = GetAbilityLevel();
 	TArray<FGameplayEffectSpecHandle> SpecHandles;
 	for (const auto& [EffectClass, Period,
-		Magnitudes] : AbilityEffects)
+		Magnitudes, bRadial] : AbilityEffects)
 	{
 		const FGameplayEffectSpecHandle SpecHandle = MakeOutgoingGameplayEffectSpec(EffectClass, Level);
 		FGameplayEffectSpec* Spec = SpecHandle.Data.Get();
@@ -30,7 +31,12 @@ TArray<FGameplayEffectSpecHandle> UDamageAbility::MakeOutgoingAbilityEffectsSpec
 			else
 			{
 				if (true) {} // Do check Inventory / Upgrades for GetValueAtLevel([UpgradeNum]); instead of using Level
-				Spec->SetByCallerTagMagnitudes.FindOrAdd(Tag) = ScalableFloat.GetValueAtLevel(Level);
+				float Val = ScalableFloat.GetValueAtLevel(Level);
+				if (bRadial && !FMath::IsNearlyEqual(Multiplier, 1.f))
+				{	// AActor::InternalTakeRadialDamage()
+					Val = FMath::Lerp(Val * MinimumValuePercent, Val, FMath::Max(0.f, Multiplier));
+				}
+				Spec->SetByCallerTagMagnitudes.FindOrAdd(Tag) = Val;
 			}
 		}
 		SpecHandles.Add(SpecHandle);
@@ -69,27 +75,22 @@ void UDamageAbility::ApplyAbilityEffectsToTarget(const AActor* InTarget, TArray<
 void UDamageAbility::MeleeTraceAndApplyEffects(const float Radius, const FVector& InLoc, const FGameplayTag& ImpactCue,
 	const EDrawDebugTrace::Type DrawDebugType)
 {
-	const UWorld* World = GEngine->GetWorldFromContextObject(this, EGetWorldErrorMode::LogAndReturnNull);
-	if (World == nullptr) return;
-
 	const FVector ActorLoc = AuraCharacter->GetActorLocation();
 	const FVector Start = ActorLoc + (InLoc - ActorLoc) * .33f;
 
 	TArray<FHitResult> HitResults;
-	UAuraAbilityLibrary::TraceByChannel(this, Start, InLoc, {AuraCharacter},
-		HitResults, {ECC_AuraTrace_Effect}, Radius, true, false, DrawDebugType);
+	UAuraAbilityLibrary::TraceMultiByChannel(this, HitResults, Start, InLoc,
+		ECC_AuraTrace_Effect, {AuraCharacter}, Radius, DrawDebugType);
 
 	UAbilitySystemComponent* ASC = CurrentActorInfo->AbilitySystemComponent.Get();
-	const float Level = GetAbilityLevel();
 	for (FHitResult& Hit : HitResults)
 	{
-		if (!Hit.PhysMaterial.Get()) continue; // ignore collision with capsule comp
 		AActor* Actor = Hit.GetActor();
 		if (UAuraAbilityLibrary::IsAlly(Actor , AuraCharacter)) continue;
 
-		if (ImpactCue.IsValid())
-		{	// Allow cue on wall and dead body
-			FGameplayCueParameters Params; Params.AbilityLevel = Level;
+		if (ImpactCue.IsValid()) // Allow cue on wall and dead body
+		{	// FGameplayCueParameters Params = UGameplayCueFunctionLibrary::MakeGameplayCueParametersFromHitResult(Hit);
+			FGameplayCueParameters Params;
 			Params.Location = Hit.ImpactPoint.IsNearlyZero() ? Actor->GetActorLocation() : Hit.ImpactPoint;
 			Params.Normal = Hit.ImpactNormal;
 			Params.PhysicalMaterial = Hit.PhysMaterial; // Set in PhysicalAsset/Component Collision/Material
@@ -105,6 +106,43 @@ void UDamageAbility::MeleeTraceAndApplyEffects(const float Radius, const FVector
 		FVector Direction = Actor->GetActorLocation() - ActorLoc;
 		Direction.Z = 0.f;
 		ApplyAbilityEffectsToTarget(Actor, SpecHandles, Direction);
+	}
+}
+
+void UDamageAbility::ApplyRadialEffectsWithFalloff(const FVector& Origin, struct FRadialDamageParams& RadialParams,
+	bool bForEnemies)
+{	// UGameplayStatics::ApplyRadialDamageWithFalloff()
+	TArray<AActor*> Actors;
+	UAuraAbilityLibrary::GetLiveCharactersInRadius(this, Actors, {},
+		RadialParams.GetMaxRadius(), Origin);
+	if (bForEnemies) UAuraAbilityLibrary::FilterOutAllies(AuraCharacter, Actors);
+	else UAuraAbilityLibrary::FilterOutEnemies(AuraCharacter, Actors);
+
+	RadialParams.InnerRadius = RadialParams.InnerRadius * RadialParams.OuterRadius; // Inner is Percentage
+	for (const AActor* Actor : Actors)
+	{	// Trace against capsule of character
+		TArray<FHitResult> Hits; UAuraAbilityLibrary::TraceMultiByChannel(this, Hits, Origin,
+			Actor->GetActorLocation(), ECC_AuraTrace_EffectMulti, {});
+		for (FHitResult& Hit : Hits)
+		{
+			const AActor* HitActor = Hit.GetActor();
+			if (Hit.bBlockingHit && HitActor != Actor) break; // Ability is blocked (by shield, ...)
+			if (HitActor == Actor)
+			{
+				const float DamageScale = RadialParams.GetDamageScale(Hit.Distance);
+				TArray<FGameplayEffectSpecHandle> SpecHandles = MakeOutgoingAbilityEffectsSpecs(DamageScale,
+					RadialParams.MinimumDamage);
+				for (const FGameplayEffectSpecHandle SpecHandle : SpecHandles)
+				{
+					SpecHandle.Data->GetContext().AddHitResult(MoveTemp(Hit));
+				}
+
+				FVector Direction = Actor->GetActorLocation() - Origin;
+				Direction.Z = 0.f;
+				ApplyAbilityEffectsToTarget(Actor, SpecHandles, Direction);
+				break;
+			}
+		}
 	}
 }
 

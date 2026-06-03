@@ -7,40 +7,6 @@
 #include "AbilitySystem/Ability/BeamAbility.h"
 #include "TargetActor_Indicator.generated.h"
 
-USTRUCT(BlueprintType)
-struct FGATargetData_CommonTarget : public FGameplayAbilityTargetData
-{
-	GENERATED_BODY()
-	FGATargetData_CommonTarget(){}
-
-	UPROPERTY(BlueprintReadWrite)
-	TWeakObjectPtr<AActor> TargetActor;
-	/** Returns all actors targeted, almost always overridden */
-	virtual TArray<TWeakObjectPtr<AActor>> GetActors() const override {return {TargetActor};}
-
-	UPROPERTY(BlueprintReadWrite)
-	FVector_NetQuantizeNormal Direction;
-	UPROPERTY(BlueprintReadWrite)
-	FVector_NetQuantize10 Location;
-	virtual FVector GetEndPoint() const override {return Location;}
-
-	// Required for all child structs of FGameplayAbilityTargetData
-	virtual UScriptStruct* GetScriptStruct() const override {return StaticStruct();}
-	// Required for all child structs of FGameplayAbilityTargetData
-	bool NetSerialize(FArchive& Ar, class UPackageMap* Map, bool& bOutSuccess)
-	{
-		Ar << TargetActor;
-		Direction.NetSerialize(Ar, Map, bOutSuccess);
-		Location.NetSerialize(Ar, Map, bOutSuccess);
-		return bOutSuccess;
-	}
-};
-template<>
-struct TStructOpsTypeTraits<FGATargetData_CommonTarget> : public TStructOpsTypeTraitsBase2<FGATargetData_CommonTarget>
-{	// This is REQUIRED for FGameplayAbilityTargetDataHandle net serialization to work
-	enum {WithNetSerializer = true};
-};
-
 USTRUCT(BlueprintType, Blueprintable)
 struct FIndicatorDetails
 {

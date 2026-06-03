@@ -95,18 +95,13 @@ void UBeamAbility::BeamTraceForTarget()
 	}
 	else // Found nothing to Beam, Just Hit any blocking object
 	{
-		TArray<FHitResult> Hits; UAuraAbilityLibrary::TraceByChannel(this, CharacterLoc, End,
-			ActorsToIgnore, Hits, {ECC_Visibility}, 0, true, false, DrawDebug);
-		for (const FHitResult& Hit : Hits)
+		FHitResult Hit;
+		if (UAuraAbilityLibrary::TraceSingleByChannel(this, Hit, CharacterLoc, End,
+			ECC_Visibility, ActorsToIgnore, 0, DrawDebug))
 		{
-			if (!Hit.bBlockingHit) continue;
 			BeamData.SourceLocation.Add(Hit.ImpactPoint);
-			break;
 		}
-		if (BeamData.SourceLocation.Num() == 0)
-		{	// Use end point if Trace doesn't hit anything
-			BeamData.SourceLocation.Add(End);
-		}
+		else BeamData.SourceLocation.Add(End); // Use end point if Trace doesn't hit anything
 	}
 
 	if (Beam) Beam->MulticastSetTarget(BeamData);

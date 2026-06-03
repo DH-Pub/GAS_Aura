@@ -5,7 +5,7 @@
 
 #include "AbilitySystemComponent.h"
 #include "AbilitySystem/Ability/AuraGameplayAbility.h"
-#include "AbilitySystem/Ability/TargetData/TargetActor_Indicator.h"
+#include "AbilitySystem/AbilityTask/AT_WaitData.h"
 #include "Character/AuraCharacterBase.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Player/AuraPlayerController.h"
@@ -54,7 +54,7 @@ void UAbilityTask_RotateActor::Activate()
 		TargetActor = PC /*IsPlayer*/ ? static_cast<AActor*>(PC->CursorHitEnemy) : AuraCharacter->CombatTarget.Get();
 
 		FScopedPredictionWindow(AbilitySystemComponent.Get(), IsPredictingClient());
-		FGATargetData_CommonTarget* Data = new FGATargetData_CommonTarget();
+		FGATargetData_CommonData* Data = new FGATargetData_CommonData();
 		Data->TargetActor = TargetActor;
 		Data->Direction = Direction;
 
@@ -80,15 +80,17 @@ void UAbilityTask_RotateActor::Activate()
 void UAbilityTask_RotateActor::OnTargetDataReplicatedCallback(const FGameplayAbilityTargetDataHandle& DataHandle,
 	FGameplayTag ActivationTag)
 {
-	if (!AbilitySystemComponent.IsValid()) return;
-	AbilitySystemComponent->AbilityTargetDataSetDelegate(GetAbilitySpecHandle(), GetActivationPredictionKey()).Remove(
-		DelegateHandle);
-	AbilitySystemComponent->ConsumeClientReplicatedTargetData(GetAbilitySpecHandle(), GetActivationPredictionKey());
+	if (UAbilitySystemComponent* ASC = AbilitySystemComponent.Get())
+	{
+		ASC->AbilityTargetDataSetDelegate(GetAbilitySpecHandle(), GetActivationPredictionKey()).Remove(DelegateHandle);
+		ASC->ConsumeClientReplicatedTargetData(GetAbilitySpecHandle(), GetActivationPredictionKey());
+	}
 
-	const FGameplayAbilityTargetData* Data = DataHandle.Data[0].Get();
-	if (!Data || Data->GetScriptStruct() != FGATargetData_CommonTarget::StaticStruct()) return;
-	const FGATargetData_CommonTarget* CommonTarget = static_cast<const FGATargetData_CommonTarget*>(Data);
-	Direction = CommonTarget->Direction; // Set AimDirection on Server side
-	TargetRotation = Direction.ToOrientationRotator();
-	bTickingTask = true;
+	if (const FGameplayAbilityTargetData* Data = DataHandle.Data[0].Get())
+	{
+		const FTransform Transform = Data->GetOrigin();
+		Direction = Transform.GetRotation().Vector(); // Set AimDirection on Server side
+		TargetRotation = Direction.ToOrientationRotator();
+		bTickingTask = true;
+	}
 }

@@ -6,6 +6,7 @@
 #include "AbilitySystemComponent.h"
 #include "AbilitySystem/Ability/AuraGameplayAbility.h"
 #include "AbilitySystem/Ability/TargetData/TargetActor_Indicator.h"
+#include "AbilitySystem/AbilityTask/AT_WaitData.h"
 #include "Character/AuraCharacterBase.h"
 #include "Player/AuraPlayerController.h"
 
@@ -104,15 +105,12 @@ void UAT_WaitIndicatorTrace::TickTask(float DeltaTime)
 	{
 		const FVector CharacterLoc = AuraAbility->AuraCharacter->GetActorLocation();
 		FVector Direction = FVector::DownVector;
-		TArray<FHitResult> Results;
-		AuraPC->GetHitResultsUnderCursorByProfile(Details.TraceProfile, Results);
-		for (const FHitResult& Result : Results)
+		FHitResult Hit;
+		if (AuraPC->GetHitResultsUnderCursorByProfile(Details.TraceProfile, Hit))
 		{
-			if (!Result.bBlockingHit) continue;
 			const FVector Loc = AuraPC->GetCursorHitResult().ImpactPoint;
 			VecFromCharacter = Loc - CharacterLoc;
-			Direction = (Result.TraceEnd - Result.TraceStart).GetSafeNormal();
-			break;
+			Direction = (Hit.TraceEnd - Hit.TraceStart).GetSafeNormal();
 		}
 
 		if (IsPredictingClient())
@@ -163,7 +161,6 @@ void UAT_WaitIndicatorTrace::OnConfirmCallback()
 	FScopedPredictionWindow	ScopedPrediction(ASC, bShouldRepToServer);
 
 	FGameplayAbilityTargetDataHandle Data = IndicatorActor->GetIndicatorDataHandle();
-	FGATargetData_CommonTarget* TargetData = static_cast<FGATargetData_CommonTarget*>(Data.Get(0));
 	if (IsPredictingClient())
 	{
 		ASC->CallServerSetReplicatedTargetData(GetAbilitySpecHandle(),
@@ -172,7 +169,7 @@ void UAT_WaitIndicatorTrace::OnConfirmCallback()
 
 	if (ShouldBroadcastAbilityTaskDelegates())
 	{
-		ValidData.Broadcast(*TargetData);
+		ValidData.Broadcast(Data);
 	}
 	EndTask();
 }
@@ -200,25 +197,20 @@ void UAT_WaitIndicatorTrace::OnTargetDataReplicatedCallback(const FGameplayAbili
 		ASC->ConsumeClientReplicatedTargetData(GetAbilitySpecHandle(), GetActivationPredictionKey());
 	}
 
-	const FGameplayAbilityTargetData* FirstData = Data.Get(0);
-	if (FirstData && FirstData->GetScriptStruct() == FGATargetData_CommonTarget::StaticStruct())
-	{
-		const FGATargetData_CommonTarget* TargetData = static_cast<const FGATargetData_CommonTarget*>(FirstData);
-
-		/** Server side check to make sure sent data is valid */
-		if (TargetData)
-		{
-			const float MaxRangeAllowed = Details.MaxRange + 10.f;
-			const FVector VecToLoc = TargetData->Location - Details.OriginComponent->GetComponentLocation();
-			if (VecToLoc.SizeSquared2D() > MaxRangeAllowed * MaxRangeAllowed || VecToLoc.Z > MaxRangeAllowed)
-			{	// Invalid Data received
-				OnTargetDataReplicatedCancelledCallback();
-				return;
-			}
+	if (const FGameplayAbilityTargetData* FirstData = Data.Get(0))
+	{	/** Server side check to make sure sent data is valid */
+		const float MaxRangeAllowed = Details.MaxRange + 10.f;
+		FTransform ClientTransform = FirstData->GetOrigin();
+		const FVector VecToLoc = ClientTransform.GetTranslation() - Details.OriginComponent->GetComponentLocation();
+		if (VecToLoc.SizeSquared2D() > MaxRangeAllowed * MaxRangeAllowed || VecToLoc.Z > MaxRangeAllowed)
+		{	// Invalid Data received
+			OnTargetDataReplicatedCancelledCallback();
+			return;
 		}
+
 		if (ShouldBroadcastAbilityTaskDelegates())
 		{
-			ValidData.Broadcast(*TargetData);
+			ValidData.Broadcast(Data);
 		}
 	}
 	EndTask();
@@ -229,7 +221,7 @@ void UAT_WaitIndicatorTrace::OnTargetDataReplicatedCancelledCallback()
 {
 	if (ShouldBroadcastAbilityTaskDelegates())
 	{
-		Cancelled.Broadcast(FGATargetData_CommonTarget());
+		Cancelled.Broadcast(FGameplayAbilityTargetDataHandle());
 	}
 	EndTask();
 }

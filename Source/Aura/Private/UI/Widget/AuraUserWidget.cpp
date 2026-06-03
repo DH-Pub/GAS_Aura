@@ -11,7 +11,7 @@
 FVector2D UAuraUserWidget::GetOffsetToPivot(const FGeometry& MyGeometry, const FVector2D Offset) const
 {
 	const FVector2D MousePos = UWidgetLayoutLibrary::GetMousePositionOnViewport(this);
-	FVector2D WidgetPosToTopLeft;
+	FVector2D WidgetPosToTopLeft; // Vector From Widget to TopLeft of Screen
 	USlateBlueprintLibrary::ScreenToWidgetLocal(this, MyGeometry, FVector2D(),
 		WidgetPosToTopLeft); // LocalCoord = ScreenPos - WidgetPos
 	const FVector2D MousePosOnWidget = MousePos + WidgetPosToTopLeft; // MousePos - WidgetPosToTopLeft * -1;

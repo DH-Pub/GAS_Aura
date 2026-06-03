@@ -9,6 +9,7 @@
 UENUM(BlueprintType)
 enum class ECombatSocket : uint8
 {
+	None,
 	Weapon,
 	LeftHand, RightHand,
 	Tail

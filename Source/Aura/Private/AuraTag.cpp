@@ -49,6 +49,7 @@ namespace AuraTag
 	// Abilities with Cooldown =======================================================================================
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Fire_FireBolt, "Ability.Fire.FireBolt")
 	// UE_DEFINE_GAMEPLAY_TAG(Ability_Fire_FireBolt_Cooldown, "Ability.Fire.FireBolt.Cooldown")
+	UE_DEFINE_GAMEPLAY_TAG(Ability_Fire_FireBlast, "Ability.Fire.FireBlast")
 
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Lightning_Electrocute, "Ability.Lightning.Electrocute")
 

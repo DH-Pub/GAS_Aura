@@ -16,17 +16,16 @@
 void USpellGlobeButtonWidget::SetWidgetController(UAuraWidgetController* InWidgetController)
 {
 	SpellMenuWC = Cast<USpellMenuWidgetController>(InWidgetController);
-	SpellMenuWC->OnReceiveAbilityDataFromASC.AddDynamic(this, &USpellGlobeButtonWidget::ReceiveAbilityData);
+	SpellMenuWC->OnReceiveAbilityDataFromASC.AddDynamic(this, &USpellGlobeButtonWidget::UpdateAbilityUI);
 	Super::SetWidgetController(InWidgetController);
 }
 
-void USpellGlobeButtonWidget::ReceiveAbilityData(const FGameplayAbilitySpec& AbilitySpec,
-	const FAuraAbilityData& Data)
+void USpellGlobeButtonWidget::UpdateAbilityUI()
 {
-	if (Data.AbilityClass != AbilityClass) return;
-
-	const FGameplayTagContainer& Tags = AbilitySpec.GetDynamicSpecSourceTags();
-	if (Tags.HasTagExact(AuraTag::Ability_Status_Locked))
+	const FAuraAbilityData* Data = UAbilityDataAsset::GetDataFromGameState(this, AbilityClass);
+	const FGameplayAbilitySpec* Spec = SpellMenuWC->GetASC()->FindAbilitySpecFromClass(AbilityClass);
+	const FGameplayTagContainer& Tags = Spec ? Spec->GetDynamicSpecSourceTags() : FGameplayTagContainer();
+	if (!Data || !Spec || Tags.HasTagExact(AuraTag::Ability_Status_Locked))
 	{
 		StatusTag = AuraTag::Ability_Status_Locked;
 		bDragEnable = false;
@@ -37,15 +36,15 @@ void USpellGlobeButtonWidget::ReceiveAbilityData(const FGameplayAbilitySpec& Abi
 	{
 		StatusTag = AuraTag::Ability_Status_Eligible;
 		bDragEnable = false;
-		Image_SpellIcon->SetBrushFromTexture(Data.Icon);
+		Image_SpellIcon->SetBrushFromTexture(Data->Icon);
 		Image_Background->SetBrushFromMaterial(LockedMaterial);
 	}
 	else
 	{	// not under any status
 		StatusTag = FGameplayTag::EmptyTag;
 		bDragEnable = true;
-		Image_SpellIcon->SetBrushFromTexture(Data.Icon);
-		Image_Background->SetBrushFromMaterial(Data.BackgroundMaterial);
+		Image_SpellIcon->SetBrushFromTexture(Data->Icon);
+		Image_Background->SetBrushFromMaterial(Data->BackgroundMaterial);
 	}
 
 	// Order: GiveAbility => Updating SpellPoints, but AbilityDataDelegate broadcast slower than OnSpellPointChangedDelegate

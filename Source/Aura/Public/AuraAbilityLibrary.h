@@ -20,25 +20,57 @@ public:
 	UFUNCTION(BlueprintCallable)
 	static void AddAdditionalTraceIgnoreActors(TArray<AActor*>& IgnoreActors, AActor* ActorToCompare);
 
-	/** UKismetSystemLibrary::LineTrace SphereTrace ForObjects
-	 * @param Channels The channels used for trace or to trace for if is object type
-	 * @param bTraceType true: Trace Channel, false: Trace for Objects. ALL 'Channels' has to be the correct type
+
+#pragma region Trace______________________________________________________
+	static void CreateCollisionQueryParams(FCollisionQueryParams& Params, const bool bTraceComplex,
+		const TArray<AActor*>& ActorsToIgnore);
+	static void FilterHitOnSameActors(TArray<FHitResult>& OutHits, TArray<FHitResult>& HitResults);
+
+	/** UKismetSystemLibrary::LineTrace SphereTrace
+	 * @param Channel bTraceType HAS TO BE true (NOT Object Type)
 	 * @param SweepRadius == 0.f: Line Trace, > 0.f: Sphere Sweep
-	 * @return OutHits.Num() > 0
 	 */
 	UFUNCTION(BlueprintCallable, meta=(DefaultToSelf="WorldContextObject"), Category="AuraLibrary")
-	static bool TraceByChannel(const UObject* WorldContextObject, const FVector& Start, const FVector& End,
-		const TArray<AActor*>& ActorsToIgnore, TArray<FHitResult>& OutHits,
-		const TArray<TEnumAsByte<ECollisionChannel>>& Channels, const float SweepRadius = 0.f, const bool bTraceType = true,
-		const bool bTraceComplex = false, EDrawDebugTrace::Type DrawDebugType = EDrawDebugTrace::None);
-	/** UKismetSystemLibrary::LineTrace SphereTrace ByProfile
+	static bool TraceSingleByChannel(const UObject* WorldContextObject, FHitResult& OutHit, const FVector& Start,
+		const FVector& End, TEnumAsByte<ECollisionChannel> Channel, const TArray<AActor*>& ActorsToIgnore,
+		float SweepRadius = 0.f, EDrawDebugTrace::Type DrawDebugType = EDrawDebugTrace::None, bool bTraceComplex = false);
+	/** UKismetSystemLibrary::LineTrace SphereTrace
+	 * @param Channel bTraceType HAS TO BE true (NOT Object Type)
 	 * @param SweepRadius == 0.f: Line Trace, > 0.f: Sphere Sweep
-	 * @return OutHits.Num() > 0
 	 */
 	UFUNCTION(BlueprintCallable, meta=(DefaultToSelf="WorldContextObject"), Category="AuraLibrary")
-	static bool TraceByProfile(const UObject* WorldContextObject, TArray<FHitResult>& OutHits, const FVector& Start,
-		const FVector& End, const TArray<AActor*>& ActorsToIgnore, const FCollisionProfileName& Profile,
-		float SweepRadius = 0.f, bool bTraceComplex = false, EDrawDebugTrace::Type DrawDebugType = EDrawDebugTrace::None);
+	static bool TraceMultiByChannel(const UObject* WorldContextObject, TArray<FHitResult>& OutHits, const FVector& Start,
+		const FVector& End, TEnumAsByte<ECollisionChannel> Channel, const TArray<AActor*>& ActorsToIgnore,
+		float SweepRadius = 0.f, EDrawDebugTrace::Type DrawDebugType = EDrawDebugTrace::None, bool bTraceComplex = false);
+
+	/** UKismetSystemLibrary::LineTrace / SphereTrace ForObjects
+	 * @param Channels bTraceType HAS TO BE false for these channels
+	 * @param SweepRadius == 0.f: Line Trace, > 0.f: Sphere Sweep
+	 */
+	UFUNCTION(BlueprintCallable, meta=(DefaultToSelf="WorldContextObject"), Category="AuraLibrary")
+	static bool TraceSingleByObjectType(const UObject* WorldContextObject, FHitResult& OutHit, const FVector& Start,
+		const FVector& End, const TArray<TEnumAsByte<ECollisionChannel>>& Channels, const TArray<AActor*>& ActorsToIgnore,
+		float SweepRadius = 0.f, EDrawDebugTrace::Type DrawDebugType = EDrawDebugTrace::None, bool bTraceComplex = false);
+	/** UKismetSystemLibrary::LineTrace / SphereTrace ForObjects
+	 * @param Channels bTraceType HAS TO BE false for these channels
+	 * @param SweepRadius == 0.f: Line Trace, > 0.f: Sphere Sweep
+	 */
+	UFUNCTION(BlueprintCallable, meta=(DefaultToSelf="WorldContextObject"), Category="AuraLibrary")
+	static bool TraceMultiByObjectType(const UObject* WorldContextObject, TArray<FHitResult>& OutHits, const FVector& Start,
+		const FVector& End, const TArray<TEnumAsByte<ECollisionChannel>>& Channels, const TArray<AActor*>& ActorsToIgnore,
+		float SweepRadius = 0.f, EDrawDebugTrace::Type DrawDebugType = EDrawDebugTrace::None, bool bTraceComplex = false);
+
+	/** @param SweepRadius == 0.f: Line Trace, > 0.f: Sphere Sweep */
+	UFUNCTION(BlueprintCallable, meta=(DefaultToSelf="WorldContextObject"), Category="AuraLibrary")
+	static bool TraceSingleByProfile(const UObject* WorldContextObject, FHitResult& OutHit, const FVector& Start,
+		const FVector& End, const FCollisionProfileName& Profile, const TArray<AActor*>& ActorsToIgnore,
+		float SweepRadius = 0.f, EDrawDebugTrace::Type DrawDebugType = EDrawDebugTrace::None, bool bTraceComplex = false);
+	/** @param SweepRadius == 0.f: Line Trace, > 0.f: Sphere Sweep */
+	UFUNCTION(BlueprintCallable, meta=(DefaultToSelf="WorldContextObject"), Category="AuraLibrary")
+	static bool TraceMultiByProfile(const UObject* WorldContextObject, TArray<FHitResult>& OutHits, const FVector& Start,
+		const FVector& End, const FCollisionProfileName& Profile, const TArray<AActor*>& ActorsToIgnore,
+		float SweepRadius = 0.f, EDrawDebugTrace::Type DrawDebugType = EDrawDebugTrace::None, bool bTraceComplex = false);
+#pragma endregion
 
 
 	UFUNCTION(BlueprintCallable, meta=(DefaultToSelf="WorldContextObject"), Category="AuraLibrary")

@@ -11,21 +11,21 @@
 #include "UI/Widget/Spells/SpellGlobeButtonWidget.h"
 #include "UI/WidgetController/OverlayWidgetController.h"
 
-void USpellMenuWidgetController::BindCallbacksDependencies(UAuraAbilitySystemComponent* InASC)
+void USpellMenuWidgetController::UnbindOldAbilitySystemComponent()
 {
-	if (AuraASC)
+	AuraASC->AbilityDataDelegate.RemoveAll(this);
+	if (AAuraPlayerState* OldPS = GetPlayerState())
 	{
-		AuraASC->AbilityDataDelegate.RemoveAll(this);
-		if (AAuraPlayerState* OldPS = GetPlayerState())
-		{
-			OldPS->OnSpellPointsChangedDelegate.RemoveAll(this);
-		}
+		OldPS->OnSpellPointsChangedDelegate.RemoveAll(this);
 	}
+}
 
-	Super::BindCallbacksDependencies(InASC);
-
-	if (!AuraASC) return;
-	AuraASC->BindAbilityDataDelegateToUIDelegate(this, OnReceiveAbilityDataFromASC);
+void USpellMenuWidgetController::BindCallbacksDependencies()
+{
+	AuraASC->AbilityDataDelegate.AddWeakLambda(this, [this]()
+	{
+		OnReceiveAbilityDataFromASC.Broadcast();
+	});
 	GetPlayerState()->OnSpellPointsChangedDelegate.AddWeakLambda(this, [this](const int32 Points)
 	{
 		GetASC()->BroadcastAllAbilityData();
@@ -95,9 +95,14 @@ bool USpellMenuWidgetController::EquipAbility()
 void USpellMenuWidgetController::ChangeSpellInputSlot(const TSubclassOf<UGameplayAbility> AbilityClass,
 	const EAuraAbilityInputID::Type AbilityID)
 {
+	GetASC()->ClearInput();
 	if (const FGameplayAbilitySpec* Spec = GetASC()->FindAbilitySpecFromClass(AbilityClass))
 	{
-		if (Spec->InputID == AbilityID) return; // Same Slot
+		if (Spec->InputID == AbilityID)
+		{	// Same Slot
+			GetASC()->BroadcastAllAbilityData();
+			return;
+		}
 		ClearSelected();
 		GetASC()->ServerChangeAbilitySlot(Spec->Ability, AbilityID);
 	}

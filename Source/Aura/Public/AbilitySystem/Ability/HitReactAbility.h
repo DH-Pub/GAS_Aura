@@ -14,6 +14,8 @@ struct FGATargetData_HitReact : public FGameplayAbilityTargetData
 	GENERATED_BODY()
 	FGATargetData_HitReact(){}
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	bool bKnockUp = false; // Ignore KnockbackDirection and KnockbackDistance. Launch the character up
 	UPROPERTY(EditDefaultsOnly)
 	int32 KnockbackDistance = 0;
 	UPROPERTY(EditDefaultsOnly)

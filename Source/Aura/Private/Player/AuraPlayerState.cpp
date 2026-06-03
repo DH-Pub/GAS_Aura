@@ -47,7 +47,7 @@ void AAuraPlayerState::SetLevel(const int32 NewLevel)
 {
 	const int32 OldLevel = Level;
 	Level = NewLevel;
-	UAbilityDataAsset::UnlockAbilityByLevel(this, AbilitySystemComponent, Level);
+	UAbilityDataAsset::UnlockAbilityByLevel(AbilitySystemComponent, Level);
 	OnRep_Level(OldLevel);
 }
 

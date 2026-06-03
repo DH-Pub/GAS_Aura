@@ -20,11 +20,11 @@ class AURA_API UAuraHeroComponent : public UActorComponent
 public:
 	UAuraHeroComponent();
 
+	virtual void BeginPlay() override;
+
 	void SetAuraHeroInputComponent(class UAuraInputComponent* AuraInputComponent);
 
 protected:
-	virtual void BeginPlay() override;
-
 	UPROPERTY(EditDefaultsOnly, Category="Aura|Input")
 	TObjectPtr<const class UAuraInputDataAsset> InputDataAsset;
 

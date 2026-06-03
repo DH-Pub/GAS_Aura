@@ -7,27 +7,32 @@
 #include "Aura/Aura.h"
 #include "AuraGameplayAbility.generated.h"
 
-USTRUCT(BlueprintType)
+USTRUCT(BlueprintType, Blueprintable)
 struct FAbilityDetails
 {
 	GENERATED_BODY()
 	FAbilityDetails(){}
 	explicit FAbilityDetails(const int32 Level, const TWeakObjectPtr<UAbilitySystemComponent> InASC) :
 		Level(Level), AbilitySystemComponent(InASC){}
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(BlueprintReadWrite)
 	int32 Level = 0;
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(BlueprintReadWrite)
 	float CostMana = 0.f;
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(BlueprintReadWrite)
 	float CostHealth = 0.f;
 
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(BlueprintReadWrite)
+	float BaseCooldown = 0.f;
+	UPROPERTY(BlueprintReadWrite)
 	float Cooldown = 0.f;
 
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(BlueprintReadWrite)
 	int32 ProjectileNums = 0;
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(BlueprintReadWrite)
 	float Damage = 0.f;
+
+	UPROPERTY(BlueprintReadWrite)
+	FVector4 WildcardNum = FVector4(); // for A Wildcard Numbers that is none the above;
 
 	TWeakObjectPtr<UAbilitySystemComponent> AbilitySystemComponent; // ASC for to check for cost/CD
 };
@@ -81,8 +86,12 @@ protected:
 	void BP_OnAvatarSet();
 	UFUNCTION(BlueprintImplementableEvent)
 	void BP_OnRemoveAbility();
+
 public:
-	virtual void GetAbilityDetails(FAbilityDetails& Details) const {};
+	virtual void GetAbilityDetails(FAbilityDetails& Details) const {BP_GetAbilityDetails(Details);}
+	UFUNCTION(BlueprintImplementableEvent, Category="Description") // Override this in each ability's BP
+	void BP_GetAbilityDetails(UPARAM(ref) FAbilityDetails& Details) const;
+
 	UFUNCTION(BlueprintImplementableEvent, Category="Description") // Override this in each ability's BP
 	void GetDescription(const FAbilityDetails& Details, FText& OutDescription) const;
 	UFUNCTION(BlueprintImplementableEvent, Category="Description") // Override this in each ability's BP
