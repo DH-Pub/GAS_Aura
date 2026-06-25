@@ -75,8 +75,11 @@ public:
 
 	UFUNCTION(BlueprintPure, meta=(CompactNodeTitle="PlayerState"))
 	class AAuraPlayerState* GetPlayerState() const; // nullptr for AI's WidgetController
+
 	UFUNCTION(BlueprintPure, meta=(CompactNodeTitle="AttributeSet"))
 	class AAuraCharacterBase* GetAuraCharacter() const;
+	UFUNCTION(BlueprintPure, meta=(CompactNodeTitle="Controller"))
+	AController* GetCharacterController() const;
 
 	UPROPERTY()
 	TObjectPtr<UAuraAbilitySystemComponent> AuraASC;

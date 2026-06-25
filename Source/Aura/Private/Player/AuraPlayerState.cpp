@@ -89,8 +89,8 @@ void AAuraPlayerState::OnRep_Level(const int32 OldLevel) const
 {
 	if (Level > OldLevel)
 	{
-		const APlayerController* PC = GEngine->GetFirstLocalPlayerController(GetWorld());
-		if (PC && GetPawn() && PC->PlayerState == this)
+		const APlayerController* PC = GetPlayerController(); // GEngine->GetFirstLocalPlayerController(GetWorld());
+		if (PC && PC->IsLocalPlayerController())
 		{	// Cue only on local
 			FGameplayCueParameters Params;
 			Params.RawMagnitude = Level; // Params.AbilityLevel = NewLevel; Params.GameplayEffectLevel = NewLevel;

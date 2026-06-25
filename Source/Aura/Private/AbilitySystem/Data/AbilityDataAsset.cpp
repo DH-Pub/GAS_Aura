@@ -8,6 +8,20 @@
 #include "AbilitySystem/Ability/AuraGameplayAbility.h"
 #include "Game/AuraGameState.h"
 #include "Misc/DataValidation.h"
+#include "UObject/ObjectSaveContext.h"
+
+void UAbilityDataAsset::PreSave(FObjectPreSaveContext SaveContext)
+{
+	Super::PreSave(SaveContext);
+
+	if (!SaveContext.IsProceduralSave())
+	{
+		AbilityDataMap.ValueSort([](const FAuraAbilityData& DataA, const FAuraAbilityData& DataB)
+		{
+			return DataA.OrderIndex < DataB.OrderIndex + UE_KINDA_SMALL_NUMBER; // <= DataB.OrderIndex;
+		});
+	}
+}
 
 const UAbilityDataAsset* UAbilityDataAsset::Get(const UObject* WorldContextObject)
 {
@@ -18,11 +32,14 @@ const UAbilityDataAsset* UAbilityDataAsset::Get(const UObject* WorldContextObjec
 const FAuraAbilityData* UAbilityDataAsset::GetDataFromGameState(const UObject* WorldContextObject,
 	const UClass* AbilityClass)
 {
-	if (const UAbilityDataAsset* DA = Get(WorldContextObject))
+	if (AbilityClass)
 	{
-		for (const FAuraAbilityData& Data : DA->AbilityDataList)
+		if (const UAbilityDataAsset* DA = Get(WorldContextObject))
 		{
-			if (Data.AbilityClass == AbilityClass) return &Data;
+			for (const FAuraAbilityData& Data : DA->AbilityDataList)
+			{
+				if (Data.AbilityClass == AbilityClass) return &Data;
+			}
 		}
 	}
 	return nullptr;

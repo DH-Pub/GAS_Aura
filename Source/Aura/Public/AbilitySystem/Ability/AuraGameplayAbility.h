@@ -15,7 +15,7 @@ struct FAbilityDetails
 	explicit FAbilityDetails(const int32 Level, const TWeakObjectPtr<UAbilitySystemComponent> InASC) :
 		Level(Level), AbilitySystemComponent(InASC){}
 	UPROPERTY(BlueprintReadWrite)
-	int32 Level = 0;
+	int32 Level = 1;
 	UPROPERTY(BlueprintReadWrite)
 	float CostMana = 0.f;
 	UPROPERTY(BlueprintReadWrite)

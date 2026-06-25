@@ -4,7 +4,6 @@
 #include "Character/Component/AuraHeroComponent.h"
 
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
-#include "AbilitySystem/Data/AuraInputDataAsset.h"
 #include "Character/AuraCharacterBase.h"
 #include "Input/AuraInputComponent.h"
 

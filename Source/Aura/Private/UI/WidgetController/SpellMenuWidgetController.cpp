@@ -47,14 +47,15 @@ void USpellMenuWidgetController::ClearSelected()
 void USpellMenuWidgetController::UpdateButtonsAndDescriptions(const bool bClick) const
 {
 	const TSubclassOf AbilityClass = FocusSpellGlobe ? FocusSpellGlobe->AbilityClass : nullptr;
-	const FGameplayTag& StatusTag = FocusSpellGlobe ? FocusSpellGlobe->StatusTag : FGameplayTag();
-	const bool bSpendEnabled = SpellPoints > 0 && !StatusTag.MatchesTagExact(AuraTag::Ability_Status_Locked);
-	const bool bEquipEnabled = !StatusTag.MatchesTag(AuraTag::Ability_Status);
+	bool bSpendEnabled = false, bEquipEnabled = false;
 
-	FText Description;
-	FText NextLvDescription;
+	FText Description, NextLvDescription;
 	if (const FGameplayAbilitySpec* Spec = AuraASC->FindAbilitySpecFromClass(AbilityClass))
 	{
+		const FGameplayTagContainer& Tags = Spec->GetDynamicSpecSourceTags();
+		bSpendEnabled = SpellPoints > 0 && !Tags.HasTagExact(AuraTag::Ability_Status_Locked);
+		bEquipEnabled = !Tags.HasTag(AuraTag::Ability_Status);
+
 		if (const UAuraGameplayAbility* AuraAbility = AbilityClass.GetDefaultObject())
 		{
 			FAbilityDetails Details(Spec->Level, AuraASC);
@@ -66,12 +67,9 @@ void USpellMenuWidgetController::UpdateButtonsAndDescriptions(const bool bClick)
 			AuraAbility->GetLevelChangeDescription(Details, ChangeDetails, NextLvDescription);
 		}
 	}
-	else if (AbilityClass) // Has no Activatable Ability with Tag
-	{
-		if (const FAuraAbilityData* Data = UAbilityDataAsset::GetDataFromGameState(this, AbilityClass))
-		{	// Description = UAuraGameplayAbility::GetLockedDescription(Data->LevelRequirement);
-			Description = AAuraHUD::Get(this)->GetLockedDescription(Data->LevelRequirement);
-		}
+	else if (const FAuraAbilityData* Data = UAbilityDataAsset::GetDataFromGameState(this, AbilityClass))
+	{	// Has no Activatable Ability with Tag
+		Description = AAuraHUD::Get(this)->GetLockedDescription(Data->LevelRequirement);
 	}
 	SpellButtonFocusDelegate.Broadcast(bSpendEnabled, bEquipEnabled,
 		Description, NextLvDescription, bClick);

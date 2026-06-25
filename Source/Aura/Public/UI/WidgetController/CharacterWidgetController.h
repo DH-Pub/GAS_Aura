@@ -16,6 +16,9 @@ class UCharacterWidgetController : public UAuraWidgetController
 {
 	GENERATED_BODY()
 public:
+	virtual void UnbindOldAbilitySystemComponent() override;
+	virtual void BindCallbacksDependencies() override;
+
 	UPROPERTY(BlueprintAssignable, Category="GAS")
 	FOnLevelUpSignature OnLevelUpDelegate;
 };

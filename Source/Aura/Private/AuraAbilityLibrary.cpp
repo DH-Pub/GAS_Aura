@@ -5,6 +5,7 @@
 
 #include "KismetTraceUtils.h"
 #include "Aura/Aura.h"
+#include "Engine/Engine.h"
 #include "Engine/OverlapResult.h"
 #include "Interface/CombatInterface.h"
 #include "PhysicsEngine/PhysicsSettings.h"

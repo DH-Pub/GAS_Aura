@@ -7,7 +7,6 @@
 #include "Character/AuraCharacterBase.h"
 #include "Player/AuraPlayerState.h"
 
-// AController* UAuraWidgetController::GetPlayerController() const {return Character->GetController();}
 const UAuraAttributeSet* UAuraWidgetController::GetAttributeSet() const
 {
 	return AuraASC ? AuraASC->GetSet<UAuraAttributeSet>() : nullptr;
@@ -21,4 +20,13 @@ AAuraPlayerState* UAuraWidgetController::GetPlayerState() const
 AAuraCharacterBase* UAuraWidgetController::GetAuraCharacter() const
 {
 	return AuraASC ? Cast<AAuraCharacterBase>(AuraASC->GetAvatarActor()) : nullptr;
+}
+
+AController* UAuraWidgetController::GetCharacterController() const
+{	// AController* UAuraWidgetController::GetPlayerController() const {return Character->GetController();}
+	if (const AAuraCharacterBase* Character = GetAuraCharacter())
+	{
+		return Character->GetController();
+	}
+	return nullptr;
 }

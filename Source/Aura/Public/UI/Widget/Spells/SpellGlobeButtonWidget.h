@@ -3,8 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "AuraTag.h"
-#include "GameplayTagContainer.h"
 #include "GlobeWidget.h"
 #include "SpellGlobeButtonWidget.generated.h"
 
@@ -27,8 +25,6 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Aura", meta=(GameplayTagFilter="Ability"))
 	TSubclassOf<class UAuraGameplayAbility> AbilityClass; // To compare and get
-	UPROPERTY(BlueprintReadOnly)
-	FGameplayTag StatusTag = AuraTag::Ability_Status_Locked;
 
 	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<class USpellMenuWidgetController> SpellMenuWC;

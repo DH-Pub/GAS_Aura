@@ -22,7 +22,7 @@ FVector2D UAuraUserWidget::GetOffsetToPivot(const FGeometry& MyGeometry, const F
 	return MousePercentOnWidget - FVector2D(Offset.X, Offset.Y);
 }
 
-void UAuraUserWidget::SetSizeBoxWidthHeight(class USizeBox* InSizeBox, const FVector2D& InWidthHeight)
+/*static*/ void UAuraUserWidget::SetSizeBoxWidthHeight(class USizeBox* InSizeBox, const FVector2D& InWidthHeight)
 {
 	InSizeBox->SetWidthOverride(InWidthHeight.X);
 	InSizeBox->SetHeightOverride(InWidthHeight.Y);

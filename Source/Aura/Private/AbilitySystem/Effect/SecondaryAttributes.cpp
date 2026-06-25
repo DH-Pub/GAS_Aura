@@ -67,20 +67,20 @@ USecondaryAttributesEffect::USecondaryAttributesEffect()
 	 *	Executions: only works for (Permanent)
 	 */
 	DurationPolicy = EGameplayEffectDurationType::Infinite;
-	AURA_ADD_ATTRIBUTE_BASED_MODIFIER(GetArmorAttribute(), AddBase, .25, 2, 6, GetResilienceAttribute()) // 0
-	AURA_ADD_ATTRIBUTE_BASED_MODIFIER(GetArmorPenetrationAttribute(), AddBase, .15, 1, 3, GetStrengthAttribute()) // 1
-	AURA_ADD_ATTRIBUTE_BASED_MODIFIER(GetBlockChanceAttribute(), AddBase, .25, 0, 4, GetArmorAttribute()) // 2
-	AURA_ADD_ATTRIBUTE_BASED_MODIFIER(GetCriticalHitChanceAttribute(), AddBase, .25, 0, 5, GetArmorPenetrationAttribute()) // 3
-	AURA_ADD_ATTRIBUTE_BASED_MODIFIER(GetCriticalHitDamageAttribute(), AddBase, .15, 0, .25, GetArmorPenetrationAttribute()) // 4
-	AURA_ADD_ATTRIBUTE_BASED_MODIFIER(GetCriticalHitResistanceAttribute(), AddBase, .25, 0, 10, GetArmorAttribute()) // 5
+	AURA_ADD_ATTRIBUTE_BASED_MODIFIER(GetArmorAttribute(), AddBase, .25f, 2.f, 6.f, GetResilienceAttribute()) // 0
+	AURA_ADD_ATTRIBUTE_BASED_MODIFIER(GetArmorPenetrationAttribute(), AddBase, .15f, 1.f, 3.f, GetStrengthAttribute()) // 1
+	AURA_ADD_ATTRIBUTE_BASED_MODIFIER(GetBlockChanceAttribute(), AddBase, .25f, 0.f, 4.f, GetArmorAttribute()) // 2
+	AURA_ADD_ATTRIBUTE_BASED_MODIFIER(GetCriticalHitChanceAttribute(), AddBase, .25f, 0.f, 5.f, GetArmorPenetrationAttribute()) // 3
+	AURA_ADD_ATTRIBUTE_BASED_MODIFIER(GetCriticalHitDamageAttribute(), AddBase, .15f, 0.f, .25f, GetArmorPenetrationAttribute()) // 4
+	AURA_ADD_ATTRIBUTE_BASED_MODIFIER(GetCriticalHitResistanceAttribute(), AddBase, .25f, 0.f, 10.f, GetArmorAttribute()) // 5
 
-	AURA_ADD_ATTRIBUTE_BASED_MODIFIER(GetHealthRegenerationAttribute(), AddBase, .1, 0, 1, GetVigorAttribute()) // 6
-	AURA_ADD_ATTRIBUTE_BASED_MODIFIER(GetManaRegenerationAttribute(), AddBase, .1, 0, 1, GetIntelligenceAttribute()) // 7
+	AURA_ADD_ATTRIBUTE_BASED_MODIFIER(GetHealthRegenerationAttribute(), AddBase, .1f, 0.f, 1.f, GetVigorAttribute()) // 6
+	AURA_ADD_ATTRIBUTE_BASED_MODIFIER(GetManaRegenerationAttribute(), AddBase, .1f, 0.f, 1.f, GetIntelligenceAttribute()) // 7
 
-	AURA_ADD_ATTRIBUTE_BASED_MODIFIER(GetFireResistanceAttribute(), AddBase, .5, 0, 3, GetResilienceAttribute()) // 8
-	AURA_ADD_ATTRIBUTE_BASED_MODIFIER(GetLightningResistanceAttribute(), AddBase, .5, 0, 3, GetResilienceAttribute()) // 9
-	AURA_ADD_ATTRIBUTE_BASED_MODIFIER(GetArcaneResistanceAttribute(), AddBase, .5, 0, 3, GetResilienceAttribute()) // 10
-	AURA_ADD_ATTRIBUTE_BASED_MODIFIER(GetPhysicalResistanceAttribute(), AddBase, .5, 0, 3, GetResilienceAttribute()) // 11
+	AURA_ADD_ATTRIBUTE_BASED_MODIFIER(GetFireResistanceAttribute(), AddBase, .5f, 0.f, 3.f, GetResilienceAttribute()) // 8
+	AURA_ADD_ATTRIBUTE_BASED_MODIFIER(GetLightningResistanceAttribute(), AddBase, .5f, 0, 3.f, GetResilienceAttribute()) // 9
+	AURA_ADD_ATTRIBUTE_BASED_MODIFIER(GetArcaneResistanceAttribute(), AddBase, .5f, 0.f, 3.f, GetResilienceAttribute()) // 10
+	AURA_ADD_ATTRIBUTE_BASED_MODIFIER(GetPhysicalResistanceAttribute(), AddBase, .5f, 0.f, 3.f, GetResilienceAttribute()) // 11
 
 	AURA_ADD_CUSTOM_CALCULATION_MODIFIER(GetMaxHealthAttribute(), AddBase, UMMC_MaxHealth) // 12
 	AURA_ADD_CUSTOM_CALCULATION_MODIFIER(GetMaxManaAttribute(), AddBase, UMMC_MaxMana) // 13

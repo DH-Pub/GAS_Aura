@@ -18,7 +18,8 @@ struct FStateTreeCombatConditionInstanceData
 	UPROPERTY(EditAnywhere, Category="Input")
 	float LostTargetRange = 0.f;
 };
-STATETREE_POD_INSTANCEDATA(FStateTreeCombatConditionInstanceData)
+UE_STATETREE_ZEROED_TRIVIALLY_COPIED_NO_DESTRUCTOR_INSTANCEDATA(FStateTreeCombatConditionInstanceData) // or
+// UE_STATETREE_CONSTRUCTED_TRIVIALLY_COPIED_NO_DESTRUCTOR_INSTANCEDATA(FStateTreeCombatConditionInstanceData)
 /*
  * same as STC_TargetInsideRange
  */

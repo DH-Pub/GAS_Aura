@@ -8,7 +8,8 @@
 #include "AttributeMenuWidgetController.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnAttriubtePointsChanged, int32, NewValue, int32, PointsAllocating);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FAttributeInfoSignature, const FGameplayTag&, Tag, float, NewValue, const FAuraAttributeData&, Info);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FAttributeInfoSignature, const FGameplayTag&, Tag, float, NewValue,
+	float, ModifiedValue);
 /**
  * Constructed in AuraHUD like OverlayWidgetController
  */
@@ -20,6 +21,9 @@ public:
 	virtual void UnbindOldAbilitySystemComponent() override;
 	virtual void BindCallbacksDependencies() override;
 	virtual void BroadcastInitialValues() override;
+
+	UFUNCTION(BlueprintCallable)
+	struct FAuraAttributeData GetAttributeData(FGameplayTag Tag);
 
 	UPROPERTY(BlueprintAssignable, Category="GAS|Attributes")
 	FAttributeInfoSignature AttributeInfoDelegate;

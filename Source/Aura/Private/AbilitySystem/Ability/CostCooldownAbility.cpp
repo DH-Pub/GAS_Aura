@@ -124,8 +124,12 @@ void UCostCooldownAbility::ApplyCost(const FGameplayAbilitySpecHandle Handle,
 
 void UCostCooldownAbility::GetCostExecutionOutput(UAbilitySystemComponent* ASC, FGameplayEffectSpec& Spec,
 	FGameplayEffectCustomExecutionOutput& ExecutionOutput) const
-{	// Spec.CaptureAttributeDataFromTarget(ASC); // This is not needed for UGameplayEffectExecutionCalculation to get Attribute
-	const FPredictionKey PredictionKey = ASC->GetPredictionKeyForNewAction();
+{
+	/*
+	 * Spec.CaptureAttributeDataFromTarget(ASC); // NOT needed for UGameplayEffectExecutionCalculation to get Attribute
+	 * Unlike UGameplayModMagnitudeCalculation
+	 */
+	const FPredictionKey PredictionKey = ASC ? ASC->GetPredictionKeyForNewAction() : FPredictionKey();
 	for (const FGameplayEffectExecutionDefinition& CurExecDef : Spec.Def->Executions)
 	{
 		if (!CurExecDef.CalculationClass) continue;
@@ -143,10 +147,12 @@ void UCostCooldownAbility::GetCost(FAbilityDetails& Details) const
 	if (const UGameplayEffect* CostGE = GetCostGameplayEffect())
 	{
 		UAbilitySystemComponent* ASC = Details.AbilitySystemComponent.Get();
-		FGameplayEffectSpec	Spec(CostGE, ASC->MakeEffectContext(), Details.Level);
-		Spec.GetContext().SetAbility(this);
+		FGameplayEffectContextHandle ContextHandle = ASC ? ASC->MakeEffectContext() :
+			FGameplayEffectContextHandle(UAbilitySystemGlobals::Get().AllocGameplayEffectContext());
+		ContextHandle.SetAbility(this);
+		FGameplayEffectSpec	Spec(CostGE, ContextHandle, Details.Level);
 		FGameplayEffectCustomExecutionOutput ExecutionOutput;
-		GetCostExecutionOutput(ASC, Spec, ExecutionOutput);
+		GetCostExecutionOutput(ASC, Spec, ExecutionOutput); // ASC can be nullptr => Attributes for Execution: 0
 		for (FGameplayModifierEvaluatedData& Data : ExecutionOutput.GetOutputModifiersRef())
 		{
 			if (Data.Attribute == UAuraAttributeSet::GetManaAttribute())
@@ -165,12 +171,13 @@ void UCostCooldownAbility::GetCooldown(FAbilityDetails& Details) const
 	const UGameplayEffect* CooldownEffect = GetCooldownGameplayEffect();
 	if (!CooldownEffect) return;
 	UAbilitySystemComponent* ASC = Details.AbilitySystemComponent.Get();
-	FGameplayEffectSpec	Spec(CooldownEffect, ASC->MakeEffectContext(), Details.Level);
-	Spec.GetContext().SetAbility(this);
+	FGameplayEffectContextHandle ContextHandle = ASC ? ASC->MakeEffectContext() :
+		FGameplayEffectContextHandle(UAbilitySystemGlobals::Get().AllocGameplayEffectContext());
+	ContextHandle.SetAbility(this);
+	FGameplayEffectSpec	Spec(CooldownEffect, ContextHandle, Details.Level);
 	Spec.SetByCallerTagMagnitudes.Add(TAG_Cooldown_Duration,
 		Details.BaseCooldown = CooldownDuration.GetValueAtLevel(Details.Level));
-	Spec.CaptureAttributeDataFromTarget(ASC);
-	ASC->GetOwnedGameplayTags(Spec.CapturedTargetTags.GetActorTags());
+	Spec.CaptureAttributeDataFromTarget(ASC); // ASC can be nullptr and return 0 for Attribute
 	if (const TSubclassOf<UGameplayModMagnitudeCalculation> ModCalcClass =
 		CooldownEffect->DurationMagnitude.GetCustomMagnitudeCalculationClass())
 	{	/*if (const UMMC_CooldownDuration* CalcCDO = ModCalcClass->GetDefaultObject<UMMC_CooldownDuration>())

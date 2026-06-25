@@ -9,7 +9,6 @@
 #include "NavigationSystem.h"
 #include "NiagaraFunctionLibrary.h"
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
-#include "AbilitySystem/Data/AuraInputDataAsset.h"
 #include "AI/NavigationSystemBase.h"
 #include "Animation/AnimInstanceProxy.h"
 #include "Aura/Aura.h"
@@ -98,7 +97,9 @@ void AAuraPlayerController::BeginPlay()
 	if (UEnhancedInputLocalPlayerSubsystem* InputSystem = ULocalPlayer::GetSubsystem
 		<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
 	{
-		InputSystem->AddMappingContext(AuraInputDA->InputMappingContext, 0);
+		FModifyContextOptions Options;
+		Options.bNotifyUserSettings = true;
+		InputSystem->AddMappingContext(AuraInputDA->InputMappingContext, 0, Options);
 	}
 
 	// Mouse Cursor Settings

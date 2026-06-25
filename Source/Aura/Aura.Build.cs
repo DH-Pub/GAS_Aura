@@ -12,6 +12,7 @@ public class Aura : ModuleRules
 			"EnhancedInput",
 			"GameplayAbilities",
 			"CommonUI",
+			"CommonGame", // TODO: May not be needed because we might not use UPrimaryGameLayout
 		]);
 
 		PrivateDependencyModuleNames.AddRange([

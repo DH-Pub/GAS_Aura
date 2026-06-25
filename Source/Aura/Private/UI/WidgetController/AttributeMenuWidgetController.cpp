@@ -30,12 +30,14 @@ void UAttributeMenuWidgetController::BindCallbacksDependencies()
 	GetPlayerState()->OnAttributePointsChangedDelegate.AddWeakLambda(this, [&](const int32 Points)
 	{
 		bIsApplying = false;
-		for (const auto& [Tag, AttributeData] : AAuraHUD::Get(this)->GetAttributeDataList())
+		/*for (const auto& [Tag, AttributeData] : AAuraHUD::Get(this)->GetAttributeDataList())
 		{
 			const float AttributeValue = AttributeData.GameplayAttribute.GetNumericValue(GetAttributeSet());
-			AttributeInfoDelegate.Broadcast(Tag, AttributeValue, AttributeData);
+			AttributeInfoDelegate.Broadcast(Tag, AttributeValue,
+				FindPointAllocationByTag(Tag), AttributeData);
 		}
-		AttributePointsToUIDelegate.Broadcast(AttributePoints = Points, AttributeTargetData.TotalPointsAllocating());
+		AttributePointsToUIDelegate.Broadcast(AttributePoints = Points, AttributeTargetData.TotalPointsAllocating());*/
+		BroadcastInitialValues();
 	});
 
 	for (const auto& [Tag, AttributeData] : AAuraHUD::Get(this)->GetAttributeDataList())
@@ -43,14 +45,40 @@ void UAttributeMenuWidgetController::BindCallbacksDependencies()
 		AuraASC->GetGameplayAttributeValueChangeDelegate(AttributeData.GameplayAttribute).AddWeakLambda(
 		this, [&](const FOnAttributeChangeData& Data)
 		{
-			if (Data.NewValue != Data.OldValue) AttributeInfoDelegate.Broadcast(Tag, Data.NewValue, AttributeData);
+			if (Data.NewValue != Data.OldValue)
+			{
+				AttributeInfoDelegate.Broadcast(Tag, Data.NewValue, FindPointAllocationByTag(Tag));
+			}
 		});
 	}
 }
 
 void UAttributeMenuWidgetController::BroadcastInitialValues()
 {
-	if (GetPlayerState()) GetPlayerState()->BroadcastCurrentData();
+	if (const AAuraPlayerState* PS = GetPlayerState())
+	{
+		AttributePointsToUIDelegate.Broadcast(AttributePoints = PS->GetAttributePoints(),
+			AttributeTargetData.TotalPointsAllocating());
+		// GetPlayerState()->BroadcastCurrentData();
+	}
+
+	if (const UAuraAttributeSet* AS = GetAttributeSet())
+	{
+		for (const auto& [Tag, AttributeData] : AAuraHUD::Get(this)->GetAttributeDataList())
+		{
+			const float AttributeValue = AttributeData.GameplayAttribute.GetNumericValue(AS);
+			AttributeInfoDelegate.Broadcast(Tag, AttributeValue, FindPointAllocationByTag(Tag));
+		}
+	}
+}
+
+FAuraAttributeData UAttributeMenuWidgetController::GetAttributeData(FGameplayTag Tag)
+{
+	if (const FAuraAttributeData* Data = AAuraHUD::Get(this)->GetAttributeDataList().Find(Tag))
+	{
+		return *Data;
+	}
+	return FAuraAttributeData();
 }
 
 int32 UAttributeMenuWidgetController::FindPointAllocationByTag(const FGameplayTag& Tag)
@@ -83,6 +111,13 @@ void UAttributeMenuWidgetController::AllocatePointToAttribute(const FGameplayTag
 	else if (Points > 0 && Points <= AttributePoints)
 	{
 		AttributeTargetData.AddNewData(AttributeTag, Points);
+	}
+
+	if (const FAuraAttributeData* Data = AAuraHUD::Get(this)->GetAttributeDataList().Find(AttributeTag))
+	{
+		const float AttributeValue = Data->GameplayAttribute.GetNumericValue(GetAttributeSet());
+		AttributeInfoDelegate.Broadcast(AttributeTag, AttributeValue,
+			FindPointAllocationByTag(AttributeTag));
 	}
 	AttributePointsToUIDelegate.Broadcast(AttributePoints, AttributeTargetData.TotalPointsAllocating());
 }

@@ -27,21 +27,18 @@ void USpellGlobeButtonWidget::UpdateAbilityUI()
 	const FGameplayTagContainer& Tags = Spec ? Spec->GetDynamicSpecSourceTags() : FGameplayTagContainer();
 	if (!Data || !Spec || Tags.HasTagExact(AuraTag::Ability_Status_Locked))
 	{
-		StatusTag = AuraTag::Ability_Status_Locked;
 		bDragEnable = false;
 		Image_SpellIcon->SetBrushFromTexture(LockedTexture);
 		Image_Background->SetBrushFromMaterial(LockedMaterial);
 	}
 	else if (Tags.HasTagExact(AuraTag::Ability_Status_Eligible))
 	{
-		StatusTag = AuraTag::Ability_Status_Eligible;
 		bDragEnable = false;
 		Image_SpellIcon->SetBrushFromTexture(Data->Icon);
 		Image_Background->SetBrushFromMaterial(LockedMaterial);
 	}
 	else
 	{	// not under any status
-		StatusTag = FGameplayTag::EmptyTag;
 		bDragEnable = true;
 		Image_SpellIcon->SetBrushFromTexture(Data->Icon);
 		Image_Background->SetBrushFromMaterial(Data->BackgroundMaterial);
